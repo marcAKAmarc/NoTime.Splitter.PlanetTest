@@ -47,11 +47,11 @@ public class MoveRotationTester : MonoBehaviour
         Debug.Log("scene body after 2: " + sceneBody.rotation.eulerAngles.ToString("G6"));
 
         //this body rotates... why?  it is as if the second call to MoveRotation overwrites the original
-        Debug.Log("splitter body before: " + splitterBody.rotation.eulerAngles.ToString("G6"));
-        splitterBody.MoveRotation(xQuaternion * splitterBody.rotation);
-        Debug.Log("splitter body after 1: " + splitterBody.rotation.eulerAngles.ToString("G6"));
-        splitterBody.MoveRotation(Quaternion.Inverse(yQuaternion) * splitterBody.rotation);
-        Debug.Log("splitter body after 2: " + splitterBody.rotation.eulerAngles.ToString("G6"));
+        Debug.Log("splitter body before: " + splitterBody.AppliedPhysics.rotation.eulerAngles.ToString("G6"));
+        splitterBody.AppliedPhysics.MoveRotation(xQuaternion * splitterBody.AppliedPhysics.rotation);
+        Debug.Log("splitter body after 1: " + splitterBody.AppliedPhysics.rotation.eulerAngles.ToString("G6"));
+        splitterBody.AppliedPhysics.MoveRotation(Quaternion.Inverse(yQuaternion) * splitterBody.AppliedPhysics.rotation);
+        Debug.Log("splitter body after 2: " + splitterBody.AppliedPhysics.rotation.eulerAngles.ToString("G6"));
 
         /*body.MovePosition(body.position + (Vector3.forward * .005f));
         body.MovePosition(body.position + (Vector3.forward * -.005f));
