@@ -1,0 +1,76 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}{\f1\fnil\fcharset2 Symbol;}}
+{\colortbl ;\red0\green0\blue0;}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sl276\slmult1\qr\f0\fs22\lang9 Last Updated 04/13/2023\par
+notimetechnology.com\par
+@notime_tech\par
+notime.technology@gmail.com\fs32\par
+
+\pard\sa200\sl276\slmult1 NoTime\fs22  - \fs32 Splitter\par
+\fs48 Technical Documentation\fs22\par
+\b\fs32 Features\b0\fs22\par
+Splitter is a framework that can be used to dynamically create and manage isolated physics contexts within Unity's built-in 3d physics engine (NVIDIA PhysX).  Isolated physics contexts are extremely useful for wrangling things like:\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Moving/Rotating platforms\par
+{\pntext\f1\'B7\tab}Ridable Rigidbodies\par
+{\pntext\f1\'B7\tab}Explorable Vehicle Interiors\par
+{\pntext\f1\'B7\tab}Gravity Walls\par
+{\pntext\f1\'B7\tab}Any combination of the above ( For example, a moving/rotating gravity wall)\par
+{\pntext\f1\'B7\tab}Any nested combination of the above.  For example, an explorable aircraft carrier that rolls in the waves, which has moving platforms on the ship, and is all on a planet that is rotating and moving in space.\par
+
+\pard\sa200\sl276\slmult1 Splitter ensures that transitions to and from these isolated physics scenes are executed as smoothly as possible.\par
+Splitter also supports physical interaction between rigidbodies in separate physics scenes.\par
+Splitter requires no coding, but does expose useful events and methods if needed.\par
+Splitter utilizes the GameObject.SendMessage to provide event level control to programmers. \par
+Lastly, Splitter supports all of the standard Rigidbody applications across physics scenes.\par
+\b\fs32 Component Documentation\b0\fs22\par
+\b\fs28 SplitterAnchor\b0\fs22\par
+Creates a 'physics anchor' and defines an isolated physics context.\par
+
+\pard\li720\sa200\sl276\slmult1 Tip:  The anchor's physical orientation in the isolated physics scene is defined by the anchor's local rotation.  If this proves to be confusing, try setting SimulationVisible to true to get a visual representation of the simulated anchor.\par
+
+\pard\sa200\sl276\slmult1\b List<Collider> EntranceTriggers \b0 - A list of triggers that are used to define an entrance area.  When a subscriber triggers any of these triggers, the subscriber will be evaluated to be entered into this anchor's isolated physics context.  Caveat:  See EntrancePriority.\par
+\b List<Collider> StayTriggers \b0 - A list of triggers that are used to define a stay area.  As long as a subscriber who has entered this anchor's isolated physics context remains in contact with one of these triggers, the subscriber will continue to be simulated in this anchor's isolated physics context. Caveat: See the EntrancePriority property.\par
+
+\pard\li720\sa200\sl276\slmult1 Tip:  In general, the entrance triggers should be contained within the StayTriggers.  The StayTriggers should be slightly larger than the Entrance triggers.  This ensures that there is a buffer zone to prevent jittery rapid entrance/exit of an anchor.\par
+
+\pard\sa200\sl276\slmult1\b int EntrancePriority \b0 - Used to manage nested anchors.  Defines the priority this anchor takes over other overlapping anchors.  For example, imagine a scene with a boat in an ocean on a rotating planet, where the boat and the planet are both SplitterAnchors.  In this case, the entrance priority of the ship should be higher than the planet.  This way, if the player is already in the planet's physics simulation, we know it is okay to exit and enter the boat's physics simulation if triggered. \par
+\b bool SimulationVisible \b0 - This is made available for debugging only.  If this is true on start, then the simulated anchor will remain visible.  All simulated anchors can be found at the world position of Vector3(100, 100, 100).\par
+\b\fs28 SplitterSubscriber\b0\fs22\par
+Gives a rigidbody the ability to interact with SplitterAnchors.\par
+\b List<MonoBehaviour> RunInSimulationSpace \b0 - A list of Monobehaviors that should be run inside the physics simulation.  In most cases, this can remain unused.  However, in the case of the player, you will most likely want to control the player from within the anchor's physics context.  So as a rule of thumb, always add the players character controller to this list\par
+\b bool SimulationVisible \b0 - This is made available for debugging only.  If this is true on the start of anchor simulation, then the simulated anchor will remain visible.  All simulated anchors can be found at the world position of Vector3(100, 100, 100).\par
+\b\fs32 Scripting Documentation\b0\fs22\par
+\b\fs28 SplitterEventListener\b0\fs22\par
+Provides access to Splitter events.\par
+Some knowledge of the inner workings of Splitter is required when dealing with events.  When a subscriber triggers an anchor, a complete copy of the subscriber game object is made and entered into the anchor's physics simulation.   The SplitterEventListener's events allow us to access the simulated subscriber and simulated anchor.\par
+To utilize this event listener, have the relevant components inherit from SplitterEventListener instead of MonoBehaviour.  Then override any of the following public virtual methods as needed.\par
+\cf1\b OnEnterAnchor(SplitterEvent evt)\b0  - Occurs for subsribers.  Occurs when the subscriber successfully enters an anchor.\par
+\b OnExitAnchor(SplitterEvent evt)\b0\lang1033  - \lang9 Occurs for subsribers.  Occurs when the subscriber successfully exits an anchor.\par
+\cf0\b OnSimulationStart(SplitterEvent evt) \b0 - Occurs for anchors.  Occurs when the anchor starts simulating a physics context.\par
+\b\fs28 SplitterEvent\b0\fs22\par
+This object simply holds relevant information for events.\par
+\b SplitterAnchor Anchor \b0 - The SplitterAnchor associated with the event.\par
+\b Transform SimulatedAnchor \b0 - The transform of the simulated anchor associated with the event.\par
+\b SplitterSubscriber Subscriber \b0 - The SplitterSubscriber associated with the event.\par
+\b Transform SimulatedSubscriber \b0 - The transform of the simulated subscriber associated with the event.\par
+\b\fs28 Applied Physics\par
+\b0\fs22 For use when a GameObject needs to apply physics to another.\par
+As a rule of thumb, when scripting physics interactions, please route all rigidbody interactions through SplitterSubscriber.AppliedPhysics.\par
+There are 3 categories of interest for Unity's Rigidbody physics interactions:\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1\b Implicit\b0 :  These interactions occur behind the scenes in unity.  For example, when a rigidbody collides with another rigidbody in physics, energy is transferred automatically from one rigidbody to another.  \b Splitter handles most of these interaction automatically.\b0\par
+{\pntext\f1\'B7\tab}\b Explicit-Internal\b0 :  These interactions occur when a script on a SplitterSubscriber's GameObject (or child GameObject) interacts with its own rigidbody's members.  \b These scripts should be added to 'RunInSimulation' on the SplitterSubscriber Behaviour.  Alternatively, they can be routed through a Splitter Subscriber's AppliedPhysics methods, if preferred.\b0\par
+{\pntext\f1\'B7\tab}\b Explicit-External\b0 : These interactions occur when a script on second GameObject interact with a SplitterSubscriber's rigidbody.  \b These interactions must be routed through a Splitter Subscriber's AppliedPhysics methods.  \par
+
+\pard\sa200\sl276\slmult1\b0\par
+AppliedPhysic's members match Rigidbody's members exactly.  So you should be able to do everything you do with a Rigidbody to a SplitterSubscriber's applied physics.\par
+//TODO:  Should a complete breakdown of all of Rigidbody/AppliedPhysics members be listed here?\par
+\b\fs24 Unsupported Interactions\par
+\b0 Some interactions are not supported.\par
+Joint Interactions (TBD)\par
+Positional / Rotational Constraints (TBD)\par
+Rigidbody Extrapolation - May cuase some unrealistic jitter.\par
+\fs22\par
+}
+ 
