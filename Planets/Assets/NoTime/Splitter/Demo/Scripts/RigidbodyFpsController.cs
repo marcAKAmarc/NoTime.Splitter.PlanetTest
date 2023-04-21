@@ -24,8 +24,8 @@ namespace NoTime.Splitter.Demo
         private Transform _verticalLook;
         private Quaternion VerticalLookStart;
         public float JumpForce;
-
-
+        public float JetpackForce;
+        public bool JetpackActive = false;
 
         private SplitterSubscriber body;
 
@@ -43,6 +43,7 @@ namespace NoTime.Splitter.Demo
             rotationX += Input.GetAxis("Mouse X") * sensitivityX;
             _rotationY += Input.GetAxis("Mouse Y") * sensitivityY;
             ShouldJump = ShouldJump || Input.GetKeyDown(KeyCode.Space);
+            JetpackActive = (!Grounded && Input.GetKeyDown(KeyCode.Space)) || (JetpackActive && Input.GetKey(KeyCode.Space));
         }
         Vector3 previousPosition;
         bool Moved = false;
@@ -79,6 +80,7 @@ namespace NoTime.Splitter.Demo
 
             Jump();
 
+            Jetpack();
 
             //sticky
             EnforceMinimumMovementDistance();
@@ -91,11 +93,11 @@ namespace NoTime.Splitter.Demo
 
         private void Move()
         {
-            if (Grounded &&
+            if (
                 (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
             )
             {
-                var direction = Vector3.zero;
+                Vector3 direction = Vector3.zero;
                 if (Input.GetKey(KeyCode.W))
                     direction += Vector3.forward;
                 if (Input.GetKey(KeyCode.A))
@@ -106,9 +108,14 @@ namespace NoTime.Splitter.Demo
                     direction += Vector3.back;
                 direction = direction.normalized;
 
-                direction = body.rotation * direction;
+                direction = body.AppliedPhysics.rotation * direction;
 
-                body.AddForce(direction * WalkForce * Time.fixedDeltaTime, ForceMode.Acceleration);
+                float MoveForce = WalkForce;
+                if (!Grounded)
+                    MoveForce = WalkForce / 4f;
+
+
+                body.AppliedPhysics.AddForce(direction * MoveForce * Time.fixedDeltaTime, ForceMode.Acceleration);
                 Moved = true;
             }
             else
@@ -125,11 +132,11 @@ namespace NoTime.Splitter.Demo
             {
                 if (
                     previousPosition != null
-                    && (previousPosition - body.position).sqrMagnitude < MinimumMovementDistance * MinimumMovementDistance
+                    && (previousPosition - body.AppliedPhysics.position).sqrMagnitude < MinimumMovementDistance * MinimumMovementDistance
                 )
-                    body.MovePosition(previousPosition);
+                    body.AppliedPhysics.MovePosition(previousPosition);
 
-                previousPosition = body.position;
+                previousPosition = body.AppliedPhysics.position;
             }
         }
 
@@ -140,21 +147,29 @@ namespace NoTime.Splitter.Demo
                         !Moved
                         ||
                         //going faster than maxwalkspeed
-                        Vector3.ProjectOnPlane(body.velocity, GravityForce.normalized).sqrMagnitude > MaxWalkSpeed * MaxWalkSpeed
+                        Vector3.ProjectOnPlane(body.AppliedPhysics.velocity, GravityForce.normalized).sqrMagnitude > MaxWalkSpeed * MaxWalkSpeed
                      )
             )
-                body.drag = StopForce;
+                body.AppliedPhysics.drag = StopForce;
             else
-                body.drag = 0f;
+                body.AppliedPhysics.drag = 0f;
         }
 
         private void Jump()
         {
             if (ShouldJump && Grounded)
             {
-                body.AddForce(JumpForce * body.transform.up, ForceMode.Impulse);
+                body.AppliedPhysics.AddForce(JumpForce * body.transform.up, ForceMode.Impulse);
             }
             ShouldJump = false;
+        }
+
+        private void Jetpack()
+        {
+            if (JetpackActive)
+            {
+                body.AppliedPhysics.AddForce(JetpackForce * body.transform.up, ForceMode.Force);
+            }
         }
 
         private RaycastHit _hit = new RaycastHit();
@@ -165,45 +180,31 @@ namespace NoTime.Splitter.Demo
             //set collider layer to tmpExclue
             _oldLayer = gameObject.layer;
             gameObject.layer = 31;
-            _spherePos = body.position + (body.rotation * -Vector3.up * GroundedOffset);
-            Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.position, GroundedRadius, _spherePos - body.position, out _hit, GroundedOffset, GroundLayers, QueryTriggerInteraction.Ignore);
+            _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOffset);
+            Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, _spherePos - body.AppliedPhysics.position, out _hit, GroundedOffset, GroundLayers, QueryTriggerInteraction.Ignore);
             gameObject.layer = _oldLayer;
         }
 
         private void AlignRotationWithGravity()
         {
             GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityForce;
-
-            Debug.Log("before align with grav " + body.rotation.eulerAngles.ToString("G10"));
-            Quaternion target = Quaternion.FromToRotation(body.rotation * Vector3.down, GravityForce.normalized);
-            body.MoveRotation(Quaternion.Slerp(body.rotation, target * body.rotation, .1f));
-            Debug.Log(" after align with grav " + body.rotation.eulerAngles.ToString("G10"));
-            Debug.Log(" before stupid one " + body.rotation.eulerAngles.ToString("G10"));
-            body.MoveRotation(Quaternion.AngleAxis(1f, Vector3.up) * body.rotation);
-            Debug.Log(" after stupid one " + body.rotation.eulerAngles.ToString("G10"));
-            
-            Debug.Log(" my rot " + transform.rotation.eulerAngles.ToString("G10"));
+            Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
+            body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f));
         }
 
         private float rotationX = 0F;
         private float _rotationY = 0F;
         void Look()
         {
-            Debug.Log("before look " + body.rotation.eulerAngles.ToString("G6"));
             Quaternion xQuaternion =
                 Quaternion.AngleAxis(rotationX, Vector3.up);
-                //Quaternion.FromToRotation(body.rotation * Vector3.forward, Quaternion.AngleAxis(rotationX, body.rotation * Vector3.up) * body.rotation * Vector3.forward);
-            body.MoveRotation(body.rotation * xQuaternion);
-            Debug.Log("after look " + body.rotation.eulerAngles.ToString("G6"));
-            //_rotation = _rotation*xQuaternion;
+            body.AppliedPhysics.MoveRotation(body.AppliedPhysics.rotation * xQuaternion);
             rotationX = 0;
 
             Quaternion yQuaternionAddition = Quaternion.AngleAxis(-_rotationY, Vector3.right);
             Quaternion potentialNewLocal = (yQuaternionAddition * _verticalLook.localRotation);
             if (Mathf.Abs(Quaternion.Angle(VerticalLookStart, potentialNewLocal)) < this.maximumY)
                 _verticalLook.localRotation = potentialNewLocal;
-
-            
             _rotationY = 0;
         }
 
@@ -220,7 +221,7 @@ namespace NoTime.Splitter.Demo
             if (body != null)
             {
                 //draw ground collider
-                Gizmos.DrawSphere(body.position + (body.rotation * -Vector3.up * GroundedOffset), GroundedRadius);
+                Gizmos.DrawSphere(body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOffset), GroundedRadius);
             }
             else
             {

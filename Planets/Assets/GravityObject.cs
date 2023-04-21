@@ -36,7 +36,7 @@ public class GravityObject : SplitterEventListener
             //GravityDirection = ((field.transform.position + (field.transform.rotation * field.transform.localPosition)) - transform.GetComponent<Rigidbody>().position).normalized;
             //Debug.Log("Gforce: " + GravityForce.ToString());
             if(ApplyGravity)
-                transform.GetComponent<SplitterSubscriber>().AddForce(GravityDirection * GravityForce, ForceMode.Acceleration);
+                transform.GetComponent<SplitterSubscriber>().AppliedPhysics.AddForce(GravityDirection * GravityForce, ForceMode.Acceleration);
         }
         else
         {

@@ -12,8 +12,8 @@ public class AlignWithGravity : MonoBehaviour
     {
         GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityForce;
         
-            Quaternion target = Quaternion.FromToRotation(-body.transform.up, GravityForce.normalized) * body.rotation;
-            body.MoveRotation(Quaternion.Slerp(body.rotation, target, .1f));
+            Quaternion target = Quaternion.FromToRotation(-body.transform.up, GravityForce.normalized) * body.AppliedPhysics.rotation;
+            body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target, .1f));
         
     }
 

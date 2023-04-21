@@ -388,7 +388,6 @@ namespace Assets.NoTime.Splitter.Core
         {
             get
             {
-                //must get from body if simulating!
                 return body.position;
             }
             set
@@ -660,7 +659,6 @@ namespace Assets.NoTime.Splitter.Core
         //     The new rotation for the Rigidbody.
         public void MoveRotation(Quaternion rotation)
         {
-
             if (!subscriber.Simulating())
                 body.MoveRotation(rotation);
             else

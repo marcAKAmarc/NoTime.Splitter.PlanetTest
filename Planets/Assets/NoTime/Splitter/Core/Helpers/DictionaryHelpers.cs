@@ -57,17 +57,24 @@ namespace NoTime.Splitter.Helpers
     }
 
     [Serializable]
+    public class GoRigid
+    {
+        public GameObject gameObject;
+        public Rigidbody rigidbody;
+    }
+
+    [Serializable]
     public class DictionaryIntGameObject
     {
         public List<int> keys = new List<int>();
-        public List<GameObject> values = new List<GameObject>();
-        public GameObject this[int key]
+        public List<GoRigid> values = new List<GoRigid>();
+        public GoRigid this[int key]
         {
             get => GetValue(key);
             set => SetValue(key, value);
         }
 
-        private GameObject GetValue(int key)
+        private GoRigid GetValue(int key)
         {
             return values[keys.IndexOf(key)];
         }
@@ -76,7 +83,7 @@ namespace NoTime.Splitter.Helpers
         {
             return keys.Any(x => x == key);
         }
-        private void SetValue(int key, GameObject value)
+        private void SetValue(int key, GoRigid value)
         {
             if (!ContainsKey(key))
             {
@@ -87,7 +94,7 @@ namespace NoTime.Splitter.Helpers
             values[keys.IndexOf(key)] = value;
         }
 
-        public void Add(int key, GameObject value)
+        public void Add(int key, GoRigid value)
         {
             SetValue(key, value);
         }
@@ -101,14 +108,6 @@ namespace NoTime.Splitter.Helpers
         public int Count()
         {
             return keys.Count();
-        }
-    }
-
-    public static class DictionaryIntGameObjectExtensions
-    {
-        public static IEnumerable<GameObject> Select(this DictionaryIntGameObject dict, Func<GameObject, GameObject> action)
-        {
-            return dict.values.Where(x => action(x));
         }
     }
 }
