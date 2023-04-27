@@ -27,6 +27,9 @@ namespace NoTime.Splitter.Demo
         public float JetpackForce;
         public bool JetpackActive = false;
 
+        [HideInInspector]
+        public bool inControllerPosition = false;
+
         private SplitterSubscriber body;
 
         private void Awake()
@@ -94,7 +97,10 @@ namespace NoTime.Splitter.Demo
         private void Move()
         {
             if (
-                (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
+                !inControllerPosition &&
+                (
+                    (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
+                )
             )
             {
                 Vector3 direction = Vector3.zero;
@@ -157,7 +163,7 @@ namespace NoTime.Splitter.Demo
 
         private void Jump()
         {
-            if (ShouldJump && Grounded)
+            if (ShouldJump && Grounded && !inControllerPosition)
             {
                 body.AppliedPhysics.AddForce(JumpForce * body.transform.up, ForceMode.Impulse);
             }
@@ -187,6 +193,8 @@ namespace NoTime.Splitter.Demo
 
         private void AlignRotationWithGravity()
         {
+            if (transform.GetComponent<GravityObject>().GravityDistance > 300f)
+                return;
             GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityForce;
             Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
             body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f));
@@ -229,13 +237,7 @@ namespace NoTime.Splitter.Demo
             }
         }
 
-        public void OnTriggerEnter(Collider other)
-        {
-            if (other.GetComponentInParent<ExecuteRoute>()
-                && other.GetComponentInParent<ExecuteRoute>().enabled
-                && other.GetComponentInParent<ExecuteRoute>().PlayTrigger.GetInstanceID() == other.GetInstanceID())
-                other.GetComponentInParent<ExecuteRoute>().Play();
-        }
+        
 
         public override void OnEnterAnchor(SplitterEvent evt)
         {
