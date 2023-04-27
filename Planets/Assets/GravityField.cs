@@ -6,24 +6,24 @@ using UnityEngine;
 
 public class GravityField : SplitterEventListener
 {
+    public int PriorityLayer;
     public float surfaceRadius;
     public float farRadius;
     public float surfaceForce;
     public float farForce;
+    public float fieldDistance;
     // Start is called before the first frame update
 
     private float worldSurfaceRadius;
     private float worldFarRadius;
 
-    
-
     public float GetGravityForce(Vector3 position)
     {
-        return GravityForce(
+        return GetGravityForce(
             (transform.position - position).magnitude
         );
     }
-    private float GravityForce(float distance)
+    public float GetGravityForce(float distance)
     {
         worldSurfaceRadius = transform.lossyScale.x * surfaceRadius / 2f;
         worldFarRadius = transform.lossyScale.x * farRadius / 2f;
