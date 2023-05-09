@@ -32,7 +32,7 @@ namespace NoTime.Splitter
         private void Awake()
         {
             AppliedPhysics = new AppliedPhysics(this, transform.GetComponent<Rigidbody>());
-            if (AnchorStack == null)
+            if(AnchorStack == null)
                 AnchorStack = new List<SplitterAnchor>();
             if (CurrentAnchorTriggers == null)
                 CurrentAnchorTriggers = new List<Collider>();
@@ -56,9 +56,9 @@ namespace NoTime.Splitter
                     AddTriggerStack(other);
 
                 //if entrance and stay in triggerstack,
-                //add to anchor stack
+                    //add to anchor stack
                 if (
-                    CurrentAnchorTriggers.Any(y =>
+                    CurrentAnchorTriggers.Any(y => 
                         other.gameObject.GetComponentInParent<SplitterAnchor>().EntranceTriggers.Any(
                             x => x.GetInstanceID() == y.GetInstanceID()
                         )
@@ -179,7 +179,7 @@ namespace NoTime.Splitter
         }
         private void UpdateContext()
         {
-            if (isActiveAndEnabled)
+            if(isActiveAndEnabled)
                 StartCoroutine(UpdateContextAtEndOfFixedUpdate());
         }
         WaitForFixedUpdate _updateWait = new WaitForFixedUpdate();
@@ -274,6 +274,8 @@ namespace NoTime.Splitter
             {
                 Anchor.ApplyCollision(this, collision);
             }
+            //else
+                //undo collision force????
         }
         private void OnCollisionStay(Collision collision)
         {
@@ -338,4 +340,3 @@ namespace NoTime.Splitter
         }
     }
 }
-
