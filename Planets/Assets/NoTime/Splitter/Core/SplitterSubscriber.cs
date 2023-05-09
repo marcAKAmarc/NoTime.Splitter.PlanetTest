@@ -210,13 +210,8 @@ namespace NoTime.Splitter
         }
         void FixedUpdate()
         {
-            /*if (Anchor != null)
-                StartCoroutine(UpdateSubscriberAtEndOfFixedUpdate());*/
-        }
-        private void Update()
-        {
-            /*if (Anchor != null)
-                Anchor.UpdateSubscriber(this.transform.gameObject);*/
+            if (Anchor != null)
+                StartCoroutine(UpdateSubscriberAtEndOfFixedUpdate());
         }
         //[ContextMenu("Set Anchor From Location - WARNING: BACKUP SCENE BEFORE USE")]
         //public void SetAnchorFromLocation()
@@ -274,8 +269,6 @@ namespace NoTime.Splitter
             {
                 Anchor.ApplyCollision(this, collision);
             }
-            //else
-                //undo collision force????
         }
         private void OnCollisionStay(Collision collision)
         {
@@ -320,7 +313,7 @@ namespace NoTime.Splitter
                     Anchor.transform.TransformDirection(
                         Anchor.GetSim().transform.InverseTransformDirection(
                             Anchor.GetSubSim(this).rigidbody.GetPointVelocity(
-                                Anchor.GetSim().gameObject.transform.TransformPoint(Anchor.transform.InverseTransformPoint(WorldPoint))
+                                Anchor.GetSubSim(this).gameObject.transform.TransformPoint(transform.InverseTransformPoint(WorldPoint))
                             )
                         )
                     )
@@ -331,7 +324,7 @@ namespace NoTime.Splitter
                     Anchor.transform.TransformDirection(
                         Anchor.GetSim().transform.InverseTransformDirection(
                             Anchor.GetSubSim(this).rigidbody.GetPointVelocity(
-                                Anchor.GetSim().gameObject.transform.TransformPoint(Anchor.transform.InverseTransformPoint(WorldPoint))
+                                Anchor.GetSubSim(this).gameObject.transform.TransformPoint(transform.InverseTransformPoint(WorldPoint))
                             )
                         )
                     )
