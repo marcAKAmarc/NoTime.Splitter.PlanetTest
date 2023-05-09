@@ -10,6 +10,8 @@ using NoTime.Splitter.Helpers;
 using NoTime.Splitter.Internal;
 using UnityEditor;
 using Unity.VisualScripting;
+using UnityEngine.LowLevel;
+using Assets.NoTime.Splitter.Core;
 
 namespace NoTime.Splitter
 {
@@ -392,7 +394,42 @@ namespace NoTime.Splitter
             PhysicsGoIdToLocalSyncs.Remove(physicsGo.GetInstanceID());
             Destroy(physicsGo);
         }
-
+        private void OnCollisionEnter(Collision collision)
+        {
+            /*if (InInMySimulation(collision.transform))
+            {
+                NegateCollision(collision);
+            }*/
+        }
+        private void OnCollisionStay(Collision collision)
+        {
+            /*if (InInMySimulation(collision.transform))
+            {
+                NegateCollision(collision);
+            }*/
+        }
+        private bool InInMySimulation(Transform t)
+        {
+            //if t is not a subscriber in this anchor,
+            //and t is also not a subscriber in an anchor subscriber chain
+            if (
+                (
+                    t.GetComponentInParent<SplitterSubscriber>() == null 
+                    || 
+                    t.GetComponentInParent<SplitterSubscriber>().Anchor == null 
+                    || 
+                    (
+                        t.GetComponentInParent<SplitterSubscriber>().Anchor.GetInstanceID() != this.GetInstanceID()
+                        &&
+                        //recursive
+                        !InInMySimulation(t.GetComponentInParent<SplitterSubscriber>().Anchor.transform)
+                    )
+                )
+            )
+                return false;
+            else
+                return true;
+        }
         private Vector3 GetUltimatePointVelocity(Vector3 WorldPos)
         {
             if (transform.GetComponent<SplitterSubscriber>() == null)
@@ -436,6 +473,38 @@ namespace NoTime.Splitter
                 physicsRigidToGetCollision.transform.TransformPoint(subscriber.transform.InverseTransformPoint(_avgContactPoint)),
                 ForceMode.Impulse
             );
+        }
+
+        internal void NegateCollision(Collision collision)
+        {
+            Vector3 impulse = collision.impulse;
+            if (Vector3.Dot(impulse, collision.GetContact(0).normal) < 0f)
+                impulse *= -1f;
+
+            _contactCount = collision.GetContacts(_contactPoints);
+
+            _avgContactPoint = Vector3.zero;
+            for (_cnt = 0; _cnt < _contactCount; _cnt++)
+            {
+                _avgContactPoint += _contactPoints[_cnt].point;
+            }
+            _avgContactPoint = _avgContactPoint * 1f / _contactCount;
+            transform.GetComponent<Rigidbody>().AddForceAtPosition(
+                -2f*impulse,
+                _avgContactPoint,
+                ForceMode.Impulse
+            );
+
+            if(collision.rigidbody != null)
+            {
+                collision.rigidbody.AddForceAtPosition(
+                    -2f*impulse,
+                    _avgContactPoint,
+                    ForceMode.Impulse
+                );
+            }
+            /*var loop = PlayerLoop.GetCurrentPlayerLoop();
+            var list = loop.subSystemList;*/
         }
 
         
@@ -797,11 +866,40 @@ namespace NoTime.Splitter
                 mustSimulateBeforeSubscriberUpdate = true;
             }
         }
-
+        public void Simulate()
+        {
+            PhysicsScene.Simulate(Time.fixedDeltaTime);
+        }
+        public void Export()
+        {
+            for (int i = 0; i < idToMainGo.Count(); i++)
+            {
+                UpdateSubscriberRigidbody(idToMainGo.values[i].gameObject);
+            }
+        }
+        public void Sync()
+        {
+            for (int i = 0; i < idToMainGo.Count(); i++)
+            {
+                SyncSubscriberRigidbody(idToMainGo.values[i].gameObject);
+            }
+        }
         private GoRigid _SimSubscriber;
         private int _physGoOfSubscriberInstanceId;
         private Rigidbody _mainGoRigidbody;
         private int _iterator = 0;
+
+        public void UpdateSubscriber(GameObject mainGo)
+        {
+            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            mainGo.transform.rotation =
+                this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation);
+
+            mainGo.transform.position =
+                this.transform.TransformPoint(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
+                );
+        }
         public void UpdateSubscriberRigidbody(GameObject mainGo)
         {
             _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
@@ -810,17 +908,17 @@ namespace NoTime.Splitter
             //lazy simulating.  This is called from fixed update, 
             //mustSimulateBeforeSubscriberUpdate is reset on waitforfixedupdate
             //This ensures that the scene if simulated prior to any updates
-            if (mustSimulateBeforeSubscriberUpdate && !_SimSubscriber.gameObject.GetComponent<Rigidbody>().IsSleeping())
+            /*if (mustSimulateBeforeSubscriberUpdate && !_SimSubscriber.gameObject.GetComponent<Rigidbody>().IsSleeping())
             {
                 mustSimulateBeforeSubscriberUpdate = false;
                 PhysicsScene.Simulate(Time.fixedDeltaTime);
-            }
-            
+            }*/
+
             _mainGoRigidbody = mainGo.GetComponent<Rigidbody>();
 
-            
 
-            _mainGoRigidbody.MoveRotation(
+
+            /*_mainGoRigidbody.MoveRotation(
                 this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation)
             );
 
@@ -828,8 +926,22 @@ namespace NoTime.Splitter
                 this.transform.TransformPoint(
                     PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
                 )
-            );
+            );*/
 
+            /*_mainGoRigidbody.AddForce(
+                transform.TransformDirection(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(
+                        _SimSubscriber.rigidbody.position
+                    )
+                    -
+                    transform.InverseTransformPoint(
+                        _mainGoRigidbody.position
+                    )
+                )
+                - 
+                _mainGoRigidbody.velocity,
+                ForceMode.VelocityChange
+            );*/
 
             //cancel
             //_mainGoRigidbody.AddForce(-_mainGoRigidbody.velocity, ForceMode.Acceleration);
@@ -847,11 +959,26 @@ namespace NoTime.Splitter
             //i think this should simply just be done for every transform instead of having an user defined explicit list
             for (_iterator = 0; _iterator < PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId].Count; _iterator++)
             {
-                PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localRotation = 
+                PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localRotation =
                     PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].physicsTransform.localRotation;
-                PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localPosition = 
+                PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localPosition =
                     PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].physicsTransform.localPosition;
             }
+        }
+
+        public void SyncSubscriberRigidbody(GameObject mainGo)
+        {
+            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            _mainGoRigidbody = mainGo.GetComponent<Rigidbody>();
+            _mainGoRigidbody.MoveRotation(
+                this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation)
+            );
+
+            _mainGoRigidbody.MovePosition(
+                this.transform.TransformPoint(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
+                )
+            );
         }
 
         public GoRigid GetSubSim(SplitterSubscriber subscriber)
@@ -868,20 +995,26 @@ namespace NoTime.Splitter
                 SceneManager.UnloadSceneAsync(Scene.Value);
         }
 
-#if UNITY_EDITOR
         void OnEnable()
         {
-            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
+            SplitterSystem.SplitterSimulate += Simulate;
+            SplitterSystem.SplitterPhysicsExport += Export;
+            SplitterSystem.SplitterSync += Sync;
+
+            //AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            //AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
         }
 
         void OnDisable()
         {
-            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
+            SplitterSystem.SplitterSimulate -= Simulate;
+            SplitterSystem.SplitterPhysicsExport -= Export;
+            SplitterSystem.SplitterSync -= Sync;
+            //AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+            //AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
         }
 
-        public void OnBeforeAssemblyReload()
+        /*public void OnBeforeAssemblyReload()
         {
             SceneName = Scene.Value.name;
         }
@@ -895,7 +1028,7 @@ namespace NoTime.Splitter
             }
 
             ReRegisterAllLocalTransformationsForAllPairs();
-        }
+        }*/
 
         private Quaternion getRotation()
         {
@@ -918,7 +1051,6 @@ namespace NoTime.Splitter
             else
                 return Vector3.zero;
         }
-
-#endif
     }
 }
+
