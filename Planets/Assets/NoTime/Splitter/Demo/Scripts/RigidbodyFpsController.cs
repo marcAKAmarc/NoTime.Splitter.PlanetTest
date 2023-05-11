@@ -71,6 +71,7 @@ namespace NoTime.Splitter.Demo
 
             Look();
 
+            
             AlignRotationWithGravity();
 
             
@@ -121,7 +122,7 @@ namespace NoTime.Splitter.Demo
                     MoveForce = WalkForce / 4f;
 
 
-                body.AppliedPhysics.AddForce(direction * MoveForce * Time.fixedDeltaTime, ForceMode.Acceleration);
+                body.AppliedPhysics.AddForce(direction * MoveForce, ForceMode.Acceleration);
                 Moved = true;
             }
             else
@@ -195,7 +196,7 @@ namespace NoTime.Splitter.Demo
         {
             if (transform.GetComponent<GravityObject>().GravityDistance > 300f)
                 return;
-            GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityForce;
+            GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityAcceleration;
             Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
             body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f));
         }

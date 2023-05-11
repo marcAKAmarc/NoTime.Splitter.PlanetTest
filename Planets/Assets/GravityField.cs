@@ -19,11 +19,11 @@ public class GravityField : SplitterEventListener
 
     public float GetGravityForce(Vector3 position)
     {
-        return GetGravityForce(
+        return GetGravityAcceleration(
             (transform.position - position).magnitude
         );
     }
-    public float GetGravityForce(float distance)
+    public float GetGravityAcceleration(float distance)
     {
         worldSurfaceRadius = transform.lossyScale.x * surfaceRadius / 2f;
         worldFarRadius = transform.lossyScale.x * farRadius / 2f;

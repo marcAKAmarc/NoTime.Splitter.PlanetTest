@@ -9,11 +9,7 @@ public class AutomaticOrbit : MonoBehaviour
     private bool doIt = true;
     public float shitvariable;
     public GravityObject gravityObject;
-    // Start is called before the first frame update
-    void Start()
-    {
-        transform.GetComponent<Rigidbody>().AddForce(transform.up * 4f + (transform.forward * .01f), ForceMode.Impulse);
-    }
+
 
     // Update is called once per frame
     float prevGravVelSqr;
@@ -21,7 +17,43 @@ public class AutomaticOrbit : MonoBehaviour
     Vector3 currentVelocityTowardGravity = Vector3.zero;
     Vector3 currentVelocityInOrbit = Vector3.zero;
     Vector3 additiveVelocity = Vector3.zero;
-    void FixedUpdate()
+
+    float _initialDistance = 0f;
+
+    private void Start()
+    {
+        StartCoroutine("Attempt2Wait");   
+    }
+    IEnumerator Attempt2Wait()
+    {
+        while(gravityObject.GravityAcceleration == 0f)
+            yield return new WaitForFixedUpdate();
+        //Attempt2();
+    }
+    Vector3 _goalV;
+    private void FixedUpdate()
+    {
+        if (_initialDistance == 0f)
+            _initialDistance = gravityObject.GravityDistance;
+        if (Mathf.Abs(_initialDistance - gravityObject.GravityDistance) > 1f)
+            return;
+        
+        Vector3 orbitDirection;
+        if(transform.GetComponent<Rigidbody>().velocity.sqrMagnitude < 1f)
+            orbitDirection = Vector3.ProjectOnPlane(transform.forward, gravityObject.GravityDirection.normalized).normalized;
+        else
+            orbitDirection = Vector3.ProjectOnPlane(transform.GetComponent<Rigidbody>().velocity.normalized, gravityObject.GravityDirection.normalized).normalized;
+        
+        _goalV = Mathf.Sqrt(gravityObject.GravityAcceleration * gravityObject.GravityDistance) * orbitDirection;
+
+        //have to add a small balancing force to keep object in orbit because physx
+        _goalV += Mathf.Clamp(_initialDistance - gravityObject.GravityDistance, 0f, .001f) * -gravityObject.GravityDirection;
+
+        transform.GetComponent<Rigidbody>().AddForce(_goalV - transform.GetComponent<Rigidbody>().velocity, ForceMode.VelocityChange);
+
+        //Debug.Log("Change in distance: " + (gravityObject.GravityDistance - _initialDistance).ToString());
+    }
+    private void attemprt1()
     {
         if (!doIt)
             return;
@@ -33,41 +65,47 @@ public class AutomaticOrbit : MonoBehaviour
             return;
 
         }
-        var gravityForce = 
-            gravityObject.GravityForce * gravityObject.GravityDirection;
+        var gravityAcceleration = 
+            gravityObject.GravityAcceleration * gravityObject.GravityDirection;
             
             /*
                 (9.8f * 99f / (planet.transform.position - (transform.position + transform.GetComponent<Rigidbody>().velocity*Time.fixedDeltaTime)).sqrMagnitude)
                 * (planet.transform.position - transform.position).normalized;
         */
-        currentVelocityTowardGravity = Vector3.Project(transform.GetComponent<Rigidbody>().velocity, gravityForce.normalized)
-            + (gravityForce / transform.GetComponent<Rigidbody>().mass);
-        var g = currentVelocityTowardGravity.magnitude;
+        currentVelocityTowardGravity = Vector3.Project(transform.GetComponent<Rigidbody>().velocity, gravityAcceleration.normalized);
+        var sameDir = Mathf.Sign(Vector3.Dot(currentVelocityTowardGravity.normalized, gravityObject.GravityDirection));
+        
+        var g = gravityObject.GravityAcceleration;
 
-        var sameDir = Mathf.Sign(Vector3.Dot(currentVelocityTowardGravity-(currentVelocityTowardGravity.normalized*.1f), planet.transform.position - transform.position));
+        
 
         var offset = transform.position - planet.transform.position;
         var distance = offset.magnitude;
 
-        var goalOrbitSpeed = Mathf.Sqrt((2 * distance * g) + (g * g));
+        var goalOrbitSpeed = Mathf.Sqrt(Mathf.Pow(distance, 2) + Mathf.Pow(distance - g, 2));
 
         Vector3 orbitDirection; 
         if(transform.GetComponent<Rigidbody>().velocity == Vector3.zero)
-            orbitDirection = Vector3.ProjectOnPlane(transform.forward, gravityForce.normalized).normalized;
+            orbitDirection = Vector3.ProjectOnPlane(transform.forward, gravityAcceleration.normalized).normalized;
         else
-            orbitDirection = Vector3.ProjectOnPlane(transform.GetComponent<Rigidbody>().velocity, gravityForce.normalized).normalized;
-        currentVelocityInOrbit = Vector3.ProjectOnPlane(transform.GetComponent<Rigidbody>().velocity, -gravityForce.normalized);
+            orbitDirection = Vector3.ProjectOnPlane(transform.GetComponent<Rigidbody>().velocity, gravityAcceleration.normalized).normalized;
+        currentVelocityInOrbit = Vector3.ProjectOnPlane(transform.GetComponent<Rigidbody>().velocity, -gravityAcceleration.normalized);
         var currentSpeedOrbit = currentVelocityInOrbit.magnitude * Vector3.Dot(currentVelocityInOrbit.normalized, orbitDirection);
 
 
         var accelerationInOrbit = goalOrbitSpeed - currentSpeedOrbit;
+        if (accelerationInOrbit < 0f)
+            Debug.Log("AccelerationInOrbit is negative");
 
-        Debug.Log("acceleration in orbit: " + accelerationInOrbit.ToString());
+        /*if (sameDir != 1)
+            accelerationInOrbit = accelerationInOrbit / (1 + Mathf.Pow(currentVelocityTowardGravity.magnitude,1));*/
+        if(sameDir == 1)
+            transform.GetComponent<Rigidbody>().AddForce((accelerationInOrbit) * orbitDirection /** sameDir*/, ForceMode.Acceleration);
 
-        if (sameDir != 1)
-            accelerationInOrbit = accelerationInOrbit / (1 + Mathf.Pow(currentVelocityTowardGravity.magnitude,1));
 
-        transform.GetComponent<Rigidbody>().AddForce((accelerationInOrbit - 5f ) * orbitDirection /** sameDir*/, ForceMode.Force);
+        //stop speed toward planet
+
+         //transform.GetComponent<Rigidbody>().AddForce(-currentVelocityTowardGravity*.75f, ForceMode.Acceleration);
 
         //var planet = GameObject.FindGameObjectsWithTag("GravitySource").First();
         //var gravityForce = 
@@ -128,7 +166,7 @@ public class AutomaticOrbit : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + currentVelocityTowardGravity);
+        Gizmos.DrawLine(transform.position, transform.position + (currentVelocityTowardGravity*100f));
         Gizmos.color = Color.blue;
         Gizmos.DrawLine(transform.position, transform.position + currentVelocityInOrbit);
         Gizmos.color = Color.green;

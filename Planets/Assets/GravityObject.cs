@@ -8,7 +8,7 @@ public class GravityObject : SplitterEventListener
 {
     public GravityField field = null;
     public Vector3 GravityDirection = Vector3.zero;
-    public float GravityForce = 0f;
+    public float GravityAcceleration = 0f;
     public float GravityDistance = 0f;
     public bool ApplyGravity = true;
 
@@ -61,16 +61,16 @@ public class GravityObject : SplitterEventListener
         if (field != null)
         {
             GravityDistance = (field.transform.position - transform.position).magnitude;
-            GravityForce = field.GetGravityForce(GravityDistance);
+            GravityAcceleration = field.GetGravityAcceleration(GravityDistance);
             GravityDirection = (field.transform.position - transform.position).normalized;
             //GravityDirection = ((field.transform.position + (field.transform.rotation * field.transform.localPosition)) - transform.GetComponent<Rigidbody>().position).normalized;
             //Debug.Log("Gforce: " + GravityForce.ToString());
             if(ApplyGravity)
-                transform.GetComponent<SplitterSubscriber>().AppliedPhysics.AddForce(GravityDirection * GravityForce, ForceMode.Acceleration);
+                transform.GetComponent<SplitterSubscriber>().AppliedPhysics.AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
         }
         else
         {
-            GravityForce = 0;
+            GravityAcceleration = 0;
         }
     }
 
