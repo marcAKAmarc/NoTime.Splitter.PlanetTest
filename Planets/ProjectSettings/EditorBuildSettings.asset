@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Planet_tempTestWithRunInSimulationSpace.unity
+    guid: a2d51894f69e65447b2730e11e21bb39
   m_configObjects: {}

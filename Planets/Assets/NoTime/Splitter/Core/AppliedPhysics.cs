@@ -865,7 +865,7 @@ namespace Assets.NoTime.Splitter.Core
         public void AddRelativeForce(Vector3 force, ForceMode mode)
         {
             if (!subscriber.Simulating())
-                body.AddRelativeForce(force);
+                body.AddRelativeForce(force, mode);
             else
             {
                 anchor.ApplyAddRelativeForce(force, mode, subscriber);
@@ -942,7 +942,7 @@ namespace Assets.NoTime.Splitter.Core
         public void AddTorque(Vector3 torque, ForceMode mode)
         {
             if (!subscriber.Simulating())
-                body.AddTorque(torque);
+                body.AddTorque(torque, mode);
             else
             {
                 anchor.ApplyAddTorque(torque, mode, subscriber);

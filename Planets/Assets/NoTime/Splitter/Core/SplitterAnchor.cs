@@ -22,6 +22,8 @@ namespace NoTime.Splitter
         [Tooltip("Any subscribers that are not in any of the exit triggers will be exit the simulation of this anchor.")]
         public List<Collider> StayTriggers;
 
+        public List<MonoBehaviour> RunInSimulationSpace;
+
         [Tooltip("Render simulated anchor")]
         public bool SimulationVisible = false;
 
@@ -97,13 +99,25 @@ namespace NoTime.Splitter
             
             PhysicsAnchorGO.name = PhysicsAnchorGO.name + "-Physics";
 
+
+
             //disable and delete all monobehaviors not in RunInSimulatedSpace
             foreach (var behaviour in PhysicsAnchorGO.GetComponentsInChildren<Behaviour>().Where(x=>
                 !(x.GetType() == typeof(SplitterAnchor))
+                && 
+                !PhysicsAnchorGO.GetComponent<SplitterAnchor>().RunInSimulationSpace.Any(
+                    y=>
+                    y.GetInstanceID() == x.GetInstanceID()
+                )
             ))
             {
                 behaviour.enabled = false;
                 Destroy(behaviour);
+            }
+            //disable all behaviours in RunInSimulatedSpace
+            foreach (var behaviour in this.RunInSimulationSpace)
+            {
+                behaviour.enabled = false;
             }
 
             PhysicsAnchorGO.AddComponent<SplitterAnchorSimulation>();
@@ -325,6 +339,19 @@ namespace NoTime.Splitter
                 );
             }
             PhysicsGoIdToLocalSyncs.Add(newGo.GetInstanceID(), Matches);
+        }
+
+        public Transform GetSimulatedTransform(SplitterSubscriber subscriber, Transform subTransform)
+        {
+            return PhysicsGoIdToLocalSyncs[
+                idToPhysicsGo[
+                    subscriber.transform.GetInstanceID()
+                ].gameObject.GetInstanceID()
+            ].Where(x =>
+                x.mainTransform.GetInstanceID() == subTransform.GetInstanceID()
+            ).Select(x =>
+                x.physicsTransform
+            ).FirstOrDefault();
         }
         public void UnregisterInScene(SplitterSubscriber subscriber)
         {
@@ -804,7 +831,14 @@ namespace NoTime.Splitter
         private int _iterator = 0;
         public void UpdateSubscriberRigidbody(GameObject mainGo)
         {
-            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            try
+            {
+                _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            }
+            catch(Exception ex)
+            {
+                Debug.Log(mainGo.name + " No longer exists in id To Physics Go?");
+            }
             _physGoOfSubscriberInstanceId = _SimSubscriber.gameObject.GetInstanceID();
 
             //lazy simulating.  This is called from fixed update, 
@@ -896,7 +930,7 @@ namespace NoTime.Splitter
 
             ReRegisterAllLocalTransformationsForAllPairs();
         }
-
+#endif
         private Quaternion getRotation()
         {
             if (body != null)
@@ -919,6 +953,6 @@ namespace NoTime.Splitter
                 return Vector3.zero;
         }
 
-#endif
+
     }
 }

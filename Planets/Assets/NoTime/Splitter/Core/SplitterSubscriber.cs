@@ -16,11 +16,11 @@ namespace NoTime.Splitter
         [HideInInspector]
         public SplitterAnchor Anchor;
 
-        [HideInInspector]
+        //[HideInInspector]
         [SerializeField]
         private List<SplitterAnchor> AnchorStack;
 
-        [HideInInspector]
+        //[HideInInspector]
         [SerializeField]
         private List<Collider> CurrentAnchorTriggers;
 
@@ -45,7 +45,16 @@ namespace NoTime.Splitter
         private void ProcessPotentialAnchorEntrance(Collider other)
         {
             if (other.gameObject.GetComponentInParent<SplitterAnchor>() != null
-                && other.gameObject.GetComponentInParent<SplitterAnchor>().enabled)
+                && 
+                other.gameObject.GetComponentInParent<SplitterAnchor>().enabled
+                && !(
+                    gameObject.GetComponent<SplitterAnchor>() != null
+                    &&
+                    gameObject.GetComponent<SplitterAnchor>().enabled
+                    &&
+                    gameObject.GetComponent<SplitterAnchor>().EntrancePriority <= other.GetComponentInParent<SplitterAnchor>().EntrancePriority
+                )
+            )
             {
                 //if activator or deactivator, track
                 if (
@@ -179,7 +188,7 @@ namespace NoTime.Splitter
         }
         private void UpdateContext()
         {
-            if(isActiveAndEnabled)
+                        if(isActiveAndEnabled)
                 StartCoroutine(UpdateContextAtEndOfFixedUpdate());
         }
         WaitForFixedUpdate _updateWait = new WaitForFixedUpdate();
