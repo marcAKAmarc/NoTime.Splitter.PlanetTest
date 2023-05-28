@@ -13,7 +13,7 @@ public class FlightController : MonoBehaviour
     public SplitterSubscriber body;
     public float MoveForce;
     public float RollSensitivity;
-    public float rTowardFactor;
+    public float rotateFactor;
     public float maxRotateSpeed;
     public float dampenFactor;
     private float StabilizationCapability = 1f;
@@ -110,8 +110,12 @@ public class FlightController : MonoBehaviour
             controlled = !controlled;
             controller.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
         }
-        ThrustDisplayUpdate();
-        SetDirection();
+
+        if (controlled)
+        {
+            ThrustDisplayUpdate();
+            SetDirection();
+        }
 
     }
     private void LateUpdate()
@@ -314,20 +318,18 @@ public class FlightController : MonoBehaviour
     }
     void SetDirection()
     {
-        if (Input.GetKey(KeyCode.Tab))
+        if (Input.GetKey(KeyCode.Tab) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E))
         {
             _target = controllerLookTransform.rotation;
 
-
-            if (Input.GetKey(KeyCode.Q))
+            if(Input.GetKey(KeyCode.Q))
                 _target = Quaternion.AngleAxis(1f * RollSensitivity, transform.forward) * _target;
-            if (Input.GetKey(KeyCode.E))
+            if(Input.GetKey(KeyCode.E))
                 _target = Quaternion.AngleAxis(-1f * RollSensitivity, transform.forward) * _target;
 
-
             FlightRotation = Quaternion.Slerp(FlightRotation, _target, .05f);
-
         }
+        
 
     }
     private void Rotate()
@@ -337,7 +339,7 @@ public class FlightController : MonoBehaviour
         if (StabilizationCapability > 1f)
             StabilizationCapability = 1f;
 
-        body.SmoothRotate(FlightRotation, maxRotateSpeed, rTowardFactor, dampenFactor, StabilizationCapability);
+        body.SmoothRotate(FlightRotation, maxRotateSpeed, rotateFactor, dampenFactor, StabilizationCapability);
 
         
 

@@ -18,8 +18,11 @@ public class AlignWithGravity : SplitterEventListener
             return;
         GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityAcceleration;
         Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
-        body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f *
-            Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
+        body.AppliedPhysics.MoveRotation(
+            Quaternion.Slerp(
+                body.AppliedPhysics.rotation, 
+                target * body.AppliedPhysics.rotation, 
+                .1f *Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
         ));
     }
 
