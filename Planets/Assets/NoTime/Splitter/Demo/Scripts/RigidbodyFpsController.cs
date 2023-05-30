@@ -19,7 +19,7 @@ namespace NoTime.Splitter.Demo
         public float MinimumMovementDistance = .01f;
         public float sensitivityX = 8F;
         public float sensitivityY = 6F;
-        public float maximumY = 60F;
+        public float VerticalLookMaxAngle = 60F;
         public Transform VerticalLook;
         private Transform _verticalLook;
         private Quaternion VerticalLookStart;
@@ -84,6 +84,8 @@ namespace NoTime.Splitter.Demo
             //body.MoveRotation(_rotation);
 
             Move();
+
+            SpaceRotate();
 
             Jump();
 
@@ -221,9 +223,21 @@ namespace NoTime.Splitter.Demo
 
             Quaternion yQuaternionAddition = Quaternion.AngleAxis(-_rotationY, Vector3.right);
             Quaternion potentialNewLocal = (yQuaternionAddition * _verticalLook.localRotation);
-            if (Mathf.Abs(Quaternion.Angle(VerticalLookStart, potentialNewLocal)) < this.maximumY)
+            if (Mathf.Abs(Quaternion.Angle(VerticalLookStart, potentialNewLocal)) < this.VerticalLookMaxAngle)
                 _verticalLook.localRotation = potentialNewLocal;
             _rotationY = 0;
+        }
+
+        private void SpaceRotate()
+        {
+            if(transform.GetComponent<GravityObject>().GravityAcceleration == 0f)
+                body.SmoothRotate(VerticalLook.rotation, 5f, .5f, .2f, 1f);
+
+            /*if (Input.GetKey(KeyCode.Q))
+                body.AppliedPhysics.AddRelativeTorque(Vector3.forward * RollSensitivity, ForceMode.Acceleration);
+            if (Input.GetKey(KeyCode.E))
+                body.AppliedPhysics.AddRelativeTorque(-Vector3.forward * RollSensitivity, ForceMode.Acceleration);*/
+
         }
 
         private void OnDrawGizmos()

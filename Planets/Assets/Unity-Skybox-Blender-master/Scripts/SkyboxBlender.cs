@@ -21,6 +21,7 @@ public class SkyboxBlender : MonoBehaviour {
     [SerializeField] [Range(0, 1)] public float invertColors = 0;
     [SerializeField] public BlendMode blendMode = BlendMode.Linear;
     [SerializeField] [Range(0, 1)] public float blend = 0;
+    private float previousBlend = 0f;
 
     [SerializeField] public bool bindOnStart = true;
     [SerializeField] public bool updateLightingOnStart = true;
@@ -166,7 +167,7 @@ public class SkyboxBlender : MonoBehaviour {
     /// </summary>
     public void UpdateLighting()
     {
-        if(Random.value < .1f)
+        if(Mathf.Abs(previousBlend - blend) > .01f)
             DynamicGI.UpdateEnvironment();
     }
 

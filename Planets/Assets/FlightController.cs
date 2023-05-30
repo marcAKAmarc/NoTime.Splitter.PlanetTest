@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class FlightController : MonoBehaviour
 {
-    public Transform controller;
+    public Transform potentialController;
     private Transform controllerLookTransform;
     public bool controllable = false;
     public bool controlled = false;
@@ -64,7 +64,7 @@ public class FlightController : MonoBehaviour
         if (other.GetComponent<RigidbodyFpsController>())
         {
             controllable = true;
-            controller = other.transform;
+            potentialController = other.transform;
             controllerLookTransform = other.GetComponent<RigidbodyFpsController>().VerticalLook;
         }
     }
@@ -72,11 +72,8 @@ public class FlightController : MonoBehaviour
     {
         if (other.GetComponent<RigidbodyFpsController>())
         {
+            potentialController = null;
             controllable = false;
-            controllerLookTransform = null;
-            if(controller != null)
-                controller.GetComponent<RigidbodyFpsController>().inControllerPosition = false;
-            controller = null;
         }
     }
     
@@ -92,14 +89,15 @@ public class FlightController : MonoBehaviour
     private void MaybeTakeHitToStabilization(Collision other)
     {
         if (
-            controller == null
+            potentialController == null
             ||
             other.gameObject.GetComponentInParent<RigidbodyFpsController>() == null
             ||
-            other.gameObject.GetComponentInParent<RigidbodyFpsController>().transform.GetInstanceID() != controller.GetInstanceID()
+            other.gameObject.GetComponentInParent<RigidbodyFpsController>().transform.GetInstanceID() != potentialController.GetInstanceID()
         )
         {
             FlightRotation = body.AppliedPhysics.rotation;
+            _target = body.AppliedPhysics.rotation;
             StabilizationCapability = 0f;
         }
     }
@@ -108,14 +106,22 @@ public class FlightController : MonoBehaviour
         if (controllable == true && Input.GetKeyDown(KeyCode.CapsLock))
         {
             controlled = !controlled;
-            controller.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
+            if (controlled)
+            {
+                potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
+                _target = transform.rotation;
+            }
+            else
+            {
+                controllerLookTransform = null;
+                if (potentialController != null)
+                    potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = false;
+                
+            }
         }
 
-        if (controlled)
-        {
-            ThrustDisplayUpdate();
-            SetDirection();
-        }
+
+        ThrustDisplayUpdate();
 
     }
     private void LateUpdate()
@@ -125,7 +131,8 @@ public class FlightController : MonoBehaviour
     }
     Quaternion _target;
     
-    void ThrustDisplayUpdate() { 
+    void ThrustDisplayUpdate() {
+        
         thrustDisplay += Vector3.ClampMagnitude(_thrustInput - thrustDisplay, Time.fixedDeltaTime);
 
         mFwd1.SetColor(
@@ -284,7 +291,7 @@ public class FlightController : MonoBehaviour
             
         }
         
-        //SetDirection();
+        SetDirection();
         Rotate();
     }
 
@@ -320,14 +327,15 @@ public class FlightController : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.Tab) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E))
         {
-            _target = controllerLookTransform.rotation;
+            if(Input.GetKey(KeyCode.Tab))
+                _target = controllerLookTransform.rotation;
 
             if(Input.GetKey(KeyCode.Q))
-                _target = Quaternion.AngleAxis(1f * RollSensitivity, transform.forward) * _target;
+                _target = _target *Quaternion.AngleAxis(1f * RollSensitivity, Vector3.forward);
             if(Input.GetKey(KeyCode.E))
-                _target = Quaternion.AngleAxis(-1f * RollSensitivity, transform.forward) * _target;
+                _target = _target * Quaternion.AngleAxis(-1f * RollSensitivity, Vector3.forward);
 
-            FlightRotation = Quaternion.Slerp(FlightRotation, _target, .05f);
+            FlightRotation = Quaternion.Slerp(FlightRotation, _target, Mathf.Clamp01(3f * Time.fixedDeltaTime));
         }
         
 
@@ -341,7 +349,10 @@ public class FlightController : MonoBehaviour
 
         body.SmoothRotate(FlightRotation, maxRotateSpeed, rotateFactor, dampenFactor, StabilizationCapability);
 
-        
+        /*if (Input.GetKey(KeyCode.Q))
+            body.AppliedPhysics.AddRelativeTorque(Vector3.forward * RollSensitivity, ForceMode.Acceleration);
+        if (Input.GetKey(KeyCode.E))
+            body.AppliedPhysics.AddRelativeTorque(-Vector3.forward * RollSensitivity, ForceMode.Acceleration);*/
 
     }
 

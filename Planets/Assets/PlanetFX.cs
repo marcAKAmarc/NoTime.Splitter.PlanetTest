@@ -49,6 +49,9 @@ public class DustData
     public float UnitFarOpaqueRadius;
     public float UnitFarTransparentRadius;
     public float maxAlpha;
+
+    public float ParticleMaxAlpha;
+
     [HideInInspector]
     public Color DustCloudColor;
     [HideInInspector]
@@ -249,7 +252,7 @@ public class PlanetFX : MonoBehaviour
                     dustData.DustParticleColor.r,
                     dustData.DustParticleColor.g,
                     dustData.DustParticleColor.b,
-                    _dayNightActivityAlpha
+                    _dayNightActivityAlpha * dustData.ParticleMaxAlpha
                 );
                 
                 
