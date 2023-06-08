@@ -91,14 +91,17 @@ public class PlanetBoid : MonoBehaviour
 
     Vector3 GoalDir;
     Vector3 previousPosition;
+    Vector3 planetToMe;
     public void UpdatePosition()
     {
 
-        GoalDir = ((AvoidanceDir*AvoidanceWeight)+(AwayDir*CrowdingWeight) + (boidParent.avgFacingDirection * GroupDirectionWeight) + ((boidParent.avgPosition-transform.position).normalized*GroupCenterWeight)).normalized;
-        if (transform.name.Contains("test"))
-        {
-            Debug.Log("AvoidanceDir: " + AvoidanceDir.ToString("G3"));
-        }
+        GoalDir = (
+            (AvoidanceDir*AvoidanceWeight)
+            +(AwayDir*CrowdingWeight) 
+            +(boidParent.avgFacingDirection * GroupDirectionWeight) 
+            + ((boidParent.avgPosition-transform.position).normalized*GroupCenterWeight)
+        ).normalized;
+
         if (GoalDir != Vector3.zero)
         {
             transform.rotation = Quaternion.Slerp(
@@ -108,11 +111,12 @@ public class PlanetBoid : MonoBehaviour
             );
         }
         //advance
-        previousPosition = transform.position;
+        
         transform.position += transform.forward * Speed * Time.deltaTime;
-        transform.position = planet.position + (transform.position - planet.position).normalized * distanceFromPlanet;
+        planetToMe = (transform.position - planet.position).normalized;
+        transform.position = planet.position + planetToMe * distanceFromPlanet;
 
-        transform.rotation = Quaternion.FromToRotation(transform.up, (transform.position - planet.position).normalized) * transform.rotation;//Quaternion.LookRotation((transform.position - previousPosition).normalized, (transform.position - planet.position).normalized);
+        transform.rotation = Quaternion.FromToRotation(transform.up, planetToMe) * transform.rotation;//Quaternion.LookRotation((transform.position - previousPosition).normalized, (transform.position - planet.position).normalized);
     }
 
     private void OnDrawGizmosSelected()

@@ -772,8 +772,8 @@ namespace NoTime.Splitter
         internal Vector3 ApplyGetPointVelocity(Vector3 worldPoint, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
-            return
-                transform.TransformDirection(
+            return subscriber.GetUltimatePointVelocity(worldPoint);
+                /*transform.TransformDirection(
                     PhysicsAnchorGO.transform.InverseTransformDirection(
                         _Sim.rigidbody.GetPointVelocity(
                             _Sim.gameObject.transform.TransformPoint(
@@ -783,7 +783,7 @@ namespace NoTime.Splitter
                             )
                         )
                     )
-                );
+                );*/
         }
         internal Vector3 ApplyClosestPointOnBound(Vector3 position, SplitterSubscriber subscriber)
         {
@@ -831,14 +831,14 @@ namespace NoTime.Splitter
         private int _iterator = 0;
         public void UpdateSubscriberRigidbody(GameObject mainGo)
         {
-            try
-            {
+            //try
+            //{
                 _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
-            }
-            catch(Exception ex)
-            {
-                Debug.Log(mainGo.name + " No longer exists in id To Physics Go?");
-            }
+            //}
+            //catch(Exception ex)
+            //{
+            //    Debug.Log(mainGo.name + " No longer exists in id To Physics Go?");
+            //}
             _physGoOfSubscriberInstanceId = _SimSubscriber.gameObject.GetInstanceID();
 
             //lazy simulating.  This is called from fixed update, 

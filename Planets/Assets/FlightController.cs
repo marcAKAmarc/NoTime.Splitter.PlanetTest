@@ -7,7 +7,7 @@ using UnityEngine;
 public class FlightController : MonoBehaviour
 {
     public Transform potentialController;
-    private Transform controllerLookTransform;
+    public Transform controllerLookTransform;
     public bool controllable = false;
     public bool controlled = false;
     public SplitterSubscriber body;
@@ -65,7 +65,7 @@ public class FlightController : MonoBehaviour
         {
             controllable = true;
             potentialController = other.transform;
-            controllerLookTransform = other.GetComponent<RigidbodyFpsController>().VerticalLook;
+            
         }
     }
     private void OnTriggerExit(Collider other)
@@ -103,6 +103,15 @@ public class FlightController : MonoBehaviour
     }
     void Update()
     {
+
+        HandlePilotSeat();
+
+        ThrustDisplayUpdate();
+
+    }
+
+    private void HandlePilotSeat()
+    {
         if (controllable == true && Input.GetKeyDown(KeyCode.CapsLock))
         {
             controlled = !controlled;
@@ -110,20 +119,18 @@ public class FlightController : MonoBehaviour
             {
                 potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
                 _target = transform.rotation;
+                controllerLookTransform = potentialController.GetComponent<RigidbodyFpsController>().VerticalLook;
             }
             else
             {
                 controllerLookTransform = null;
                 if (potentialController != null)
                     potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = false;
-                
+
             }
         }
-
-
-        ThrustDisplayUpdate();
-
     }
+
     private void LateUpdate()
     {
         //if(controlled)

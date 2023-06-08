@@ -11,9 +11,14 @@ public class FacadeData
 {
     public Transform Facade;
     private Material[] Materials;
+    private Renderer[] Renderers;
     public float transparentDistance;
     public float opaqueDistance;
 
+    public Renderer[] GetRenderers()
+    {
+        return Renderers;
+    }
     public Material[] GetMaterials()
     {
         return Materials;
@@ -21,6 +26,7 @@ public class FacadeData
     public void Init()
     {
         Materials = Facade.GetComponentsInChildren<Renderer>().Select(r=>r.material).ToArray();
+        Renderers = Facade.GetComponentsInChildren<Renderer>().ToArray();
     }
 }
 
@@ -34,6 +40,20 @@ public class AtmosphereData
     public float nearBlendValue;
     public float farExposureValue;
     public float nearExposureValue;
+    public Color DayTintColor;
+    public Color NightTintColor;
+    public float SunIntensityNoon;
+    public float SunIntensityHorizon;
+    public Color SunNoonColor;
+    public Color SunHorizonColor;
+    public Color FlareNoonColor;
+    public Color FlareHorizonColor;
+    public float flareScaleNoon;
+    public float flareScaleHorizon;
+    //public float flareAlphaNoon;
+    //public float flareAlphaHorizon;
+    public float SunScaleNoon;
+    public float SunScaleHorizon;
     public Transform PlanetAtmosphereTexture;
     public Vector3 _initialScale;
 }
@@ -56,30 +76,103 @@ public class DustData
     public Color DustCloudColor;
     [HideInInspector]
     public Color DustParticleColor;
+    [HideInInspector]
+    public List<DustAudioData> AudioData;
+}
+public class DustAudioData
+{
+    public AudioSource source;
+    public float initialVolume;
 }
 public class PlanetFX : MonoBehaviour
 {
     public Transform SunLight;
+    public Transform SunObj;
+    public Renderer SunFlare;
+    public Renderer SunModel;
+    public float SunScale;
+    public Color SunColor;
+    public float SunIntensity;
+    public float FlareScale;
+    //public float FlareAlpha;
+    public Color FlareColor;
+    public float sunObjDistance;
     public List<FacadeData> Facades;
     public List<DustData> Dust;
     public DustAvoidanceReporter DustAvoidanceReporter;
 
     public List<AtmosphereData> Atmospheres;
     public SkyboxBlender AtmosphereBlender;
-    // Start is called before the first frame update
+
+    
+
     private void Start()
     {
         FacadesStart();
+        DustSoundsStart();
     }
     private void FacadesStart() { 
         Facades.ForEach(x => x.Init());
     }
-
+    private void DustSoundsStart()
+    {
+        foreach(var dg in Dust)
+        {
+            dg.AudioData = dg.DustGroup.GetComponentsInChildren<AudioSource>()
+                .Select(
+                    x => new DustAudioData() { 
+                        initialVolume = x.volume, 
+                        source = x 
+                    }
+                ).ToList();
+        }
+    }
     private void OnPreRender()
     {
+        
         AtmospherePreRender();
+        SunPreRender();
         FacadesPreRender();
         DustPreRender();
+    }
+    AtmosphereData _closestAtmosphere;
+    private void SunPreRender()
+    {
+
+        SunObj.position = transform.position + (-SunLight.forward * sunObjDistance);
+        SunObj.rotation = Quaternion.LookRotation((transform.position - SunObj.position).normalized);
+        /*_closestAtmosphere = Atmospheres.FirstOrDefault(x => (transform.position - x.PlanetTransform.position).sqrMagnitude < Mathf.Pow(x.farRadius, 2f));
+        if (_closestAtmosphere != null) {
+            SunFlare.sharedMaterial.color = new Color(
+                    SunFlare.sharedMaterial.color.r,
+                    SunFlare.sharedMaterial.color.g,
+                    SunFlare.sharedMaterial.color.b,
+                    
+
+
+                    Mathf.Clamp(
+                        //angle of sunset is no flare
+                        Vector3.Dot(
+                            (transform.position - _closestAtmosphere.PlanetTransform.position).normalized,
+                            (SunObj.position - _closestAtmosphere.PlanetTransform.position).normalized
+                        ),
+                        //this is the overall distance to planet  - must be full when we go to space :)
+                        Mathf.Clamp(
+                            Map(
+                                (transform.position - _closestAtmosphere.PlanetTransform.position).sqrMagnitude, 
+                                Mathf.Pow(_closestAtmosphere.nearRadius,2f), 0f, 
+                                Mathf.Pow(_closestAtmosphere.farRadius,2f), 1f
+                            ),
+                            .05f,
+                            1f
+                        ),
+                        1f
+                    )
+
+
+                );
+        }*/
+        
     }
     private void AtmospherePreRender()
     {
@@ -104,24 +197,87 @@ public class PlanetFX : MonoBehaviour
 
                 float distanceBlend = (mBlend * x) + bBlend;
                 float distanceExposure = (mExposure * x) + bExposure;
+
+                float dayNightFactor =
+                    Mathf.Clamp01(
+                            Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward)
+                     );
+                float activeZoneFactor = Map(x, ad.nearRadius, 0, ad.farRadius, 1f);
+
                 float positionalBlend =
                     (
-                        Mathf.Clamp01(
-                            Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward)
-                        )
+                        dayNightFactor
                         *
                         (distanceBlend - ad.farBlendValue)
                      ) + ad.farBlendValue;
                 float positionalExposure = (
-                        Mathf.Clamp01(
-                            Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward)
-                        )
+                        dayNightFactor
                         *
                         (distanceExposure - ad.farExposureValue)
                      ) + ad.farExposureValue;
-
-                AtmosphereBlender.blend = positionalBlend;
+                
+                Color tint =
+                    Color.Lerp(
+                        Color.Lerp(ad.NightTintColor, ad.DayTintColor, dayNightFactor + (dayNightFactor - Mathf.Pow(dayNightFactor, 2f))),
+                        Color.white,
+                        activeZoneFactor
+                    );
+                Color sunColor =
+                    Color.Lerp(
+                        Color.Lerp(ad.SunHorizonColor, ad.SunNoonColor, dayNightFactor + (dayNightFactor - Mathf.Pow(dayNightFactor, 2f))),
+                        SunColor,
+                        activeZoneFactor
+                    );
+                Color flareColor =
+                    Color.Lerp(
+                        Color.Lerp(ad.FlareHorizonColor, ad.FlareNoonColor, dayNightFactor + (dayNightFactor - Mathf.Pow(dayNightFactor, 2f))),
+                        FlareColor,
+                        activeZoneFactor
+                    );
+                float planetSunScale = Map(
+                        activeZoneFactor,
+                        0f,
+                        Map(dayNightFactor, 0f, ad.SunScaleHorizon, 1f, ad.SunScaleNoon),
+                        1f,
+                        SunScale
+                    );
+                float planetSunFlareScale = Map(
+                    activeZoneFactor,
+                    0f,
+                    Map(dayNightFactor, 0f, ad.flareScaleHorizon, 1f, ad.flareScaleNoon),
+                    1f,
+                    FlareScale
+                );
+                float sunIntensity = Map(
+                    activeZoneFactor,
+                    0f,
+                    Map(dayNightFactor, 0f, ad.SunIntensityHorizon, 1f, ad.SunIntensityNoon),
+                    1f,
+                    SunIntensity
+                );
+                /*float flareAlpha = Map(
+                    tintDistance,
+                    0f,
+                    Map(tintDayNight, 0f, ad.flareAlphaHorizon, 1f, ad.flareAlphaNoon),
+                    1f,
+                    FlareAlpha
+                );*/
                 AtmosphereBlender.exposure = positionalExposure;
+                AtmosphereBlender.tint = new Color(tint.r, tint.g, tint.b, 1f);
+                AtmosphereBlender.blend = positionalBlend;
+                SunFlare.sharedMaterial.color = flareColor;
+                SunModel.sharedMaterial.color = sunColor;
+                SunModel.sharedMaterial.SetColor("_EmissionColor", 
+                    sunColor * sunIntensity 
+                );
+                SunModel.transform.localScale = Vector3.one * planetSunScale;
+                SunFlare.transform.localScale = Vector3.one * planetSunFlareScale;
+                /*SunFlare.sharedMaterial.color = new Color(
+                   flareColor.r,
+                   flareColor.g,
+                   flareColor.b,
+                   flareAlpha
+                );*/
             }
 
             ad.PlanetAtmosphereTexture.rotation = Quaternion.LookRotation( (ad.PlanetTransform.position - transform.position).normalized);
@@ -134,13 +290,15 @@ public class PlanetFX : MonoBehaviour
             float shiftFactor = 1f - Mathf.Abs(Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward));
             float shiftDistance = x * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(ad.nearRadius / x)) * .333f;
 
+
+
+            ad.PlanetAtmosphereTexture.localScale = ad.PlanetAtmosphereTexture.localScale * (
+                1f - (shiftDistance/ad.farRadius)
+            );
+ 
             ad.PlanetAtmosphereTexture.position = ad.PlanetTransform.position + (
                 -SunLight.forward * shiftDistance
             );
-
-            ad.PlanetAtmosphereTexture.localScale = ad.PlanetAtmosphereTexture.localScale * (
-                ((1f - (shiftDistance/ad.nearRadius))*.25f) + .25f
-            ) * 2f;
         }
     }
     private void FacadesPreRender() { 
@@ -149,23 +307,30 @@ public class PlanetFX : MonoBehaviour
 
             float sqrDist = (transform.position - f.Facade.position).sqrMagnitude;
 
-           
-            if(sqrDist < Mathf.Pow(f.transparentDistance, 2))
+
+            if (sqrDist < Mathf.Pow(f.transparentDistance, 2))
             {
-                foreach(var m in f.GetMaterials())
-                    m.color = new Color(m.color.r, m.color.g, m.color.b, 0f);
-            }
-            else if(sqrDist > Mathf.Pow(f.opaqueDistance,2))
-            {
+                foreach (var r in f.GetRenderers())
+                    r.enabled = false;
                 foreach (var m in f.GetMaterials())
-                    m.color = new Color(m.color.r, m.color.g, m.color.b, 1f);
+                    m.color = new Color(m.color.r, m.color.g, m.color.b, 0f);
             }
             else
             {
-                float linear = (sqrDist - Mathf.Pow(f.transparentDistance, 2)) / (Mathf.Pow(f.opaqueDistance, 2) - Mathf.Pow(f.transparentDistance, 2));
-                //linear = (2 * linear) - (linear * linear);
-                foreach (var m in f.GetMaterials())
-                    m.color = new Color(m.color.r, m.color.g, m.color.b, linear);
+                foreach (var r in f.GetRenderers())
+                    r.enabled = true;
+                if (sqrDist > Mathf.Pow(f.opaqueDistance, 2))
+                {
+
+                    foreach (var m in f.GetMaterials())
+                        m.color = new Color(m.color.r, m.color.g, m.color.b, 1f);
+                }
+                else
+                {
+                    float linear = (sqrDist - Mathf.Pow(f.transparentDistance, 2)) / (Mathf.Pow(f.opaqueDistance, 2) - Mathf.Pow(f.transparentDistance, 2));
+                    foreach (var m in f.GetMaterials())
+                        m.color = new Color(m.color.r, m.color.g, m.color.b, linear);
+                }
             }
         }
         
@@ -255,7 +420,11 @@ public class PlanetFX : MonoBehaviour
                     _dayNightActivityAlpha * dustData.ParticleMaxAlpha
                 );
                 
-                
+                //sounds?
+                for(int i = 0; i < dustData.AudioData.Count; i++)
+                {
+                    dustData.AudioData[i].source.volume = dustData.AudioData[i].initialVolume * _dayNightActivityAlpha;
+                }
             }
             else
             {
@@ -265,6 +434,12 @@ public class PlanetFX : MonoBehaviour
                     foreach (PlanetBoid b in dustData.DustGroup.GetComponentsInChildren<PlanetBoid>())
                     {
                         b.DustAvoidanceReporters = b.DustAvoidanceReporters.Where(d=>d.GetInstanceID() != DustAvoidanceReporter.GetInstanceID()).ToList();
+                    }
+
+                    //sounds?
+                    for (int i = 0; i < dustData.AudioData.Count; i++)
+                    {
+                        dustData.AudioData[i].source.volume = 0f;
                     }
                 }
             }

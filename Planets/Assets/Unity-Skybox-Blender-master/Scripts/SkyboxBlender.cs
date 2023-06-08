@@ -167,8 +167,11 @@ public class SkyboxBlender : MonoBehaviour {
     /// </summary>
     public void UpdateLighting()
     {
-        if(Mathf.Abs(previousBlend - blend) > .01f)
+        if (Mathf.Abs(previousBlend - blend) > .01f)
+        {
             DynamicGI.UpdateEnvironment();
+            previousBlend = blend;
+        }
     }
 
     /// <summary>
