@@ -71,3 +71,9 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 Planets/Assets/RockFolder/Rocks/orange_natural_rock_texture.zip
+
+# My own builds
+TestBuild/*
+
+# Sound Workspace
+Sounds/*
