@@ -191,6 +191,7 @@ namespace NoTime.Splitter.Demo
         private RaycastHit _hit = new RaycastHit();
         private Vector3 _spherePos;
         private int _oldLayer;
+        private Ray _ray;
         private void GroundCheck()
         {
             //set collider layer to tmpExclue
@@ -198,6 +199,12 @@ namespace NoTime.Splitter.Demo
             gameObject.layer = 31;
             _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOffset);
             Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, _spherePos - body.AppliedPhysics.position, out _hit, GroundedOffset, GroundLayers, QueryTriggerInteraction.Ignore);
+            if (Grounded)
+            {
+                //body.AppliedPhysics.MovePosition(transform.position + ((_spherePos - _hit.point).normalized * GroundedRadius*.9f));
+            }
+            
+            
             gameObject.layer = _oldLayer;
         }
 
@@ -207,8 +214,8 @@ namespace NoTime.Splitter.Demo
                 return;
             GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityAcceleration;
             Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
-            body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f * 
-                Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration/9.8f,2f)
+            body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f 
+                
             ));
         }
 

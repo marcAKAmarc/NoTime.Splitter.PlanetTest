@@ -18,11 +18,11 @@ public static class RigidbodyRotationExtensions
 
         // If we're already facing the right way, just stop.
         // This avoids problems with the infinite axes ToAngleAxis gives us in this case.
-        if (Mathf.Approximately(angle, 0))
+        /*if (Mathf.Approximately(angle, 0))
         {
-            body.AppliedPhysics.angularVelocity = Vector3.zero;
+            body.AppliedPhysics.AddTorque(-body.AppliedPhysics.angularVelocity * stabilizationCapability);
             return;
-        }
+        }*/
 
         // If you need to, you can enforce a cap here on the maximum rotation you'll
         // allow in a single step, to prevent overly jerky movement from upsetting your sim.
@@ -48,15 +48,15 @@ public static class RigidbodyRotationExtensions
         body.AppliedPhysics.AddTorque((targetAngularVelocity - body.AppliedPhysics.angularVelocity)*stabilizationCapability, ForceMode.VelocityChange);
 
         //apply damp
-        float dotAngularVelocity = Mathf.Clamp01(Vector3.Dot(targetAngularVelocity.normalized, body.AppliedPhysics.angularVelocity));
         float dotGoal = Mathf.Clamp01(Quaternion.Dot(rotationChange, body.AppliedPhysics.rotation));
+        //body.AppliedPhysics.AddTorque(Vector3.zero, ForceMode.VelocityChange);
         body.AppliedPhysics.AddTorque(
             (-body.AppliedPhysics.angularVelocity) * dotGoal/*(2*dotGoal-Mathf.Pow(dotGoal,2))*/ * dampenFactor * stabilizationCapability,
             ForceMode.VelocityChange
         );
     }
 
-    public static void SmoothRotate(this Rigidbody body, Quaternion targetRotation, float maxTowardSpeed, float TowardFactor, float dampenFactor)
+    public static void SmoothRotate(this Rigidbody body, Quaternion targetRotation, float maxTowardSpeed, float TowardFactor, float dampenFactor, float stabilizationCapability = 1f)
     {
         // Compute the change in orientation we need to impart.
         Quaternion rotationChange = targetRotation * Quaternion.Inverse(body.rotation);
@@ -68,11 +68,11 @@ public static class RigidbodyRotationExtensions
 
         // If we're already facing the right way, just stop.
         // This avoids problems with the infinite axes ToAngleAxis gives us in this case.
-        if (Mathf.Approximately(angle, 0))
+        /*if (Mathf.Approximately(angle, 0))
         {
-            body.angularVelocity = Vector3.zero;
+            body.AppliedPhysics.AddTorque(-body.AppliedPhysics.angularVelocity * stabilizationCapability);
             return;
-        }
+        }*/
 
         // If you need to, you can enforce a cap here on the maximum rotation you'll
         // allow in a single step, to prevent overly jerky movement from upsetting your sim.
@@ -95,13 +95,13 @@ public static class RigidbodyRotationExtensions
             targetAngularVelocity = targetAngularVelocity.normalized * maxTowardSpeed;
 
         // Apply a torque to finish the job.
-        body.AddTorque(targetAngularVelocity - body.angularVelocity, ForceMode.VelocityChange);
+        body.AddTorque((targetAngularVelocity - body.angularVelocity) * stabilizationCapability, ForceMode.VelocityChange);
 
         //apply damp
-        float dotAngularVelocity = Mathf.Clamp01(Vector3.Dot(targetAngularVelocity.normalized, body.angularVelocity));
         float dotGoal = Mathf.Clamp01(Quaternion.Dot(rotationChange, body.rotation));
+        //body.AppliedPhysics.AddTorque(Vector3.zero, ForceMode.VelocityChange);
         body.AddTorque(
-            (-body.angularVelocity) * dotGoal/*(2*dotGoal-Mathf.Pow(dotGoal,2))*/ * dampenFactor,
+            (-body.angularVelocity) * dotGoal/*(2*dotGoal-Mathf.Pow(dotGoal,2))*/ * dampenFactor * stabilizationCapability,
             ForceMode.VelocityChange
         );
     }

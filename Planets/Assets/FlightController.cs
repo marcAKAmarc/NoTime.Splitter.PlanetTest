@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FlightController : MonoBehaviour
+public class FlightController : SplitterEventListener
 {
     public Transform potentialController;
     public Transform controllerLookTransform;
@@ -29,7 +29,8 @@ public class FlightController : MonoBehaviour
     private Material mFwd1, mFwd2, mFwd3, mBack1, mBack2, mBack3, mLeft1, mLeft2, mLeft3, mRight1, mRight2, mRight3, mUp1, mUp2, mUp3, mDown1, mDown2, mDown3;
     private Vector3 thrustDisplay;
 
-    private Quaternion FlightRotation;
+    private Quaternion GoalRotation;
+    public Transform FlightRotationVisual;
 
     private void Awake()
     {
@@ -37,7 +38,7 @@ public class FlightController : MonoBehaviour
     }
     private void Start()
     {
-        FlightRotation = transform.rotation;
+        GoalRotation = transform.rotation;
 
         mFwd1 = Fwd1.transform.GetComponent<Renderer>().material;//material;
         mFwd2 = Fwd2.transform.GetComponent<Renderer>().material;
@@ -83,7 +84,8 @@ public class FlightController : MonoBehaviour
     }
     private void OnCollisionStay(Collision other)
     {
-        MaybeTakeHitToStabilization(other);
+
+            MaybeTakeHitToStabilization(other);
     }
 
     private void MaybeTakeHitToStabilization(Collision other)
@@ -96,7 +98,8 @@ public class FlightController : MonoBehaviour
             other.gameObject.GetComponentInParent<RigidbodyFpsController>().transform.GetInstanceID() != potentialController.GetInstanceID()
         )
         {
-            FlightRotation = body.AppliedPhysics.rotation;
+            _FlightRotationWhenHit = GoalRotation;
+            GoalRotation = body.AppliedPhysics.rotation;
             _target = body.AppliedPhysics.rotation;
             StabilizationCapability = 0f;
         }
@@ -108,8 +111,13 @@ public class FlightController : MonoBehaviour
 
         ThrustDisplayUpdate();
 
-    }
+        DebugScene();
 
+    }
+    void DebugScene()
+    {
+        FlightRotationVisual.rotation = GoalRotation;
+    }
     private void HandlePilotSeat()
     {
         if (controllable == true && Input.GetKeyDown(KeyCode.CapsLock))
@@ -292,6 +300,11 @@ public class FlightController : MonoBehaviour
     }
     private void FixedUpdate()
     {
+
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            TestRotation();
+        }
         if (controlled)
         {
             Move();
@@ -300,6 +313,8 @@ public class FlightController : MonoBehaviour
         
         SetDirection();
         Rotate();
+
+
     }
 
     private Vector3 _thrust;
@@ -330,9 +345,17 @@ public class FlightController : MonoBehaviour
         body.AppliedPhysics.AddForce(_thrust * MoveForce * Time.fixedDeltaTime, ForceMode.Acceleration);
         
     }
+    Quaternion _FlightRotationWhenHit = Quaternion.identity;
+    Stabilizer _simSubStabilizer;
     void SetDirection()
     {
-        if (Input.GetKey(KeyCode.Tab) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E))
+        if (!controllable)
+        {
+            GoalRotation = body.AppliedPhysics.rotation;
+            return;
+        }
+
+        if (controlled && (Input.GetKey(KeyCode.Tab) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E)))
         {
             if(Input.GetKey(KeyCode.Tab))
                 _target = controllerLookTransform.rotation;
@@ -340,21 +363,39 @@ public class FlightController : MonoBehaviour
             if(Input.GetKey(KeyCode.Q))
                 _target = _target *Quaternion.AngleAxis(1f * RollSensitivity, Vector3.forward);
             if(Input.GetKey(KeyCode.E))
-                _target = _target * Quaternion.AngleAxis(-1f * RollSensitivity, Vector3.forward);
-
-            FlightRotation = Quaternion.Slerp(FlightRotation, _target, Mathf.Clamp01(3f * Time.fixedDeltaTime));
+                _target = _target * Quaternion.AngleAxis(-1f * RollSensitivity, Vector3.forward);    
         }
-        
 
-    }
-    private void Rotate()
-    {
         if (StabilizationCapability < 1f)
-            StabilizationCapability += Time.fixedDeltaTime/5f;
+            StabilizationCapability += Time.fixedDeltaTime / 2f;
         if (StabilizationCapability > 1f)
             StabilizationCapability = 1f;
 
-        body.SmoothRotate(FlightRotation, maxRotateSpeed, rotateFactor, dampenFactor, StabilizationCapability);
+        /*if (transform.GetComponent<SplitterSubscriber>() != null &&
+            transform.GetComponent<SplitterSubscriber>().Anchor != null)
+        {
+            _simSubStabilizer = transform.GetComponent<SplitterSubscriber>()
+                 .Anchor.GetSubSim(transform.GetComponent<SplitterSubscriber>())
+                 .gameObject.GetComponent<Stabilizer>();
+            _simSubStabilizer.TargetRotation = transform.GetComponent<SplitterSubscriber>().Anchor.TranslateWorldRotationToSimRotation(_target);
+            _simSubStabilizer.Capability = StabilizationCapability;
+        }
+        if (transform.GetComponent<Stabilizer>() != null)
+        {
+            transform.GetComponent<Stabilizer>().TargetRotation = _target;
+            transform.GetComponent<Stabilizer>().Capability = StabilizationCapability;
+        }*/
+
+        GoalRotation = Quaternion.Slerp(GoalRotation, _target, Mathf.Clamp01(Time.fixedDeltaTime / .5f));
+        GoalRotation = Quaternion.Slerp(body.AppliedPhysics.rotation, GoalRotation, StabilizationCapability);
+        _target = Quaternion.Slerp(body.AppliedPhysics.rotation, _target, StabilizationCapability);
+    }
+    private void Rotate()
+    {
+        
+
+        //if(StabilizationCapability == 1f)
+            body.SmoothRotate(GoalRotation, maxRotateSpeed, rotateFactor, dampenFactor, Mathf.Pow(StabilizationCapability,4f));
 
         /*if (Input.GetKey(KeyCode.Q))
             body.AppliedPhysics.AddRelativeTorque(Vector3.forward * RollSensitivity, ForceMode.Acceleration);
@@ -364,7 +405,10 @@ public class FlightController : MonoBehaviour
     }
 
 
-
+    private void TestRotation()
+    {
+        body.AppliedPhysics.AddTorque(Vector3.one * 1000f, ForceMode.VelocityChange);
+    }
     
     private void OnDrawGizmos()
     {

@@ -10,15 +10,22 @@ public class PlanetBoid : MonoBehaviour
     public float TurnSpeed;
     public float NeighborhoodRadius;
     public float CrowdingDistance;
+    public float AvoidanceDistance;
     public float AvoidanceWeight;
     public float CrowdingWeight;
     public float GroupDirectionWeight;
     public float GroupCenterWeight;
     public float distanceFromPlanet;
+    public bool Hidden = false;
+    public float HiddenAlpha = 1f;
+    public bool lit = false;
     public List<DustAvoidanceReporter> DustAvoidanceReporters;
     private List<PlanetBoid> localBoids;
     private List<PlanetBoid> allBoids;
     private PlanetBoidParent boidParent;
+
+    private Vector3 dbPreviousSpawn = Vector3.zero;
+    private Color dbColor = Color.white;
 
     private void Awake()
     {
@@ -32,30 +39,52 @@ public class PlanetBoid : MonoBehaviour
         transform.position = transform.position + new Vector3((Random.value * 20f) - 10f, (Random.value * 20f) - 10f, (Random.value * 20f) - 10f);
     }
 
+    private int _placementAttempts = 0;
+    private int _maxPlacementAttempts = 4;
+    private bool inAnyAvoidances = false;
+    private bool nearAnyAvoidances = false;
     public void Wrap(Vector3 position, float distance)
     {
         if((transform.position - position).sqrMagnitude > Mathf.Pow(distance, 2f))
         {
-            transform.position -= 2f * (transform.position - position);
+            Hidden = true;
+            HiddenAlpha = 0f;
+
+            _placementAttempts = 0;
+
+            transform.position = position - ((transform.position - position).normalized * distance * .9f);
             transform.position = planet.position + (transform.position - planet.position).normalized * distanceFromPlanet;
 
+            inAnyAvoidances = boidParent.dustAvoidanceReporter.avoidances.Any(c => c.bounds.Contains(transform.position));
+            nearAnyAvoidances = boidParent.dustAvoidanceReporter.avoidances.Any(
+                            c => (transform.position - c.ClosestPointOnBounds(transform.position)).sqrMagnitude < Mathf.Pow(CrowdingDistance, 2f)     
+                    );
+            dbPreviousSpawn = transform.position;
+            dbColor = Color.white;
             //while inside avoidance, rotate some around position
-            
-            while(
-                DustAvoidanceReporters.Any(
-                    x=>x.avoidances.Any(c=> c.bounds.Contains(transform.position)))
-                ||
-                DustAvoidanceReporters.SelectMany(
-                    x => x.avoidances.Select(
-                        c => transform.position - c.ClosestPointOnBounds(transform.position)
-                    )
-                ).Any(
-                    x => x.sqrMagnitude < Mathf.Pow(CrowdingDistance, 2f)
+
+            while (
+                _placementAttempts <= _maxPlacementAttempts
+                &&
+                (
+                    inAnyAvoidances 
+                    ||
+                    nearAnyAvoidances
                 )
             )
             {
                 transform.RotateAround(transform.parent.position, (position - planet.position).normalized, 1f);
                 transform.position = planet.position + (transform.position - planet.position).normalized * distanceFromPlanet;
+                dbPreviousSpawn = transform.position;
+                dbColor = Color.yellow;
+                _placementAttempts += 1;
+            }
+            //if we couldn't find a spot, just place it decently outside of radius so we try again later
+            if (_placementAttempts > _maxPlacementAttempts)
+            {
+                transform.position = position + (1.5f * (transform.position - position).normalized * distance);
+                dbPreviousSpawn = transform.position;
+                dbColor = Color.red;
             }
         }
     }
@@ -87,6 +116,14 @@ public class PlanetBoid : MonoBehaviour
     public void finalizeAvoidanceDirection()
     {
         AvoidanceDir = AvoidanceDir.normalized;
+    }
+
+    public void Update()
+    {
+        if (Hidden)
+            HiddenAlpha = Mathf.Lerp(HiddenAlpha, 0, .1f * Time.deltaTime);
+        else
+            HiddenAlpha = Mathf.Lerp(HiddenAlpha, 1, .1f * Time.deltaTime);
     }
 
     Vector3 GoalDir;
@@ -123,5 +160,11 @@ public class PlanetBoid : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position, transform.position + (AvoidanceDir * 3f));
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = dbColor;
+        Gizmos.DrawWireSphere(dbPreviousSpawn,.5f);
     }
 }

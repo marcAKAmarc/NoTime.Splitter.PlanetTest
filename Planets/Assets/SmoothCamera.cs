@@ -17,7 +17,7 @@ public class SmoothCamera : MonoBehaviour
     // Update is called once per frame
     void LateUpdate()
     {
-        transform.rotation = SmoothDampQuaternion(transform.rotation, followTransform.rotation, ref currentVelocity, SmoothFactor - (SmoothFactor * Mathf.Clamp01(Quaternion.Angle(transform.rotation, followTransform.rotation)/90f)));
+        transform.rotation = Quaternion.Lerp(transform.rotation, followTransform.rotation, SmoothFactor);//SmoothDampQuaternion(transform.rotation, followTransform.rotation, ref currentVelocity, SmoothFactor - (SmoothFactor * Mathf.Clamp01(Quaternion.Angle(transform.rotation, followTransform.rotation)/90f)));
         transform.position = followTransform.position + followTransform.TransformDirection(followTransformRelativeOffset);
     }
 

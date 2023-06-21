@@ -143,7 +143,7 @@ public class SkyboxBlender : MonoBehaviour {
     /// </summary>
     public void UpdateReflectionProbe()
     {
-        if (!probeGameObject)//|| !probeComponent)
+        if (!probeGameObject|| !probeComponent)
             CreateReflectionProbe();
 
         probeComponent.resolution = GetProbeResolution(reflectionResolution);

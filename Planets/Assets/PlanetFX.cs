@@ -308,7 +308,10 @@ public class PlanetFX : MonoBehaviour
             float sqrDist = (transform.position - f.Facade.position).sqrMagnitude;
 
 
-            if (sqrDist < Mathf.Pow(f.transparentDistance, 2))
+            if ((f.opaqueDistance > f.transparentDistance && sqrDist < Mathf.Pow(f.transparentDistance, 2))
+                ||
+                (f.opaqueDistance < f.transparentDistance && sqrDist > Mathf.Pow(f.transparentDistance, 2))
+            )
             {
                 foreach (var r in f.GetRenderers())
                     r.enabled = false;
@@ -319,7 +322,12 @@ public class PlanetFX : MonoBehaviour
             {
                 foreach (var r in f.GetRenderers())
                     r.enabled = true;
-                if (sqrDist > Mathf.Pow(f.opaqueDistance, 2))
+                foreach (var m in f.GetMaterials())
+                    m.color = new Color(m.color.r, m.color.g, m.color.b,
+
+                            Mathf.Clamp01(Map(sqrDist, Mathf.Pow(f.transparentDistance, 2), 0f, Mathf.Pow(f.opaqueDistance, 2), 1f))
+                    );
+                /*if (sqrDist > Mathf.Pow(f.opaqueDistance, 2))
                 {
 
                     foreach (var m in f.GetMaterials())
@@ -330,7 +338,7 @@ public class PlanetFX : MonoBehaviour
                     float linear = (sqrDist - Mathf.Pow(f.transparentDistance, 2)) / (Mathf.Pow(f.opaqueDistance, 2) - Mathf.Pow(f.transparentDistance, 2));
                     foreach (var m in f.GetMaterials())
                         m.color = new Color(m.color.r, m.color.g, m.color.b, linear);
-                }
+                }*/
             }
         }
         
@@ -343,6 +351,8 @@ public class PlanetFX : MonoBehaviour
     }
     float _camAlpha;
     float _dayNightActivityAlpha;
+    float _shadowAlpha;
+    ParticleSystem.SizeOverLifetimeModule _sizeOverLifetime;
     private void DustPreRender()
     {
         foreach(var dustData in Dust)
@@ -408,8 +418,11 @@ public class PlanetFX : MonoBehaviour
                     {
                         _camAlpha = 1f;
                     }
-
-                    r.material.color = new Color(dustData.DustCloudColor.r, dustData.DustCloudColor.g, dustData.DustCloudColor.b, _camAlpha * _dayNightActivityAlpha * dustData.maxAlpha);                    
+                    if (r.transform.parent.GetComponent<PlanetBoid>().lit)
+                        _shadowAlpha = 1f;
+                    else
+                        _shadowAlpha = .5f;
+                    r.material.color = new Color(dustData.DustCloudColor.r, dustData.DustCloudColor.g, dustData.DustCloudColor.b, _camAlpha * _dayNightActivityAlpha * r.transform.parent.GetComponent<PlanetBoid>().HiddenAlpha * _shadowAlpha * dustData.maxAlpha);                    
                 }
 
                 //THIS ONE WORKS THROUGH SHARED MATERIAL
@@ -417,9 +430,24 @@ public class PlanetFX : MonoBehaviour
                     dustData.DustParticleColor.r,
                     dustData.DustParticleColor.g,
                     dustData.DustParticleColor.b,
-                    _dayNightActivityAlpha * dustData.ParticleMaxAlpha
+                    ((2f*_dayNightActivityAlpha)-Mathf.Pow(_dayNightActivityAlpha,2f)) * dustData.ParticleMaxAlpha
                 );
-                
+
+                //partical shadows?
+                foreach(var ps in dustData.DustGroup.GetComponentsInChildren<ParticleSystem>())
+                {
+                    if (ps.transform.parent.GetComponent<PlanetBoid>().lit && ps.sizeOverLifetime.sizeMultiplier != 1f)
+                    {
+
+                        _sizeOverLifetime = ps.sizeOverLifetime;
+                        _sizeOverLifetime.sizeMultiplier = 1f;
+                    }
+                    else if (ps.sizeOverLifetime.sizeMultiplier != 0f)
+                    {
+                        _sizeOverLifetime = ps.sizeOverLifetime;
+                        _sizeOverLifetime.sizeMultiplier = 0f;
+                    } 
+                }
                 //sounds?
                 for(int i = 0; i < dustData.AudioData.Count; i++)
                 {
@@ -484,4 +512,6 @@ public class PlanetFX : MonoBehaviour
         float b = y2 - (x2 * m);
         return (val * m) + b;
     }
+
+
 }

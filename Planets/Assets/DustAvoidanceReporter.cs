@@ -20,7 +20,7 @@ public class DustAvoidanceReporter : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.GetComponentsInParent<PlanetBehaviour>().Length == 0 && other.GetComponentInParent<RigidbodyFpsController>() == null)
+        if(other.GetComponentInParent<DustAvoidance>()!=null)
             avoidances.Add(other);
     }
     private void OnTriggerExit(Collider other)

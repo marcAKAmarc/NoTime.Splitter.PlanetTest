@@ -2,16 +2,36 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 
 public class PlanetBoidParent : MonoBehaviour
 {
     public List<PlanetBoid> planetBoids;
+    public Light SunLight;
     public Vector3 avgFacingDirection;
     public Vector3 avgPosition;
     public DustAvoidanceReporter dustAvoidanceReporter;
     public float soundPitchVariance = .02f;
+    public bool init = false;
+
     // Start is called before the first frame update
-    void Start()
+    private void Start()
+    {
+        Debug.Log("Start");
+        Reset();
+    }
+    void OnEnable()
+    {
+        Debug.Log("Enabled");
+        if(planetBoids != null)
+            Reset();
+    }
+    private void Init()
+    {
+        init = true;
+        Reset();
+    }
+    private void Reset()
     {
         avgFacingDirection = Vector3.zero;
         avgPosition = transform.position;
@@ -49,11 +69,14 @@ public class PlanetBoidParent : MonoBehaviour
         return Time.realtimeSinceStartup - startTime > maxCalculationTime;
     }
     bool _hasInterrupted = false;
+    private Ray litRay = new Ray();
     IEnumerator Interruptable()
     {
         StartTimers();
         while (true)
         {
+            if (init == false)
+                yield return null;
             _hasInterrupted = false;
             dirs = Vector3.zero;
             pos = Vector3.zero;
@@ -118,20 +141,37 @@ public class PlanetBoidParent : MonoBehaviour
             for (i = 0; i < planetBoids.Count; i++)
             {
                 boid1 = planetBoids[i];
+                boid1.Hidden = false;
                 for (j = 0; j < dustAvoidanceReporter.avoidances.Count; j++)
                 {
                     avoidance = dustAvoidanceReporter.avoidances[j];
-                    _avoidanceDir = boid1.transform.position - avoidance.ClosestPointOnBounds(boid1.transform.position);
+                    _avoidanceDir = boid1.transform.position - avoidance.bounds.ClosestPoint(boid1.transform.position);
                     if (
                         _avoidanceDir.sqrMagnitude
                         <
-                        Mathf.Pow(boid1.CrowdingDistance, 2f)
+                        Mathf.Pow(boid1.AvoidanceDistance, 2f)
                     )
                     {
                         boid1.addAvoidanceDirection(_avoidanceDir);
+                        //boid1.Hidden = true;
                     }
                 }
                 boid1.finalizeAvoidanceDirection();
+            }
+
+            //lit
+            for(i = 0; i <planetBoids.Count; i++)
+            {
+                litRay.origin = planetBoids[i].transform.position;
+                litRay.direction = -SunLight.transform.forward;
+                planetBoids[i].lit = !Physics.Raycast(litRay, 500f);
+                //maybe pause
+                if (isAlarm())
+                {
+                    _hasInterrupted = true;
+                    yield return null;
+                    StartTimers();
+                }
             }
 
             if (!_hasInterrupted)

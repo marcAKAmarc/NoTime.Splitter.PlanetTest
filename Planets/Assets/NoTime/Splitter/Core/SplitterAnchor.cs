@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +8,7 @@ using UnityEngine.SceneManagement;
 using NoTime.Splitter.Helpers;
 using NoTime.Splitter.Internal;
 using UnityEditor;
-using Unity.VisualScripting;
+using NoTime.Splitter.Core;
 
 namespace NoTime.Splitter
 {
@@ -443,7 +442,9 @@ namespace NoTime.Splitter
         {
             if (!ids.ContainsKey(subscriber.gameObject.GetInstanceID()))
                 return;
-            
+
+            Debug.Log("Applying Collision at " + Time.time);
+
             Vector3 impulse = collision.impulse;
             if (Vector3.Dot(impulse, collision.GetContact(0).normal) < 0f)
                 impulse *= -1f;
@@ -614,7 +615,10 @@ namespace NoTime.Splitter
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
             _Sim.rigidbody.rotation = PhysicsAnchorGO.transform.rotation * (Quaternion.Inverse(this.getRotation()) * rotation);
         }
-
+        public Quaternion TranslateWorldRotationToSimRotation(Quaternion rotation)
+        {
+            return PhysicsAnchorGO.transform.rotation * (Quaternion.Inverse(this.getRotation()) * rotation);
+        }
         internal void ApplyMoveRotation(Quaternion rotation, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
@@ -758,7 +762,10 @@ namespace NoTime.Splitter
         }
         internal Vector3 ApplyGetRelativePointVelocity(Vector3 localPoint, SplitterSubscriber subscriber)
         {
-            //TODO TEST LOCAL SPACE OR RELATIVE SPACE -- if this doesn't work, try just subscriber.transform.InverseTransformPoint(localPoint)
+            ///TODO:
+            ///The velocity relative to the rigidbody at the point relativePoint.
+            ///GetRelativePointVelocity will take the angularVelocity of the rigidbody into account when calculating the velocity.
+            ///the tough part - how to compare angular velocities?
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
             return 
                 subscriber.transform.TransformDirection(
@@ -773,17 +780,17 @@ namespace NoTime.Splitter
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
             return subscriber.GetUltimatePointVelocity(worldPoint);
-                /*transform.TransformDirection(
-                    PhysicsAnchorGO.transform.InverseTransformDirection(
-                        _Sim.rigidbody.GetPointVelocity(
-                            _Sim.gameObject.transform.TransformPoint(
-                                subscriber.transform.InverseTransformPoint(
-                                    worldPoint
-                                )
+            /*transform.TransformDirection(
+                PhysicsAnchorGO.transform.InverseTransformDirection(
+                    _Sim.rigidbody.GetPointVelocity(
+                        _Sim.gameObject.transform.TransformPoint(
+                            subscriber.transform.InverseTransformPoint(
+                                worldPoint
                             )
                         )
                     )
-                );*/
+                )
+            );*/
         }
         internal Vector3 ApplyClosestPointOnBound(Vector3 position, SplitterSubscriber subscriber)
         {
@@ -824,37 +831,69 @@ namespace NoTime.Splitter
                 mustSimulateBeforeSubscriberUpdate = true;
             }
         }
+        public void Simulate()
+        {
+            PhysicsScene.Simulate(Time.fixedDeltaTime);
+        }
+        public void Export()
+        {
+           for(int i = 0; i < idToMainGo.Count(); i++)
+           {
+                UpdateSubscriberRigidbody(idToMainGo.values[i].gameObject);
+           }
+        }
 
+        public void PhysicsSync()
+        {
+            for (int i = 0; i < idToMainGo.Count(); i++)
+            {
+                SyncSubscriberRigidbody(idToMainGo.values[i].gameObject);
+            }
+        }
+        public void HardSync()
+        {
+            for (int i = 0; i < idToMainGo.Count(); i++)
+            {
+                SyncSubscriberTransform(idToMainGo.values[i].gameObject);
+            }
+        }
         private GoRigid _SimSubscriber;
         private int _physGoOfSubscriberInstanceId;
         private Rigidbody _mainGoRigidbody;
         private int _iterator = 0;
+        public void UpdateSubscriber(GameObject mainGo)
+        {
+            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            mainGo.transform.rotation =
+                this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation);
+
+            mainGo.transform.position =
+                this.transform.TransformPoint(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
+                );
+        }
+
+        
         public void UpdateSubscriberRigidbody(GameObject mainGo)
         {
-            //try
-            //{
-                _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
-            //}
-            //catch(Exception ex)
-            //{
-            //    Debug.Log(mainGo.name + " No longer exists in id To Physics Go?");
-            //}
+            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
             _physGoOfSubscriberInstanceId = _SimSubscriber.gameObject.GetInstanceID();
 
             //lazy simulating.  This is called from fixed update, 
             //mustSimulateBeforeSubscriberUpdate is reset on waitforfixedupdate
             //This ensures that the scene if simulated prior to any updates
-            if (mustSimulateBeforeSubscriberUpdate && !_SimSubscriber.gameObject.GetComponent<Rigidbody>().IsSleeping())
+            /*if (mustSimulateBeforeSubscriberUpdate && !_SimSubscriber.gameObject.GetComponent<Rigidbody>().IsSleeping())
             {
                 mustSimulateBeforeSubscriberUpdate = false;
                 PhysicsScene.Simulate(Time.fixedDeltaTime);
-            }
+            }*/
             
             _mainGoRigidbody = mainGo.GetComponent<Rigidbody>();
 
             
 
-            _mainGoRigidbody.MoveRotation(
+
+            /*_mainGoRigidbody.MoveRotation(
                 this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation)
             );
 
@@ -862,7 +901,7 @@ namespace NoTime.Splitter
                 this.transform.TransformPoint(
                     PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
                 )
-            );
+            );*/
 
 
             //cancel
@@ -872,15 +911,16 @@ namespace NoTime.Splitter
             _mainGoRigidbody.AddForce(
                 (
                     //dv
-                    (mainGo.GetComponent<SplitterSubscriber>().GetUltimatePointVelocity(_mainGoRigidbody.position) - (_mainGoRigidbody.velocity)) / (Time.fixedDeltaTime)
+                    (mainGo.GetComponent<SplitterSubscriber>().GetUltimatePointVelocity(_mainGoRigidbody.position) - (_mainGoRigidbody.velocity))
                 ),
-                ForceMode.Acceleration
+                ForceMode.VelocityChange
             );
 
             _iterator = 0;
             //i think this should simply just be done for every transform instead of having an user defined explicit list
             for (_iterator = 0; _iterator < PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId].Count; _iterator++)
             {
+                
                 PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localRotation = 
                     PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].physicsTransform.localRotation;
                 PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localPosition = 
@@ -888,6 +928,30 @@ namespace NoTime.Splitter
             }
         }
 
+        public void SyncSubscriberRigidbody(GameObject mainGo)
+        {
+            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            _mainGoRigidbody = mainGo.GetComponent<Rigidbody>();
+            _mainGoRigidbody.MoveRotation(
+                this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation)
+            );
+
+            _mainGoRigidbody.MovePosition(
+                this.transform.TransformPoint(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
+                )
+            );
+        }
+        public void SyncSubscriberTransform(GameObject mainGo)
+        {
+            _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
+            mainGo.transform.rotation =
+                this.getRotation()
+                * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation);
+            mainGo.transform.position = this.transform.TransformPoint(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
+                );
+        }
         public GoRigid GetSubSim(SplitterSubscriber subscriber)
         {
             return idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
@@ -902,20 +966,27 @@ namespace NoTime.Splitter
                 SceneManager.UnloadSceneAsync(Scene.Value);
         }
 
-#if UNITY_EDITOR
         void OnEnable()
         {
-            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
+            SplitterSystem.SplitterSimulate += Simulate;
+            SplitterSystem.SplitterPhysicsExport += Export;
+            SplitterSystem.SplitterPhysicsSync += PhysicsSync;
+            SplitterSystem.SplitterHardSync += HardSync;
+            //AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            //AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
         }
 
         void OnDisable()
         {
-            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
+            SplitterSystem.SplitterSimulate -= Simulate;
+            SplitterSystem.SplitterPhysicsExport -= Export;
+            SplitterSystem.SplitterPhysicsSync -= PhysicsSync;
+            SplitterSystem.SplitterHardSync -= HardSync;
+            //AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+            //AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
         }
 
-        public void OnBeforeAssemblyReload()
+        /*public void OnBeforeAssemblyReload()
         {
             SceneName = Scene.Value.name;
         }
@@ -929,8 +1000,8 @@ namespace NoTime.Splitter
             }
 
             ReRegisterAllLocalTransformationsForAllPairs();
-        }
-#endif
+        }*/
+
         private Quaternion getRotation()
         {
             if (body != null)

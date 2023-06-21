@@ -1,7 +1,9 @@
 using Assets.NoTime.Splitter.Core;
+using NoTime.Splitter.Core;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -16,11 +18,11 @@ namespace NoTime.Splitter
         [HideInInspector]
         public SplitterAnchor Anchor;
 
-        //[HideInInspector]
+        [HideInInspector]
         [SerializeField]
         private List<SplitterAnchor> AnchorStack;
 
-        //[HideInInspector]
+        [HideInInspector]
         [SerializeField]
         private List<Collider> CurrentAnchorTriggers;
 
@@ -91,14 +93,25 @@ namespace NoTime.Splitter
                 UpdateContext();
             }
         }
-
+        
         private void OnDisable()
         {
             UpdateContext();
+            //SplitterSystem.InvestigatoryEvents -= Investigate;
         }
+
         private void OnEnable()
         {
             UpdateContext();
+            //SplitterSystem.InvestigatoryEvents += Investigate;
+        }
+        private void Investigate(string eventName)
+        {
+            if (transform.name.Contains("TEST"))
+            {
+                Debug.Log(eventName + " finished.");
+                Debug.Log("    position = " + transform.GetComponent<Rigidbody>().position);
+            }
         }
 
         private void ProcessPotentialAnchorExit(Collider other)
@@ -188,7 +201,7 @@ namespace NoTime.Splitter
         }
         private void UpdateContext()
         {
-                        if(isActiveAndEnabled)
+            if(isActiveAndEnabled)
                 StartCoroutine(UpdateContextAtEndOfFixedUpdate());
         }
         WaitForFixedUpdate _updateWait = new WaitForFixedUpdate();
@@ -219,8 +232,13 @@ namespace NoTime.Splitter
         }
         void FixedUpdate()
         {
-            if (Anchor != null)
-                StartCoroutine(UpdateSubscriberAtEndOfFixedUpdate());
+            /*if (Anchor != null)
+                StartCoroutine(UpdateSubscriberAtEndOfFixedUpdate());*/
+        }
+        private void Update()
+        {
+            /*if (Anchor != null)
+                Anchor.UpdateSubscriber(this.transform.gameObject);*/
         }
         //[ContextMenu("Set Anchor From Location - WARNING: BACKUP SCENE BEFORE USE")]
         //public void SetAnchorFromLocation()
@@ -322,7 +340,7 @@ namespace NoTime.Splitter
                     Anchor.transform.TransformDirection(
                         Anchor.GetSim().transform.InverseTransformDirection(
                             Anchor.GetSubSim(this).rigidbody.GetPointVelocity(
-                                Anchor.GetSubSim(this).gameObject.transform.TransformPoint(transform.InverseTransformPoint(WorldPoint))
+                                Anchor.GetSim().gameObject.transform.TransformPoint(Anchor.transform.InverseTransformPoint(WorldPoint))
                             )
                         )
                     )
@@ -333,12 +351,14 @@ namespace NoTime.Splitter
                     Anchor.transform.TransformDirection(
                         Anchor.GetSim().transform.InverseTransformDirection(
                             Anchor.GetSubSim(this).rigidbody.GetPointVelocity(
-                                Anchor.GetSubSim(this).gameObject.transform.TransformPoint(transform.InverseTransformPoint(WorldPoint))
+                                Anchor.GetSim().gameObject.transform.TransformPoint(Anchor.transform.InverseTransformPoint(WorldPoint))
                             )
                         )
                     )
                     +
                     Anchor.GetPointVelocity(WorldPoint);
         }
+
+
     }
 }
