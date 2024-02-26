@@ -1,9 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
-using NoTime.Splitter;
-using System.Linq;
 
 namespace NoTime.Splitter.Demo
 {
@@ -33,7 +30,7 @@ namespace NoTime.Splitter.Demo
         {
             if (play)
             {
-                if (currentJourney > 1f )
+                if (currentJourney > 1f)
                 {
                     CurrentIndex = (CurrentIndex + 1) % Route.Count;
                     currentJourney = 0f;
@@ -48,7 +45,7 @@ namespace NoTime.Splitter.Demo
                     }
                 }
 
-                
+
 
                 currentJourney += Time.fixedDeltaTime * (Mathf.Lerp(Route[CurrentIndex].speed, Route[(CurrentIndex + 1) % Route.Count].speed, currentJourney)) /
                     (Route[(CurrentIndex + 1) % Route.Count].transform.position - Route[CurrentIndex].transform.position).magnitude;

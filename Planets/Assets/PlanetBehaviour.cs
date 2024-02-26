@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.Rendering.HybridV2;
 using UnityEngine;
 
 public class PlanetBehaviour : MonoBehaviour

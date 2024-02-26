@@ -1,9 +1,7 @@
-using Assets.NoTime.Splitter.Core;
 using NoTime.Splitter.Core;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -34,7 +32,7 @@ namespace NoTime.Splitter
         private void Awake()
         {
             AppliedPhysics = new AppliedPhysics(this, transform.GetComponent<Rigidbody>());
-            if(AnchorStack == null)
+            if (AnchorStack == null)
                 AnchorStack = new List<SplitterAnchor>();
             if (CurrentAnchorTriggers == null)
                 CurrentAnchorTriggers = new List<Collider>();
@@ -42,12 +40,19 @@ namespace NoTime.Splitter
         void Start()
         {
             if (NeedToUpdateContext())
-                UpdateContextImmediate();
+                CheckAndExecuteContextUpdate();
+        }
+        public Rigidbody GetSimulationBody()
+        {
+            if (Anchor == null)
+                return null;
+            else
+                return Anchor.GetSimulationBody(this);
         }
         private void ProcessPotentialAnchorEntrance(Collider other)
         {
             if (other.gameObject.GetComponentInParent<SplitterAnchor>() != null
-                && 
+                &&
                 other.gameObject.GetComponentInParent<SplitterAnchor>().enabled
                 && !(
                     gameObject.GetComponent<SplitterAnchor>() != null
@@ -67,9 +72,9 @@ namespace NoTime.Splitter
                     AddTriggerStack(other);
 
                 //if entrance and stay in triggerstack,
-                    //add to anchor stack
+                //add to anchor stack
                 if (
-                    CurrentAnchorTriggers.Any(y => 
+                    CurrentAnchorTriggers.Any(y =>
                         other.gameObject.GetComponentInParent<SplitterAnchor>().EntranceTriggers.Any(
                             x => x.GetInstanceID() == y.GetInstanceID()
                         )
@@ -93,7 +98,7 @@ namespace NoTime.Splitter
                 UpdateContext();
             }
         }
-        
+
         private void OnDisable()
         {
             UpdateContext();
@@ -201,14 +206,14 @@ namespace NoTime.Splitter
         }
         private void UpdateContext()
         {
-            if(isActiveAndEnabled)
+            if (isActiveAndEnabled)
                 StartCoroutine(UpdateContextAtEndOfFixedUpdate());
         }
         WaitForFixedUpdate _updateWait = new WaitForFixedUpdate();
         IEnumerator UpdateContextAtEndOfFixedUpdate()
         {
             yield return _updateWait;
-            UpdateContextImmediate();
+            CheckAndExecuteContextUpdate();
         }
         IEnumerator UpdateSubscriberAtEndOfFixedUpdate()
         {
@@ -218,9 +223,22 @@ namespace NoTime.Splitter
                 Anchor.UpdateSubscriberRigidbody(this.gameObject);
             }
         }
-        private void UpdateContextImmediate()
-        {
 
+        private void CheckAndExecuteContextUpdate()
+        {
+            //check if we would just re enter this context.  bail if so.
+            if (!NeedToUpdateContext())
+                return;
+            /*if (this.enabled
+                && AnchorStack.FirstOrDefault() != null
+                && Anchor != null
+                && AnchorStack.FirstOrDefault() == Anchor)
+                return;*/
+
+            if (transform.name.Contains("Control"))
+            {
+                var breaka = "here";
+            }
             if (Anchor != null)
             {
                 HandleExitSplitterContext(Anchor);
@@ -230,16 +248,7 @@ namespace NoTime.Splitter
                 HandleEnterSplitterContext(AnchorStack.FirstOrDefault());
             }
         }
-        void FixedUpdate()
-        {
-            /*if (Anchor != null)
-                StartCoroutine(UpdateSubscriberAtEndOfFixedUpdate());*/
-        }
-        private void Update()
-        {
-            /*if (Anchor != null)
-                Anchor.UpdateSubscriber(this.transform.gameObject);*/
-        }
+
         //[ContextMenu("Set Anchor From Location - WARNING: BACKUP SCENE BEFORE USE")]
         //public void SetAnchorFromLocation()
         //{
@@ -359,6 +368,36 @@ namespace NoTime.Splitter
                     Anchor.GetPointVelocity(WorldPoint);
         }
 
+        public Vector3 GetUltimateAngularVelocity()
+        {
+            if (Anchor == null)
+                return transform.GetComponent<Rigidbody>().angularVelocity;
 
+            if (Anchor.transform.GetComponent<SplitterSubscriber>() != null)
+                return
+                    Anchor.transform.TransformDirection(
+                        Anchor.GetSim().transform.InverseTransformDirection(
+                            Anchor.GetSubSim(this).rigidbody.angularVelocity
+                        )
+                    )
+                    +
+                    Anchor.transform.GetComponent<SplitterSubscriber>().GetUltimateAngularVelocity();
+            if (Anchor.transform.GetComponent<Rigidbody>() != null)
+                return
+                    Anchor.transform.TransformDirection(
+                        Anchor.GetSim().transform.InverseTransformDirection(
+                            Anchor.GetSubSim(this).rigidbody.angularVelocity
+                        )
+                    )
+                    +
+                    Anchor.transform.GetComponent<Rigidbody>().angularVelocity;
+            else
+                return
+                    Anchor.transform.TransformDirection(
+                        Anchor.GetSim().transform.InverseTransformDirection(
+                            Anchor.GetSubSim(this).rigidbody.angularVelocity
+                        )
+                    );
+        }
     }
 }

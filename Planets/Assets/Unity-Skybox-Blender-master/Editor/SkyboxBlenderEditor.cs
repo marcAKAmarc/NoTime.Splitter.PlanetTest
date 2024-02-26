@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using UnityEditor;
 using UnityEngine;
-using UnityEditor;
 
 [CustomEditor(typeof(SkyboxBlender))]
 public class SkyboxBlenderEditor : Editor
@@ -115,7 +113,7 @@ public class SkyboxBlenderEditor : Editor
         EditorGUILayout.Space();
         EditorGUI.indentLevel--;
         EditorGUILayout.EndVertical();
-        
+
 
         serializedObject.ApplyModifiedProperties();
     }

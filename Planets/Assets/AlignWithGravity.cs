@@ -1,6 +1,4 @@
 using NoTime.Splitter;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class AlignWithGravity : SplitterEventListener
@@ -20,9 +18,9 @@ public class AlignWithGravity : SplitterEventListener
         Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
         body.AppliedPhysics.MoveRotation(
             Quaternion.Slerp(
-                body.AppliedPhysics.rotation, 
-                target * body.AppliedPhysics.rotation, 
-                .1f *Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
+                body.AppliedPhysics.rotation,
+                target * body.AppliedPhysics.rotation,
+                .1f * Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
         ));
     }
 

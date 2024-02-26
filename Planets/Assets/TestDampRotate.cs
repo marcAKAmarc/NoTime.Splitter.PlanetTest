@@ -1,13 +1,11 @@
 using NoTime.Splitter;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 
 public static class RigidbodyRotationExtensions
 {
-    public static void SmoothRotate(this SplitterSubscriber body, Quaternion targetRotation, float maxTowardSpeed, float TowardFactor, float dampenFactor, float stabilizationCapability = 1f) {
+    public static void SmoothRotate(this SplitterSubscriber body, Quaternion targetRotation, float maxTowardSpeed, float TowardFactor, float dampenFactor, float stabilizationCapability = 1f)
+    {
         // Compute the change in orientation we need to impart.
         Quaternion rotationChange = targetRotation * Quaternion.Inverse(body.AppliedPhysics.rotation);
 
@@ -45,7 +43,7 @@ public static class RigidbodyRotationExtensions
             targetAngularVelocity = targetAngularVelocity.normalized * maxTowardSpeed;
 
         // Apply a torque to finish the job.
-        body.AppliedPhysics.AddTorque((targetAngularVelocity - body.AppliedPhysics.angularVelocity)*stabilizationCapability, ForceMode.VelocityChange);
+        body.AppliedPhysics.AddTorque((targetAngularVelocity - body.AppliedPhysics.angularVelocity) * stabilizationCapability, ForceMode.VelocityChange);
 
         //apply damp
         float dotGoal = Mathf.Clamp01(Quaternion.Dot(rotationChange, body.AppliedPhysics.rotation));

@@ -1,6 +1,5 @@
 using NoTime.Splitter;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -22,21 +21,38 @@ public class GravityObject : SplitterEventListener
     [HideInInspector]
     public List<FieldCollider> fieldColliders;
 
+    private SplitterSubscriber splitterSubscriber;
+    private Rigidbody rigidbody;
+
     public void Awake()
     {
+        splitterSubscriber = GetComponentInParent<SplitterSubscriber>();
+        rigidbody = GetComponentInParent<Rigidbody>();
+
         if (fieldColliders == null)
             fieldColliders = new List<FieldCollider>();
     }
+    int _insertAt;
     private void OnTriggerEnter(Collider other)
     {
         GravityField otherField = other.GetComponentInParent<GravityField>();
-        if(otherField == null)
+        if (otherField == null)
             return;
         if (otherField.PriorityLayer > MaximumGravityPriorityLayer)
             return;
 
-        fieldColliders.Add(new FieldCollider{collider = other, Field = otherField});
-        fieldColliders = fieldColliders.OrderByDescending(x => x.Field.PriorityLayer).ToList();
+        _insertAt = 0;
+        while (_insertAt < fieldColliders.Count)
+        {
+            if (fieldColliders[_insertAt].Field.PriorityLayer <= otherField.PriorityLayer)
+                break;
+            _insertAt += 1;
+        }
+        if (_insertAt == fieldColliders.Count)
+            fieldColliders.Add(new FieldCollider { collider = other, Field = otherField });
+        else
+            fieldColliders.Insert(_insertAt, new FieldCollider { collider = other, Field = otherField });
+        //fieldColliders = fieldColliders.OrderByDescending(x => x.Field.PriorityLayer).ToList();
         UpdateFieldFromFields();
     }
     private void OnTriggerExit(Collider other)
@@ -49,9 +65,11 @@ public class GravityObject : SplitterEventListener
         UpdateFieldFromFields();
     }
 
-    private void UpdateFieldFromFields() {
+    private void UpdateFieldFromFields()
+    {
         //quick clean
-        fieldColliders = fieldColliders.Where(x => x.Field != null).ToList();
+        if (fieldColliders.Any(x => x.Field == null))
+            fieldColliders = fieldColliders.Where(x => x.Field != null).ToList();
 
         if (fieldColliders.Count == 0)
         {
@@ -63,7 +81,7 @@ public class GravityObject : SplitterEventListener
             field = fieldColliders[0].Field;
         }
     }
-    
+
 
     private void FixedUpdate()
     {
@@ -72,14 +90,13 @@ public class GravityObject : SplitterEventListener
             GravityDistance = (field.transform.position - transform.position).magnitude;
             GravityAcceleration = field.GetGravityAcceleration(GravityDistance);
             GravityDirection = (field.transform.position - transform.position).normalized;
-            //GravityDirection = ((field.transform.position + (field.transform.rotation * field.transform.localPosition)) - transform.GetComponent<Rigidbody>().position).normalized;
-            //Debug.Log("Gforce: " + GravityForce.ToString());
+
             if (ApplyGravity)
             {
-                if (transform.GetComponentInParent<SplitterSubscriber>() != null)
-                    transform.GetComponentInParent<SplitterSubscriber>().AppliedPhysics.AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
+                if (splitterSubscriber != null)
+                    splitterSubscriber.AppliedPhysics.AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
                 else
-                    transform.GetComponentInParent<Rigidbody>().AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
+                    rigidbody.AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
             }
         }
         else
@@ -92,35 +109,41 @@ public class GravityObject : SplitterEventListener
     {
         Gizmos.color = Color.cyan;
 
-        if(field != null)
+        if (field != null)
             Gizmos.DrawLine(transform.position, field.transform.position);
     }
 
     public override void OnEnterAnchor(SplitterEvent evt)
     {
-        if(this.GetComponentInParent<SplitterSubscriber>()!=null && evt.Subscriber.gameObject.GetInstanceID() == this.GetComponentInParent<SplitterSubscriber>().gameObject.GetInstanceID())
+        //we want to keep this on in WorldSpace so that we can read from it
+        if (splitterSubscriber != null && evt.Subscriber.gameObject.GetInstanceID() == splitterSubscriber.gameObject.GetInstanceID())
         {
-            this.enabled = false;
+            this.enabled = true;
+            ApplyGravity = false;
         }
+
+        //get existing fieldColliders and set them up
         if (evt.SimulatedAnchor.GetComponentInChildren<GravityField>() != null)
         {
             evt.SimulatedSubscriber.GetComponent<GravityObject>().field = evt.SimulatedAnchor.GetComponentInChildren<GravityField>();
-            evt.SimulatedSubscriber.GetComponent<GravityObject>().fieldColliders = 
-                fieldColliders.Where(x=>
+            evt.SimulatedSubscriber.GetComponent<GravityObject>().fieldColliders =
+                fieldColliders.Where(x =>
                     x.Field.transform.GetInstanceID() == evt.SimulatedSubscriber.GetComponent<GravityObject>().field.transform.GetInstanceID()
                 ).ToList();
-            /*evt.SimulatedSubscriber.GetComponent<GravityObject>().fieldColliders.Add(
-                new FieldCollider { 
-                    collider = evt.SimulatedAnchor.GetComponentInChildren<GravityField>().transform.GetComponent<Collider>(), 
-                    Field = evt.SimulatedAnchor.GetComponentInChildren<GravityField>() 
-                }
-            );*/
         }
     }
 
-    /*public override void OnExitAnchor(SplitterEvent evt)
+    public override void OnExitAnchor(SplitterEvent evt)
     {
-        if (evt.Subscriber.gameObject.GetInstanceID() == this.transform.GetInstanceID())
-            this.enabled = true;
-    }*/
+        if (evt.Subscriber.gameObject.GetInstanceID() == splitterSubscriber.gameObject.GetInstanceID())
+            ApplyGravity = true;
+    }
+    private void OnDisable()
+    {
+        var Breaka = "here";
+    }
+    private void OnEnable()
+    {
+        var breaka = "here";
+    }
 }

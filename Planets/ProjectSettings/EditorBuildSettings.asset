@@ -5,7 +5,16 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Planet_tempTestWithRunInSimulationSpace.unity
     guid: a2d51894f69e65447b2730e11e21bb39
+  - enabled: 1
+    path: Assets/Scenes/Planet_paranoiaBranch.unity
+    guid: ae3f4289c44792c4d8e7be29f1dbfec4
+  - enabled: 1
+    path: Assets/Scenes/LightingScenes/DomeBuilding.unity
+    guid: 30b1547f67219c1418c263a4545d729e
+  - enabled: 1
+    path: Assets/Scenes/LightingScenes/Beacon.unity
+    guid: dad654896ca8eaa4884992504fc6e875
   m_configObjects: {}

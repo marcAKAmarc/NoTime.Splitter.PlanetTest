@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -62,7 +61,8 @@ namespace NoTime.Splitter.Internal
 
         private void CleanTriggerStack()
         {
-            CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x != null).ToList();
+            if (CurrentAnchorTriggers.Any(x => x == null))
+                CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x != null).ToList();
         }
 
 

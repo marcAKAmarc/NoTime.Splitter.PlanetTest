@@ -1,6 +1,5 @@
 using NoTime.Splitter;
 using NoTime.Splitter.Demo;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,8 +19,8 @@ public class FlightController : SplitterEventListener
     public float RotationDeadzone;
     private float rotationX = 0F;
     private float rotationY = 0F;
+    public LoopSoundCollection ShipEngine;
 
-    
 
     private Color _initialThrustDisplayColor;
     public Transform Fwd1;
@@ -29,8 +28,17 @@ public class FlightController : SplitterEventListener
     private Material mFwd1, mFwd2, mFwd3, mBack1, mBack2, mBack3, mLeft1, mLeft2, mLeft3, mRight1, mRight2, mRight3, mUp1, mUp2, mUp3, mDown1, mDown2, mDown3;
     private Vector3 thrustDisplay;
 
+    public List<EngineParticleBehavior> UpEngines, DownEngines, LeftEngines, RightEngines, ForwardEngines, BackEngines;
+
     private Quaternion GoalRotation;
     public Transform FlightRotationVisual;
+    public List<InteriorLightBehavior> InteriorLights;
+
+    Vector3 autopilotThrust;
+    public void RegisterAutopilotThrust(Vector3 thrust)
+    {
+        autopilotThrust = thrust;
+    }
 
     private void Awake()
     {
@@ -38,9 +46,10 @@ public class FlightController : SplitterEventListener
     }
     private void Start()
     {
+        transform.GetComponent<SplitterSubscriber>().AppliedPhysics.centerOfMass = Vector3.zero;
         GoalRotation = transform.rotation;
 
-        mFwd1 = Fwd1.transform.GetComponent<Renderer>().material;//material;
+        mFwd1 = Fwd1.transform.GetComponent<Renderer>().material;
         mFwd2 = Fwd2.transform.GetComponent<Renderer>().material;
         mFwd3 = Fwd3.transform.GetComponent<Renderer>().material;
         mBack1 = Back1.transform.GetComponent<Renderer>().material;
@@ -66,7 +75,7 @@ public class FlightController : SplitterEventListener
         {
             controllable = true;
             potentialController = other.transform;
-            
+
         }
     }
     private void OnTriggerExit(Collider other)
@@ -77,7 +86,7 @@ public class FlightController : SplitterEventListener
             controllable = false;
         }
     }
-    
+
     private void OnCollisionEnter(Collision other)
     {
         MaybeTakeHitToStabilization(other);
@@ -85,23 +94,37 @@ public class FlightController : SplitterEventListener
     private void OnCollisionStay(Collision other)
     {
 
-            MaybeTakeHitToStabilization(other);
+        MaybeTakeHitToStabilization(other);
     }
 
     private void MaybeTakeHitToStabilization(Collision other)
     {
+        //bail if this collision is from an object occurring within your simulation
         if (
-            potentialController == null
-            ||
-            other.gameObject.GetComponentInParent<RigidbodyFpsController>() == null
-            ||
-            other.gameObject.GetComponentInParent<RigidbodyFpsController>().transform.GetInstanceID() != potentialController.GetInstanceID()
+            transform.GetComponent<SplitterAnchor>() != null
+            &&
+            other.body.GetComponent<SplitterSubscriber>()
+            &&
+            transform.GetComponent<SplitterAnchor>().IsInMySimulation(other.body.GetComponent<SplitterSubscriber>())
+
         )
+            return;
+        
+        _FlightRotationWhenHit = GoalRotation;
+        GoalRotation = body.AppliedPhysics.rotation;
+        _target = body.AppliedPhysics.rotation;
+        StabilizationCapability = 0f;
+
+        if (potentialController != null && other.relativeVelocity.magnitude > 5f)
         {
-            _FlightRotationWhenHit = GoalRotation;
-            GoalRotation = body.AppliedPhysics.rotation;
-            _target = body.AppliedPhysics.rotation;
-            StabilizationCapability = 0f;
+            potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>().AddInput(new CameraShakeInput
+            {
+                Amplitude = .18f * other.relativeVelocity.magnitude / 1000f,
+                Frequency = 10f,
+                Decay = .8f,
+                Asymmetry = new Vector2(.8f, .64f),
+                startTime = Time.time
+            });
         }
     }
     void Update()
@@ -109,10 +132,45 @@ public class FlightController : SplitterEventListener
 
         HandlePilotSeat();
 
+        //merge autopilot input
+        _thrustInput += autopilotThrust.normalized;
+
         ThrustDisplayUpdate();
+
+        HandleThrustVisuals();
+
+        HandleCameraShake();
+
+        HandleShipSounds();
 
         DebugScene();
 
+        _thrustInput -= autopilotThrust.normalized;
+        autopilotThrust = Vector3.zero;
+        
+    }
+
+
+    public void HandleShipSounds()
+    {
+        if (_thrustInput.sqrMagnitude != 0f)
+            ShipEngine.enabled = true;
+        else
+            ShipEngine.enabled = false;
+    }
+    void HandleCameraShake()
+    {
+        if (potentialController != null && _thrustInput.sqrMagnitude != 0f)
+        {
+            potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>().AddInput(new CameraShakeInput
+            {
+                Amplitude = .0045f,
+                Frequency = 20,
+                Decay = .2f,
+                Asymmetry = new Vector2(.8f, .64f),
+                startTime = Time.time
+            });
+        }
     }
     void DebugScene()
     {
@@ -128,13 +186,20 @@ public class FlightController : SplitterEventListener
                 potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
                 _target = transform.rotation;
                 controllerLookTransform = potentialController.GetComponent<RigidbodyFpsController>().VerticalLook;
+                foreach (var light in InteriorLights)
+                {
+                    light.Switch(true);
+                }
             }
             else
             {
                 controllerLookTransform = null;
                 if (potentialController != null)
                     potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = false;
-
+                foreach (var light in InteriorLights)
+                {
+                    light.Switch(false);
+                }
             }
         }
     }
@@ -142,20 +207,37 @@ public class FlightController : SplitterEventListener
     private void LateUpdate()
     {
         //if(controlled)
-            
+
     }
     Quaternion _target;
-    
-    void ThrustDisplayUpdate() {
-        
+
+    void HandleThrustVisuals()
+    {
+        foreach (var eng in ForwardEngines)
+            eng.SetEngineOn(_thrustInput.z > 0);
+        foreach (var eng in BackEngines)
+            eng.SetEngineOn(_thrustInput.z < 0);
+        foreach (var eng in RightEngines)
+            eng.SetEngineOn(_thrustInput.x > 0);
+        foreach (var eng in LeftEngines)
+            eng.SetEngineOn(_thrustInput.x < 0);
+        foreach (var eng in UpEngines)
+            eng.SetEngineOn(_thrustInput.y > 0);
+        foreach (var eng in DownEngines)
+            eng.SetEngineOn(_thrustInput.y < 0);
+
+    }
+    void ThrustDisplayUpdate()
+    {
+
         thrustDisplay += Vector3.ClampMagnitude(_thrustInput - thrustDisplay, Time.fixedDeltaTime);
 
         mFwd1.SetColor(
-            "_EmissionColor", 
+            "_EmissionColor",
             Color.Lerp(
                 Color.black,
                 _initialThrustDisplayColor,
-                -thrustDisplay.z*3f
+                -thrustDisplay.z * 3f
             )
         );
         mFwd2.SetColor(
@@ -300,17 +382,12 @@ public class FlightController : SplitterEventListener
     }
     private void FixedUpdate()
     {
-
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            TestRotation();
-        }
         if (controlled)
         {
             Move();
-            
+
         }
-        
+
         SetDirection();
         Rotate();
 
@@ -320,7 +397,7 @@ public class FlightController : SplitterEventListener
     private Vector3 _thrust;
     private Vector3 _thrustInput;
     private void Move()
-    { 
+    {
 
 
         _thrustInput = Vector3.zero;
@@ -342,13 +419,16 @@ public class FlightController : SplitterEventListener
         _thrust = _thrustInput.normalized;
         _thrust = body.AppliedPhysics.rotation * _thrust;
 
+        //body.AppliedPhysics.AddForceAtPosition(_thrust * MoveForce * Time.fixedDeltaTime, gameObject.GetComponent<SplitterAnchor>().inclusiveWorldCenterOfMass(), ForceMode.Acceleration);
         body.AppliedPhysics.AddForce(_thrust * MoveForce * Time.fixedDeltaTime, ForceMode.Acceleration);
-        
+
     }
     Quaternion _FlightRotationWhenHit = Quaternion.identity;
     Stabilizer _simSubStabilizer;
     void SetDirection()
     {
+        
+
         if (!controllable)
         {
             GoalRotation = body.AppliedPhysics.rotation;
@@ -357,17 +437,17 @@ public class FlightController : SplitterEventListener
 
         if (controlled && (Input.GetKey(KeyCode.Tab) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E)))
         {
-            if(Input.GetKey(KeyCode.Tab))
+            if (Input.GetKey(KeyCode.Tab))
                 _target = controllerLookTransform.rotation;
 
-            if(Input.GetKey(KeyCode.Q))
-                _target = _target *Quaternion.AngleAxis(1f * RollSensitivity, Vector3.forward);
-            if(Input.GetKey(KeyCode.E))
-                _target = _target * Quaternion.AngleAxis(-1f * RollSensitivity, Vector3.forward);    
+            if (Input.GetKey(KeyCode.Q))
+                _target = _target * Quaternion.AngleAxis(1f * RollSensitivity, Vector3.forward);
+            if (Input.GetKey(KeyCode.E))
+                _target = _target * Quaternion.AngleAxis(-1f * RollSensitivity, Vector3.forward);
         }
 
         if (StabilizationCapability < 1f)
-            StabilizationCapability += Time.fixedDeltaTime / 2f;
+            StabilizationCapability += Time.fixedDeltaTime / 4f;
         if (StabilizationCapability > 1f)
             StabilizationCapability = 1f;
 
@@ -392,27 +472,11 @@ public class FlightController : SplitterEventListener
     }
     private void Rotate()
     {
-        
 
+        //Debug.Log("Rotating... stabilization is " + StabilizationCapability);
         //if(StabilizationCapability == 1f)
-            body.SmoothRotate(GoalRotation, maxRotateSpeed, rotateFactor, dampenFactor, Mathf.Pow(StabilizationCapability,4f));
-
-        /*if (Input.GetKey(KeyCode.Q))
-            body.AppliedPhysics.AddRelativeTorque(Vector3.forward * RollSensitivity, ForceMode.Acceleration);
-        if (Input.GetKey(KeyCode.E))
-            body.AppliedPhysics.AddRelativeTorque(-Vector3.forward * RollSensitivity, ForceMode.Acceleration);*/
+        body.SmoothRotate(GoalRotation, maxRotateSpeed, rotateFactor, dampenFactor, Mathf.Pow(StabilizationCapability, 4f));
 
     }
 
-
-    private void TestRotation()
-    {
-        body.AppliedPhysics.AddTorque(Vector3.one * 1000f, ForceMode.VelocityChange);
-    }
-    
-    private void OnDrawGizmos()
-    {
-        
-
-    }
 }

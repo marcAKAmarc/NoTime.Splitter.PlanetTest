@@ -1,12 +1,9 @@
 using NoTime.Splitter;
 using NoTime.Splitter.Demo;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using Random = UnityEngine.Random;
 
 [Serializable]
@@ -20,6 +17,13 @@ public class HitSoundData
     public float lowpassLow;
     public float lowpassHigh;
     public float pitchVariance;
+
+    [HideInInspector]
+    [DoNotSerialize]
+    public float lastHitTime;
+    [HideInInspector]
+    [DoNotSerialize]
+    public float hitMagnitude;
 }
 [Serializable]
 public class ScrapeSoundData
@@ -52,40 +56,59 @@ public class PhysicalSounds : MonoBehaviour
     }
     private void OnCollisionEnter(Collision collision)
     {
+        bool isScrape = Mathf.Abs(Vector3.Dot(collision.impulse, collision.relativeVelocity)) < .1f;
+        if (isScrape)
+            return;
 
-        for(int i = 0; i < HitSounds.Count; i++)
+        float thisMagnitude = collision.relativeVelocity.magnitude; // impulse.magnitude;
+        if (thisMagnitude < 1f)
+            return;
+
+        for (int i = 0; i < HitSounds.Count; i++)
         {
+
+            if (
+                Time.time - HitSounds[i].lastHitTime < .01f
+                &&
+                thisMagnitude < HitSounds[i].hitMagnitude
+            )
+                return;
+
+
             _vol = Mathf.Clamp(
-                collision.impulse.sqrMagnitude.Map(
-                    Mathf.Pow(HitSounds[i].valueLow, 2f),
+                thisMagnitude.Map(
+                    HitSounds[i].valueLow,
                     HitSounds[i].volumeLow,
-                    Mathf.Pow(HitSounds[i].valueHigh, 2f),
+                    HitSounds[i].valueHigh,
                     HitSounds[i].volumeHigh
                 ),
                 HitSounds[i].volumeLow,
                 HitSounds[i].volumeHigh
             );
             float _cutOff = Mathf.Clamp(
-                collision.impulse.sqrMagnitude.Map(
-                    Mathf.Pow(HitSounds[i].valueLow, 2f),
+                thisMagnitude.Map(
+                    HitSounds[i].valueLow,
                     HitSounds[i].lowpassLow,
-                    Mathf.Pow(HitSounds[i].valueHigh, 2f),
+                    HitSounds[i].valueHigh,
                     HitSounds[i].lowpassHigh
                 ),
                 HitSounds[i].lowpassLow,
                 HitSounds[i].lowpassHigh
             );
+            //Debug.Log(transform.name + "sound data - velocity: " + thisMagnitude.ToString("G6") + "; vol: " + _vol.ToString("G6") + "; ");
             if (_vol > .01f)
             {
+                HitSounds[i].hitMagnitude = thisMagnitude;
+                HitSounds[i].lastHitTime = Time.time;
 
                 _t = Instantiate(HitSounds[i].original, collision.contacts[0].point, Quaternion.identity, transform);
                 _t.GetComponent<AudioSource>().pitch += (Random.value * HitSounds[i].pitchVariance) - (HitSounds[i].pitchVariance / 2f);
                 _t.GetComponent<AudioSource>().volume = _vol;
-                if (_t.GetComponent<AudioLowPassFilter>()!=null)
+                if (_t.GetComponent<AudioLowPassFilter>() != null)
                 {
                     _t.GetComponent<AudioLowPassFilter>().cutoffFrequency = _cutOff;
                 }
-                
+
                 _t.gameObject.SetActive(true);
                 _t.GetComponent<AudioSource>().Play();
                 _SoundCache.Insert(0, _t.gameObject);
@@ -113,7 +136,7 @@ public class PhysicalSounds : MonoBehaviour
         {
             otherVel = collision.rigidbody.transform.GetComponent<SplitterSubscriber>().AppliedPhysics.GetPointVelocity(collision.contacts[0].point);
         }
-        else if(collision.rigidbody != null)
+        else if (collision.rigidbody != null)
         {
             otherVel = collision.rigidbody.GetPointVelocity(collision.contacts[0].point);
         }
@@ -131,7 +154,7 @@ public class PhysicalSounds : MonoBehaviour
 
         for (int i = 0; i < ScrapeSounds.Count; i++)
         {
-            
+
             _vol = Mathf.Clamp(
                 (otherVel - myVel).sqrMagnitude.Map(
                     Mathf.Pow(ScrapeSounds[i].valueLow, 2f),
@@ -143,7 +166,7 @@ public class PhysicalSounds : MonoBehaviour
                 ScrapeSounds[i].volumeHigh
             );
             float _cutOff = Mathf.Clamp(
-                (otherVel-myVel).sqrMagnitude.Map(
+                (otherVel - myVel).sqrMagnitude.Map(
                     Mathf.Pow(ScrapeSounds[i].valueLow, 2f),
                     ScrapeSounds[i].lowpassLow,
                     Mathf.Pow(ScrapeSounds[i].valueHigh, 2f),
@@ -191,7 +214,7 @@ public class PhysicalSounds : MonoBehaviour
             ScrapeSounds[i].goalVol -= ScrapeSounds[i].volDecayFactor * Time.deltaTime;
             if (ScrapeSounds[i].goalVol < ScrapeSounds[i].volumeLow)
                 ScrapeSounds[i].goalVol = ScrapeSounds[i].volumeLow;
-            if(ScrapeSounds[i].original.GetComponent<AudioLowPassFilter>() != null)
+            if (ScrapeSounds[i].original.GetComponent<AudioLowPassFilter>() != null)
             {
                 ScrapeSounds[i].original.GetComponent<AudioLowPassFilter>().cutoffFrequency =
                     Mathf.Lerp(ScrapeSounds[i].original.GetComponent<AudioLowPassFilter>().cutoffFrequency, ScrapeSounds[i].goalLowPass, Mathf.Clamp01(ScrapeSounds[i].volDecayFactor * Time.deltaTime));
@@ -199,9 +222,9 @@ public class PhysicalSounds : MonoBehaviour
                 if (ScrapeSounds[i].goalLowPass < ScrapeSounds[i].lowpassLow)
                     ScrapeSounds[i].goalLowPass = ScrapeSounds[i].lowpassLow;
             }
-            
-            
-            
+
+
+
         }
     }
 }
@@ -215,5 +238,27 @@ public static class floatExtensions
         return (val * m) + b;
 
         //return (val * (y2 - y1) / (x2 - x1)) + (y2 - (x2 * ((y2 - y1) / x2 - x1)));
+    }
+}
+
+public static class AudioExtensions
+{
+    public static float LinearToDecibel(float linear)
+    {
+        float dB;
+
+        if (linear != 0)
+            dB = 20.0f * Mathf.Log10(linear);
+        else
+            dB = -144.0f;
+
+        return dB;
+    }
+
+    public static float DecibelToLinear(float dB)
+    {
+        float linear = Mathf.Pow(10.0f, dB / 20.0f);
+
+        return linear;
     }
 }

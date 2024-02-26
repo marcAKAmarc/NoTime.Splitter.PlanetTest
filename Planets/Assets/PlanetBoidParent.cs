@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 
 public class PlanetBoidParent : MonoBehaviour
 {
@@ -23,7 +22,7 @@ public class PlanetBoidParent : MonoBehaviour
     void OnEnable()
     {
         Debug.Log("Enabled");
-        if(planetBoids != null)
+        if (planetBoids != null)
             Reset();
     }
     private void Init()
@@ -160,7 +159,7 @@ public class PlanetBoidParent : MonoBehaviour
             }
 
             //lit
-            for(i = 0; i <planetBoids.Count; i++)
+            for (i = 0; i < planetBoids.Count; i++)
             {
                 litRay.origin = planetBoids[i].transform.position;
                 litRay.direction = -SunLight.transform.forward;

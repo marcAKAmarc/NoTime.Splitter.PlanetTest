@@ -20,5 +20,5 @@ namespace NoTime.Splitter
             return Desc;
         }
     }
-    
+
 }

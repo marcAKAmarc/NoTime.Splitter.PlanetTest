@@ -10,19 +10,19 @@ namespace NoTime.Splitter
         //Event occurs for a subscriber when it enters an anchor
         public virtual void OnEnterAnchor(SplitterEvent evt)
         {
-           
+
         }
 
         //Event occurs for a subscriber when it exits an anchor
         public virtual void OnExitAnchor(SplitterEvent evt)
         {
-            
+
         }
 
         //Event occurs for anchor when it starts simulating
         public virtual void OnSimulationStart(SplitterEvent evt)
         {
-            
+
         }
     }
 }

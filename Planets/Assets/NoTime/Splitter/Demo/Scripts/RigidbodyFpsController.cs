@@ -1,7 +1,3 @@
-using NoTime.Splitter;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NoTime.Splitter.Demo
@@ -10,7 +6,8 @@ namespace NoTime.Splitter.Demo
     {
 
         public bool Grounded = true;
-        public float GroundedOffset = .67f;
+        public float GroundedOriginOffset = .67f;
+        public float GroundedOriginCastDistance = .67f;
         public float GroundedRadius = 0.45f;
         public LayerMask GroundLayers;
         public float WalkForce = 500f;
@@ -58,30 +55,13 @@ namespace NoTime.Splitter.Demo
         Vector3 GravityForce = Vector3.zero;
         private void FixedUpdate()
         {
-            //_rotation = body.rotation;
 
             GroundCheck();
 
-            /*GravityForce = Vector3.zero;
-            foreach (var go in GameObject.FindGameObjectsWithTag("GravitySource"))
-            {
-                GravityForce +=
-                    (9.8f * 99f / (go.transform.position - transform.position).sqrMagnitude)
-                    * (go.transform.position - transform.position).normalized;
-            }
-
-            body.AddForce(GravityForce);*/
-
             Look();
 
-            if(_rotateToGravity)
+            if (_rotateToGravity)
                 AlignRotationWithGravity();
-
-            
-
-            
-
-            //body.MoveRotation(_rotation);
 
             Move();
 
@@ -92,7 +72,7 @@ namespace NoTime.Splitter.Demo
             Jetpack();
 
             //sticky
-            EnforceMinimumMovementDistance();
+            //EnforceMinimumMovementDistance();
 
             //friction
             FrictionAndSlowdown();
@@ -137,12 +117,20 @@ namespace NoTime.Splitter.Demo
         }
 
         public bool _rotateToGravity = true;
-        
+
         private void EnforceMinimumMovementDistance()
         {
             if (Grounded && !Moved)
             {
-                if (
+                if (body.GetSimulationBody() != null
+                    &&
+                    body.GetSimulationBody().velocity.sqrMagnitude < Mathf.Pow(MinimumMovementDistance, 2f)
+                )
+                {
+                    body.AppliedPhysics.AddForce(-(body.GetSimulationBody().velocity.magnitude * body.AppliedPhysics.velocity.normalized), ForceMode.VelocityChange);
+                }
+
+                else if (
                     previousPosition != null
                     && (previousPosition - body.AppliedPhysics.position).sqrMagnitude < MinimumMovementDistance * MinimumMovementDistance
                 )
@@ -152,14 +140,26 @@ namespace NoTime.Splitter.Demo
             }
         }
 
+        Vector3 fricVel;
+        Vector3 normalDir;
         private void FrictionAndSlowdown()
         {
+            if (body.GetSimulationBody() != null)
+                fricVel = body.GetSimulationBody().velocity;
+            else
+                fricVel = body.AppliedPhysics.velocity;
+
+            if (body.GetSimulationBody() != null)
+                normalDir = body.Anchor.WorldDirectionToAnchorDirection(GravityForce.normalized);
+            else
+                normalDir = GravityForce.normalized;
+
             if (Grounded &&
                     (
                         !Moved
                         ||
                         //going faster than maxwalkspeed
-                        Vector3.ProjectOnPlane(body.AppliedPhysics.velocity, GravityForce.normalized).sqrMagnitude > MaxWalkSpeed * MaxWalkSpeed
+                        Vector3.ProjectOnPlane(fricVel, normalDir).sqrMagnitude > Mathf.Pow(MaxWalkSpeed, 2f)
                      )
             )
                 body.AppliedPhysics.drag = StopForce;
@@ -197,14 +197,26 @@ namespace NoTime.Splitter.Demo
             //set collider layer to tmpExclue
             _oldLayer = gameObject.layer;
             gameObject.layer = 31;
-            _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOffset);
-            Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, _spherePos - body.AppliedPhysics.position, out _hit, GroundedOffset, GroundLayers, QueryTriggerInteraction.Ignore);
+            _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOriginOffset);
+            Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, (_spherePos - body.AppliedPhysics.position).normalized, out _hit, GroundedOriginCastDistance, GroundLayers, QueryTriggerInteraction.Ignore);
             if (Grounded)
             {
-                //body.AppliedPhysics.MovePosition(transform.position + ((_spherePos - _hit.point).normalized * GroundedRadius*.9f));
+
+                body.AppliedPhysics.MovePosition(
+                        body.AppliedPhysics.position +
+                        (
+                            (_spherePos - _hit.point).normalized //dir away
+                            *
+                            .01f
+                        )
+
+
+                /*+ (
+                    (_spherePos - _hit.point).normalized * GroundedRadius*.9f));*/
+                );
             }
-            
-            
+
+
             gameObject.layer = _oldLayer;
         }
 
@@ -214,8 +226,8 @@ namespace NoTime.Splitter.Demo
                 return;
             GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityAcceleration;
             Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);
-            body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f 
-                
+            body.AppliedPhysics.MoveRotation(Quaternion.Slerp(body.AppliedPhysics.rotation, target * body.AppliedPhysics.rotation, .1f
+
             ));
         }
 
@@ -237,7 +249,7 @@ namespace NoTime.Splitter.Demo
 
         private void SpaceRotate()
         {
-            if(transform.GetComponent<GravityObject>().GravityAcceleration == 0f)
+            if (transform.GetComponent<GravityObject>().GravityAcceleration == 0f)
                 body.SmoothRotate(VerticalLook.rotation, 5f, .5f, .2f, 1f);
 
             /*if (Input.GetKey(KeyCode.Q))
@@ -253,22 +265,22 @@ namespace NoTime.Splitter.Demo
             Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
             Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
 
-            if (Grounded) 
+            if (Grounded)
                 Gizmos.color = transparentGreen;
-            else 
+            else
                 Gizmos.color = transparentRed;
             if (body != null)
             {
                 //draw ground collider
-                Gizmos.DrawSphere(body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOffset), GroundedRadius);
+                Gizmos.DrawSphere(body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOriginOffset), GroundedRadius);
             }
             else
             {
-                Gizmos.DrawSphere(transform.position + (transform.rotation * -Vector3.up * GroundedOffset), GroundedRadius);
+                Gizmos.DrawSphere(transform.position + (transform.rotation * -Vector3.up * GroundedOriginOffset), GroundedRadius);
             }
         }
 
-        
+
 
         public override void OnEnterAnchor(SplitterEvent evt)
         {

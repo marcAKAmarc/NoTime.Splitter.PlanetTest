@@ -1,8 +1,5 @@
 using NoTime.Splitter;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class Stabilizer : SplitterSubscriber
 {
@@ -12,11 +9,11 @@ public class Stabilizer : SplitterSubscriber
     public float DampenFactor;
     private Quaternion GoalRotation;
     public float Capability;
-    
+
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     public void SetGoalToTargetRotation()

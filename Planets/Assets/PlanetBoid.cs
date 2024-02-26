@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -45,7 +44,7 @@ public class PlanetBoid : MonoBehaviour
     private bool nearAnyAvoidances = false;
     public void Wrap(Vector3 position, float distance)
     {
-        if((transform.position - position).sqrMagnitude > Mathf.Pow(distance, 2f))
+        if ((transform.position - position).sqrMagnitude > Mathf.Pow(distance, 2f))
         {
             Hidden = true;
             HiddenAlpha = 0f;
@@ -57,7 +56,7 @@ public class PlanetBoid : MonoBehaviour
 
             inAnyAvoidances = boidParent.dustAvoidanceReporter.avoidances.Any(c => c.bounds.Contains(transform.position));
             nearAnyAvoidances = boidParent.dustAvoidanceReporter.avoidances.Any(
-                            c => (transform.position - c.ClosestPointOnBounds(transform.position)).sqrMagnitude < Mathf.Pow(CrowdingDistance, 2f)     
+                            c => (transform.position - c.ClosestPointOnBounds(transform.position)).sqrMagnitude < Mathf.Pow(CrowdingDistance, 2f)
                     );
             dbPreviousSpawn = transform.position;
             dbColor = Color.white;
@@ -67,7 +66,7 @@ public class PlanetBoid : MonoBehaviour
                 _placementAttempts <= _maxPlacementAttempts
                 &&
                 (
-                    inAnyAvoidances 
+                    inAnyAvoidances
                     ||
                     nearAnyAvoidances
                 )
@@ -133,10 +132,10 @@ public class PlanetBoid : MonoBehaviour
     {
 
         GoalDir = (
-            (AvoidanceDir*AvoidanceWeight)
-            +(AwayDir*CrowdingWeight) 
-            +(boidParent.avgFacingDirection * GroupDirectionWeight) 
-            + ((boidParent.avgPosition-transform.position).normalized*GroupCenterWeight)
+            (AvoidanceDir * AvoidanceWeight)
+            + (AwayDir * CrowdingWeight)
+            + (boidParent.avgFacingDirection * GroupDirectionWeight)
+            + ((boidParent.avgPosition - transform.position).normalized * GroupCenterWeight)
         ).normalized;
 
         if (GoalDir != Vector3.zero)
@@ -148,7 +147,7 @@ public class PlanetBoid : MonoBehaviour
             );
         }
         //advance
-        
+
         transform.position += transform.forward * Speed * Time.deltaTime;
         planetToMe = (transform.position - planet.position).normalized;
         transform.position = planet.position + planetToMe * distanceFromPlanet;
@@ -165,6 +164,6 @@ public class PlanetBoid : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = dbColor;
-        Gizmos.DrawWireSphere(dbPreviousSpawn,.5f);
+        Gizmos.DrawWireSphere(dbPreviousSpawn, .5f);
     }
 }

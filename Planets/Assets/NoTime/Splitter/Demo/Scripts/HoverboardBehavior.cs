@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -61,7 +60,7 @@ public class HoverboardBehavior : MonoBehaviour
                         ).y;
 
                     speedTowardCollider = Mathf.Pow((speedTowardCollider + AirSpeed) /
-                        (2 * AirSpeed),2);
+                        (2 * AirSpeed), 2);
                     if (speedTowardCollider < 0)
                         speedTowardCollider = 0f;
 
@@ -84,7 +83,7 @@ public class HoverboardBehavior : MonoBehaviour
                         body.velocity = Vector3.forward * .0000001f;
                     body.velocity += body.velocity.normalized * Time.fixedDeltaTime * .5f;
                 }
-                
+
                 //if no rider and on flat and velocity isn't pretty much zero, subtract some
                 if (collisions == 0)
                 {

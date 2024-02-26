@@ -1,10 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 
 [ExecuteInEditMode]
-public class SkyboxBlender : MonoBehaviour {
+public class SkyboxBlender : MonoBehaviour
+{
 
     [SerializeField] public enum BlendMode { Linear, Smoothstep, Maximum, Add, Substract, Multiply }
     [SerializeField] public enum ProbeResolution { _16, _32, _64, _128, _256, _512, _1024, _2048 }
@@ -15,12 +14,12 @@ public class SkyboxBlender : MonoBehaviour {
 
     //[Header("Blended Skybox")]
     [SerializeField] public Material blendedSkybox;
-    [SerializeField] [Range(0, 8)] public float exposure = 1;
-    [SerializeField] [Range(0, 360)] public float rotation = 0;
+    [SerializeField][Range(0, 8)] public float exposure = 1;
+    [SerializeField][Range(0, 360)] public float rotation = 0;
     [SerializeField] public Color tint = Color.white;
-    [SerializeField] [Range(0, 1)] public float invertColors = 0;
+    [SerializeField][Range(0, 1)] public float invertColors = 0;
     [SerializeField] public BlendMode blendMode = BlendMode.Linear;
-    [SerializeField] [Range(0, 1)] public float blend = 0;
+    [SerializeField][Range(0, 1)] public float blend = 0;
     private float previousBlend = 0f;
 
     [SerializeField] public bool bindOnStart = true;
@@ -39,7 +38,8 @@ public class SkyboxBlender : MonoBehaviour {
     #region MonoBehaviour Functions
 
     // Use this for initialization
-    void Start () {
+    void Start()
+    {
 
         if (bindOnStart)
             BindTextures();
@@ -53,9 +53,10 @@ public class SkyboxBlender : MonoBehaviour {
         if (updateReflectionsOnStart)
             UpdateReflections();
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update()
+    {
 
         //Update material parameters
         UpdateBlendedMaterialParameters();
@@ -68,7 +69,7 @@ public class SkyboxBlender : MonoBehaviour {
         if (updateReflectionsEveryFrame)
             UpdateReflections();
     }
-    
+
     /*
     private void OnValidate()
     {
@@ -79,7 +80,7 @@ public class SkyboxBlender : MonoBehaviour {
     }
     */
 
-    #endregion 
+    #endregion
 
     /// <summary>
     /// Get the probe resolution value
@@ -143,7 +144,7 @@ public class SkyboxBlender : MonoBehaviour {
     /// </summary>
     public void UpdateReflectionProbe()
     {
-        if (!probeGameObject|| !probeComponent)
+        if (!probeGameObject || !probeComponent)
             CreateReflectionProbe();
 
         probeComponent.resolution = GetProbeResolution(reflectionResolution);

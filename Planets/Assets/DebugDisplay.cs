@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +15,7 @@ public class DebugDisplay : MonoBehaviour
     {
         frameCount += 1;
         timeSinceUiUpdate += Time.deltaTime;
-        if(timeSinceUiUpdate > UpdateUiTime)
+        if (timeSinceUiUpdate > UpdateUiTime)
         {
             fps = frameCount / timeSinceUiUpdate;
             frameCount = 0;
