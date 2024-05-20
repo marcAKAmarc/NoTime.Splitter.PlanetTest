@@ -56,6 +56,8 @@ public class AtmosphereData
     public float PlanetAtmosphereShiftMultiplier;
     public float PlanetAtmosphereShiftScaler;
     public Vector3 _initialScale;
+    public Color EnvironmentalLightingColorDay;
+    public Color EnvironmentalLightingColorNight;
 }
 
 [Serializable]
@@ -102,6 +104,7 @@ public class PlanetFX : MonoBehaviour
     //public float FlareAlpha;
     public Color FlareColor;
     public float sunObjDistance;
+    public Color DefaultEnvironmentalLightingColor;
     public List<FacadeData> Facades;
     public bool DustActive;
     public List<DustData> Dust;
@@ -273,6 +276,7 @@ public class PlanetFX : MonoBehaviour
                 AtmosphereBlender.exposure = positionalExposure;
                 AtmosphereBlender.tint = new Color(tint.r, tint.g, tint.b, 1f);
                 AtmosphereBlender.blend = positionalBlend;
+                //RenderSettings.subtractiveShadowColor = Color.Lerp(Color.black, Color.Lerp(Color.blue, Color.white, .5f), positionalBlend);
                 SunFlare.sharedMaterial.color = flareColor;
                 SunModel.sharedMaterial.color = sunColor;
                 SunModel.sharedMaterial.SetColor("_EmissionColor",
@@ -286,29 +290,36 @@ public class PlanetFX : MonoBehaviour
                    flareColor.b,
                    flareAlpha
                 );*/
+
+                //Debug.Log("active zone factor: " + activeZoneFactor.ToString("G6"));
+                //environmental lighting
+                RenderSettings.ambientLight = Color.Lerp(
+                    Color.Lerp(ad.EnvironmentalLightingColorNight,ad.EnvironmentalLightingColorDay, dayNightFactor),
+                    DefaultEnvironmentalLightingColor,
+                    activeZoneFactor
+                );
             }
+            
 
             ad.PlanetAtmosphereTexture.rotation = Quaternion.LookRotation((ad.PlanetTransform.position - transform.position).normalized);
             ad.PlanetSurfaceAtmosphereTexture.rotation = ad.PlanetAtmosphereTexture.rotation;
             float angle = (Mathf.Deg2Rad * 90f) - Mathf.Acos(ad.nearRadius / x);
             //Debug.Log("angle: " + angle.ToString());
-            ad.PlanetAtmosphereTexture.localScale = ad._initialScale * x * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(ad.nearRadius / x)) / ad.nearRadius;
+            ad.PlanetAtmosphereTexture.localScale = ad._initialScale * x * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(Mathf.Clamp01(ad.nearRadius / x))) / ad.nearRadius;
 
             //SHIFT VALUE
             float shiftFactor = 1f - Mathf.Abs(Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward));
-            float shiftDistance = x * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(ad.nearRadius / x)) * ad.PlanetAtmosphereShiftMultiplier;
+            float shiftDistance = Mathf.Max(x, ad.nearRadius/.9f) * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(Mathf.Min(ad.nearRadius / x, .9f))) * ad.PlanetAtmosphereShiftMultiplier;
 
 
 
-            ad.PlanetAtmosphereTexture.localScale = ad.PlanetAtmosphereTexture.localScale * (
+            ad.PlanetAtmosphereTexture.localScale = /*ad.PlanetAtmosphereTexture.localScale **/Vector3.one * (
                 ad.PlanetAtmosphereShiftScaler - (shiftDistance / ad.farRadius)
             );
 
             ad.PlanetAtmosphereTexture.position = ad.PlanetTransform.position + (
                 -SunLight.forward * shiftDistance
             );
-
-
         }
     }
     private void FacadesPreRender()

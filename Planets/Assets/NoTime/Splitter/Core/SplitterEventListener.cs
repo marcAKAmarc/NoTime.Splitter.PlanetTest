@@ -24,5 +24,36 @@ namespace NoTime.Splitter
         {
 
         }
+
+        //Event occurs for Subscriber and Anchor 
+        public virtual void OnSimulationTriggerEnter(SplitterEvent evt)
+        {
+
+        }
+
+        public virtual void OnSimulationCollisionEnter(SplitterEvent evt)
+        {
+
+        }
+
+        public virtual void OnSimulationTriggerStay(SplitterEvent evt)
+        {
+
+        }
+
+        public virtual void OnSimulationCollisionStay(SplitterEvent evt)
+        {
+
+        }
+
+        public virtual void OnSimulationTriggerExit(SplitterEvent evt)
+        {
+
+        }
+
+        public virtual void OnSimulationCollisionExit(SplitterEvent evt)
+        {
+
+        }
     }
 }

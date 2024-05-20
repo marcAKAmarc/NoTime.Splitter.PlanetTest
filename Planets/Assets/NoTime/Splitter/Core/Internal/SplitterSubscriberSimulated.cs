@@ -66,5 +66,53 @@ namespace NoTime.Splitter.Internal
         }
 
 
+        //Pass through events
+        private void OnCollisionEnter(Collision collision)
+        {
+            //Debug.Log("splitter Col enter");
+            Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
+            {
+                x.SendMessage("OnSimulationCollisionEnter", new SplitterEvent
+                {
+                    Anchor = this.Anchor,
+                    SimulatedSubscriber = this.transform,
+                    Subscriber = Authentic,
+                    SimulatedAnchor = null,
+                    Collision = collision
+                }, SendMessageOptions.DontRequireReceiver);
+            });
+        }
+
+        private void OnCollisionStay(Collision collision)
+        {
+            //Debug.Log("splitter Col Stay");
+            Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
+            {
+                x.SendMessage("OnSimulationCollisionStay", new SplitterEvent
+                {
+                    Anchor = this.Anchor,
+                    SimulatedSubscriber = this.transform,
+                    Subscriber = Authentic,
+                    SimulatedAnchor = null,
+                    Collision = collision
+                }, SendMessageOptions.DontRequireReceiver);
+            });
+        }
+
+        private void OnCollisionExit(Collision collision)
+        {
+            Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
+            {
+                x.SendMessage("OnSimulationCollisionExit", new SplitterEvent
+                {
+                    Anchor = this.Anchor,
+                    SimulatedSubscriber = this.transform,
+                    Subscriber = Authentic,
+                    SimulatedAnchor = null,
+                    Collision = collision
+                }, SendMessageOptions.DontRequireReceiver);
+            });
+        }
+
     }
 }

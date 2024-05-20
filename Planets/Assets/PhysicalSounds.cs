@@ -23,7 +23,7 @@ public class HitSoundData
     public float lastHitTime;
     [HideInInspector]
     [DoNotSerialize]
-    public float hitMagnitude;
+    public float hitSqrMagnitude;
 }
 [Serializable]
 public class ScrapeSoundData
@@ -54,14 +54,11 @@ public class PhysicalSounds : MonoBehaviour
         _SoundCache = new List<GameObject>();
         _timers = new List<float>();
     }
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnterSounds(Vector3 worldPoint, float impulseSquareMagnitude)
     {
-        bool isScrape = Mathf.Abs(Vector3.Dot(collision.impulse, collision.relativeVelocity)) < .1f;
-        if (isScrape)
-            return;
+        Debug.Log("enter sounds");
 
-        float thisMagnitude = collision.relativeVelocity.magnitude; // impulse.magnitude;
-        if (thisMagnitude < 1f)
+        if (impulseSquareMagnitude < 1f)
             return;
 
         for (int i = 0; i < HitSounds.Count; i++)
@@ -70,38 +67,43 @@ public class PhysicalSounds : MonoBehaviour
             if (
                 Time.time - HitSounds[i].lastHitTime < .01f
                 &&
-                thisMagnitude < HitSounds[i].hitMagnitude
+                impulseSquareMagnitude < HitSounds[i].hitSqrMagnitude
             )
                 return;
 
+            //Debug.Log("MAG: " + Mathf.Sqrt(impulseSquareMagnitude).ToString());
 
             _vol = Mathf.Clamp(
-                thisMagnitude.Map(
-                    HitSounds[i].valueLow,
+                impulseSquareMagnitude.Map(
+                    //HitSounds[i].valueLow,
+                    Mathf.Pow(HitSounds[i].valueLow, 2),
                     HitSounds[i].volumeLow,
-                    HitSounds[i].valueHigh,
+                    //HitSounds[i].valueHigh,
+                    Mathf.Pow(HitSounds[i].valueHigh, 2),
                     HitSounds[i].volumeHigh
                 ),
                 HitSounds[i].volumeLow,
                 HitSounds[i].volumeHigh
             );
             float _cutOff = Mathf.Clamp(
-                thisMagnitude.Map(
-                    HitSounds[i].valueLow,
+                impulseSquareMagnitude.Map(
+                    //HitSounds[i].valueLow,
+                    Mathf.Pow(HitSounds[i].valueLow, 2),
                     HitSounds[i].lowpassLow,
-                    HitSounds[i].valueHigh,
+                    //HitSounds[i].valueHigh,
+                    Mathf.Pow(HitSounds[i].valueHigh, 2),
                     HitSounds[i].lowpassHigh
                 ),
                 HitSounds[i].lowpassLow,
                 HitSounds[i].lowpassHigh
             );
-            //Debug.Log(transform.name + "sound data - velocity: " + thisMagnitude.ToString("G6") + "; vol: " + _vol.ToString("G6") + "; ");
+            //Debug.Log(transform.name + "sound data - impulse mag: " + Mathf.Sqrt(impulseSquareMagnitude).ToString("G6") + "; vol: " + _vol.ToString("G6") + "; ");
             if (_vol > .01f)
             {
-                HitSounds[i].hitMagnitude = thisMagnitude;
+                HitSounds[i].hitSqrMagnitude = impulseSquareMagnitude;
                 HitSounds[i].lastHitTime = Time.time;
 
-                _t = Instantiate(HitSounds[i].original, collision.contacts[0].point, Quaternion.identity, transform);
+                _t = Instantiate(HitSounds[i].original, worldPoint, Quaternion.identity, transform);
                 _t.GetComponent<AudioSource>().pitch += (Random.value * HitSounds[i].pitchVariance) - (HitSounds[i].pitchVariance / 2f);
                 _t.GetComponent<AudioSource>().volume = _vol;
                 if (_t.GetComponent<AudioLowPassFilter>() != null)
@@ -124,11 +126,57 @@ public class PhysicalSounds : MonoBehaviour
         }
     }
 
+    private bool CollisionIsScrape(Vector3 impulse, Vector3 relativeVelocity)
+    {
+        return Mathf.Abs(Vector3.Dot(impulse.normalized, relativeVelocity.normalized)) < .2f;
+    }
+
     float scrapeVol;
     Vector3 otherVel;
     Vector3 myVel;
-    private void OnCollisionStay(Collision collision)
+    private void OnCollisionStaySounds(Vector3 worldPoint, float impulseSquareMagnitude, float pointRelativeVelocitySquareMagnitude)
     {
+        for (int i = 0; i < ScrapeSounds.Count; i++)
+        {
+
+            _vol = Mathf.Clamp(
+                pointRelativeVelocitySquareMagnitude.Map(
+                    Mathf.Pow(ScrapeSounds[i].valueLow, 2f),
+                    ScrapeSounds[i].volumeLow,
+                    Mathf.Pow(ScrapeSounds[i].valueHigh, 2f),
+                    ScrapeSounds[i].volumeHigh
+                ),
+                ScrapeSounds[i].volumeLow,
+                ScrapeSounds[i].volumeHigh
+            );
+            float _cutOff = Mathf.Clamp(
+                pointRelativeVelocitySquareMagnitude.Map(
+                    Mathf.Pow(ScrapeSounds[i].valueLow, 2f),
+                    ScrapeSounds[i].lowpassLow,
+                    Mathf.Pow(ScrapeSounds[i].valueHigh, 2f),
+                    ScrapeSounds[i].lowpassHigh
+                ),
+                ScrapeSounds[i].lowpassLow,
+                ScrapeSounds[i].lowpassHigh
+            );
+            if (_vol > .008f)
+            {
+
+                _t = ScrapeSounds[i].original;
+                ScrapeSounds[i].goalVol = _vol;
+                ScrapeSounds[i].goalLowPass = _cutOff;
+
+            }
+            else
+            {
+                _t = ScrapeSounds[i].original;
+                ScrapeSounds[i].goalVol = ScrapeSounds[i].volumeLow;
+                ScrapeSounds[i].goalLowPass = ScrapeSounds[i].lowpassLow;
+            }
+        }
+        
+        /*
+        //Debug.Log("stay sounds");
         if (collision.transform.GetComponentInParent<RigidbodyFpsController>() != null)
             return;
 
@@ -189,9 +237,61 @@ public class PhysicalSounds : MonoBehaviour
                 ScrapeSounds[i].goalVol = ScrapeSounds[i].volumeLow;
                 ScrapeSounds[i].goalLowPass = ScrapeSounds[i].lowpassLow;
             }
+        }*/
+    }
+
+    public void OnCollisionEnter(Collision collision)
+    {
+        if(CollisionIsNatural(collision)
+            && !CollisionIsScrape(collision.impulse, collision.relativeVelocity)
+        )
+        {
+            OnCollisionEnterSounds(
+                collision.contacts[0].point,
+                collision.impulse.sqrMagnitude
+            );
+        }
+    }
+    public void OnCollisionStay(Collision collision)
+    {
+        if (CollisionIsNatural(collision)
+            && CollisionIsScrape(collision.impulse, collision.relativeVelocity)
+        )
+        {
+            OnCollisionStaySounds(
+                collision.contacts[0].point,
+                collision.impulse.sqrMagnitude,
+                (
+                    collision.contacts[0].thisCollider.attachedRigidbody.GetPointVelocity(collision.contacts[0].point)
+                    -
+                    collision.contacts[0].otherCollider.attachedRigidbody.GetPointVelocity(collision.contacts[0].point)
+                ).sqrMagnitude
+            );
         }
     }
 
+    public void OnSimulationCollisionEnter(SplitterEvent evt)
+    {
+        if(!CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+            OnCollisionEnterSounds(
+                evt.Anchor.AnchorPointToWorldPoint(evt.Collision.contacts[0].point),
+                evt.Collision.impulse.sqrMagnitude
+            );
+    }
+
+    public void OnSimulationCollisionStay(SplitterEvent evt)
+    {
+        if (CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+            OnCollisionStaySounds(
+                evt.Anchor.AnchorPointToWorldPoint(evt.Collision.contacts[0].point),
+                evt.Collision.impulse.sqrMagnitude,
+                (
+                    evt.Collision.contacts[0].thisCollider.attachedRigidbody.GetPointVelocity(evt.Collision.contacts[0].point) 
+                    -
+                    evt.Collision.contacts[0].otherCollider.attachedRigidbody.GetPointVelocity(evt.Collision.contacts[0].point)
+                ).sqrMagnitude
+            );
+    }
 
     void Update()
     {
@@ -226,6 +326,37 @@ public class PhysicalSounds : MonoBehaviour
 
 
         }
+    }
+
+    private bool CollisionIsNatural(Collision collision)
+    {
+        //i am subscriber of collider's anchor
+        if (transform.GetComponent<SplitterSubscriber>() != null
+            && transform.GetComponent<SplitterSubscriber>().Simulating()
+            && collision.rigidbody.GetComponent<SplitterAnchor>()
+            && collision.rigidbody.GetComponent<SplitterAnchor>().IsInMySimulation(transform.GetComponent<SplitterSubscriber>())
+        )
+            return false;
+
+        //i am anchor of collider's subscriber
+        if (transform.GetComponent<SplitterAnchor>() != null &&
+            collision.rigidbody.transform.GetComponent<SplitterSubscriber>() != null
+            && transform.GetComponent<SplitterAnchor>().IsInMySimulation(
+                collision.collider.transform.GetComponent<SplitterSubscriber>()
+            )
+         )
+            return false;
+
+        //we are subscribers with shared anchor
+        if (transform.GetComponent<SplitterSubscriber>() != null
+            && collision.rigidbody.GetComponent<SplitterSubscriber>() != null
+            && transform.GetComponent<SplitterSubscriber>().Simulating()
+            && collision.rigidbody.GetComponent<SplitterSubscriber>().Simulating()
+            && transform.GetComponent<SplitterSubscriber>().Anchor.gameObject == collision.rigidbody.GetComponent<SplitterSubscriber>().Anchor.gameObject
+        )
+            return false;
+
+        return true;
     }
 }
 

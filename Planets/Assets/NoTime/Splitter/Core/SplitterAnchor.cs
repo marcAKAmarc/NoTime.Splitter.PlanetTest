@@ -336,6 +336,8 @@ namespace NoTime.Splitter
         }
         private void SetupLocalTransformSyncCache(SplitterSubscriber subscriber, GameObject newGo)
         {
+            //!!!!!!!!!!!!!!!!
+
             List<MatchedTransform> Matches = new List<MatchedTransform>();
 
 
@@ -1004,13 +1006,13 @@ namespace NoTime.Splitter
 
             _iterator = 0;
             //i think this should simply just be done for every transform instead of having an user defined explicit list
-            for (_iterator = 0; _iterator < PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId].Count; _iterator++)
+            /*for (_iterator = 0; _iterator < PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId].Count; _iterator++)
             {
                 PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localRotation =
                     PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].physicsTransform.localRotation;
                 PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].mainTransform.localPosition =
                     PhysicsGoIdToLocalSyncs[_physGoOfSubscriberInstanceId][_iterator].physicsTransform.localPosition;
-            }
+            }*/
         }
 
         public void SyncSubscriberRigidbody(GameObject mainGo)

@@ -9,6 +9,8 @@ namespace NoTime.Splitter
         public SplitterSubscriber Subscriber;
         public Transform SimulatedSubscriber;
 
+        public Collision Collision;
+
         private string Desc;
         public override string ToString()
         {

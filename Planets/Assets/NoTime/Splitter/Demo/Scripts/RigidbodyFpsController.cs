@@ -282,7 +282,7 @@ namespace NoTime.Splitter.Demo
 
 
 
-        public override void OnEnterAnchor(SplitterEvent evt)
+        /*public override void OnEnterAnchor(SplitterEvent evt)
         {
             this._verticalLook = evt.SimulatedSubscriber.GetComponent<RigidbodyFpsController>().VerticalLook;
         }
@@ -290,7 +290,7 @@ namespace NoTime.Splitter.Demo
         public override void OnExitAnchor(SplitterEvent evt)
         {
             this._verticalLook = VerticalLook;
-        }
+        }*/
     }
 }
 

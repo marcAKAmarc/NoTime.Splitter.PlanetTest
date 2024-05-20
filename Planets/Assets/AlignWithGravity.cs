@@ -5,6 +5,7 @@ public class AlignWithGravity : SplitterEventListener
 {
     private Vector3 GravityForce;
     public SplitterSubscriber body;
+    public float force;
     // Start is called before the first frame update
     public void Start()
     {
@@ -20,8 +21,10 @@ public class AlignWithGravity : SplitterEventListener
             Quaternion.Slerp(
                 body.AppliedPhysics.rotation,
                 target * body.AppliedPhysics.rotation,
-                .1f * Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
+                .05f * Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
         ));
+
+        
     }
 
     private void FixedUpdate()

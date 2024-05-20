@@ -10,8 +10,10 @@ Shader "Custom/CustomPlanetShader2"
         _AtmDepthColor ("Atmosphere Color at Depth", Color) = (0, 0, 0, 1)
         _AtmSurfaceColor ("Atmosphere Color at Surface", Color) = (0, 0, 0, 1)
         _AtmDepth ("Atmosphere Depth", float) = 100
+        _PlanetRadiusFudge("Planet Radius Fudge", float) = 0
         _SurfaceAdjust("Surface Adjust", float) = 200
         _SurfaceAlphaAdjust("Surface Alpha Adjust", float) = 2
+        _ColorMultiply("Color Multiply", float) = 1
         _HaloAdjust ("Halo Adjust", float) = 100
         _HaloAlphaAdjust ("Halo Alpha Adjust", float) = 1
         _Fudge("Fudge", float) = 1
@@ -26,12 +28,13 @@ Shader "Custom/CustomPlanetShader2"
 
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend("Source Blend", float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend("Destination Blend", float) = 1
+        [Enum(UnityEngine.Rendering.BlendOp)] _BlendOp("Blend Operation", float) = 1
     }
     SubShader
     {
         Tags { "Queue"="Overlay" "RenderType" = "Transparent"}
         Blend[_SrcBlend][_DstBlend]
-
+        BlendOp [_BlendOp]
         Pass
         {
             CGPROGRAM
@@ -41,7 +44,7 @@ Shader "Custom/CustomPlanetShader2"
             float4 _AtmDepthColor;
             float4 _AtmSurfaceColor;
             float _AtmDepth;
-
+            float _PlanetRadiusFudge;
             float4 _finalColor;
             float _theta;
             float _opposite;
@@ -59,6 +62,7 @@ Shader "Custom/CustomPlanetShader2"
             float _HaloAdjust;
             float _HaloAlphaAdjust;
             float _AlphaFudge;
+            float _ColorMultiply;
             float _darkAlpha;
             float _m;
             float _b;
@@ -110,12 +114,11 @@ Shader "Custom/CustomPlanetShader2"
             half4 frag(v2f i) : SV_Target
             {
                 /*static const ?   once per draw*/
-                _atmRadius = length(i.texelPosition - i.objectOrigin);
+                _atmRadius = length(i.texelPosition - i.objectOrigin) + _PlanetRadiusFudge;
 
                 // apply fog
                 _theta = acos(dot(normalize(i.objectOrigin - _WorldSpaceCameraPos), normalize(i.texelPosition - _WorldSpaceCameraPos)));
-                //_opposite = tan(_theta) * (i.cameraDistObjectOrigin);
-                //_opposite = 2 * i.cameraDistObjectOrigin * ( -1 / tan(_theta) +  1/ sin(_theta));
+
                 _opposite = (_atmRadius - _AtmDepth) * cos(  PI / 2 + _theta - asin(tan(_theta) * i.cameraDistObjectOrigin * sin(PI / 2 - _theta) / (_atmRadius - _AtmDepth)));
                 _opposite = clamp(_opposite, 0, (_atmRadius - _AtmDepth));
                 _height =   (_atmRadius - _AtmDepth) * sin(  PI / 2 + _theta - asin(tan(_theta) * i.cameraDistObjectOrigin * sin(PI / 2 - _theta) / (_atmRadius - _AtmDepth)));
@@ -123,22 +126,16 @@ Shader "Custom/CustomPlanetShader2"
                 _tOpposite = (_atmRadius)            * cos(  PI / 2 + _theta - asin(tan(_theta) * i.cameraDistObjectOrigin * sin(PI / 2 - _theta) / (_atmRadius)));
                 _tHeight =   (_atmRadius)            * sin(  PI / 2 + _theta - asin(tan(_theta) * i.cameraDistObjectOrigin * sin(PI / 2 - _theta) / (_atmRadius)));
                 
-                //_oppositeBack = (_atmRadius - _AtmDepth) * cos(PI / 2 - t - asin(tan(t) * i.cameraDistObjectOrigin * sin(PI / 2 - t) / (_atmRadius - _AtmDepth)));
-                //_height = sin(acos(clamp(_opposite / (_atmRadius - _AtmDepth), 0, 1)));
-                //_height = cos(theta) * (o.cameraDistObjectOrigin - _atmRadius);
-                //_backHeight = sin(acos(_opposite))*_atmRadius;
                 _backHeight = _atmRadius * 2 * dot(normalize(_WorldSpaceCameraPos - i.objectOrigin), normalize(i.texelPosition - i.objectOrigin));//_atmRadius * sin(PI / 2 - _theta - asin(tan(_theta) * i.cameraDistObjectOrigin * sin(PI / 2 - _theta) / _atmRadius));
-                //_height *= (_atmRadius - _AtmDepth);
-
-                //_height = lerp(atmRadius-_height, _backHeight, pow(1 - _height / (_atmRadius - _AtmDepth), _Fudge));
+                
                 /*static const?  once ever?*/
                 _maxFogDepth = _atmRadius * 2 * sin(acos((_atmRadius - _AtmDepth) / _atmRadius));
-                _fogDepth = lerp(pow(sqrt(pow(_tHeight - _height, 2) + pow(_tOpposite - _opposite, 2))/_SurfaceAdjust, _SurfaceAlphaAdjust), pow(_backHeight / _HaloAdjust, _HaloAlphaAdjust), pow(1 - _height / (_atmRadius - _AtmDepth), _Fudge));
-                
-                //_fogDepth = (_atmRadius - sqrt(pow(_opposite,2)+pow(_height,2))) / _maxFogDepth;
-                //_fogDepth = distance(i.objectOrigin + (normalize(- i.camerafwd) * _height) + (-i) _opposite, i.texelPosition) / _maxFogDepth;
-                
-                _finalColor = lerp(_AtmSurfaceColor, _AtmDepthColor, _fogDepth);
+                //_fogDepth = lerp(pow(sqrt(pow(_tHeight - _height, 2) + pow(_tOpposite - _opposite, 2))/_SurfaceAdjust, _SurfaceAlphaAdjust), pow(_backHeight / _HaloAdjust, _HaloAlphaAdjust), 1-ceil(_height/(_atmRadius-_AtmDepth))/*pow(1 - _height / (_atmRadius - _AtmDepth)  , _Fudge)*/);
+                _fogDepth = lerp(pow(sqrt(pow(_tHeight - _height, 2) + pow(_tOpposite-_opposite, 2)) / _SurfaceAdjust, _SurfaceAlphaAdjust), pow(_backHeight / _HaloAdjust, _HaloAlphaAdjust), 0/*1 - ceil(_height / (_atmRadius - _AtmDepth))*//*pow(1 - _height / (_atmRadius - _AtmDepth)  , _Fudge)*/);
+
+
+
+                _finalColor = lerp(_AtmSurfaceColor, _AtmDepthColor, clamp(_fogDepth,0,1)  );
                 _finalColor.a = clamp(pow(_finalColor.a, _AlphaFudge), .00001, .99999);
                 
                 _darkAlpha = pow(
@@ -156,8 +153,11 @@ Shader "Custom/CustomPlanetShader2"
                         + _b, .0001, 1
                     ), _fade
                 );
-                _finalColor.a = _finalColor.a * _darkAlpha;
-                
+                _darkAlpha = max(_darkAlpha, .05);
+                _finalColor.a = _finalColor.a * _darkAlpha;//1-(pow(1-_darkAlpha,1));
+                _finalColor.r *= _darkAlpha;
+                _finalColor.g *= _darkAlpha;
+                _finalColor.b *= _darkAlpha;
                 //camera proximal fade
                 _finalColor.a *= pow(
                     clamp(
@@ -165,6 +165,11 @@ Shader "Custom/CustomPlanetShader2"
                         , 0, 1
                     )
                 ,2);
+
+
+                _finalColor.r *= _ColorMultiply;
+                _finalColor.g *= _ColorMultiply;
+                _finalColor.b *= _ColorMultiply;
 
                 return _finalColor;
             }

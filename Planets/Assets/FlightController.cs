@@ -1,10 +1,20 @@
 using NoTime.Splitter;
 using NoTime.Splitter.Demo;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class FlightController : SplitterEventListener
 {
+    public bool StablizerInstalled;
+    public bool RollInstalled;
+    public bool LookRotationInstalled;
+    public bool AutomaticOrbitInstalled;
+    public bool TractorBeamInstalled;
+    public bool TerranFlightInstalled;
+
+
+    public BrassShipDoorBehavior Door;
     public Transform potentialController;
     public Transform controllerLookTransform;
     public bool controllable = false;
@@ -46,7 +56,7 @@ public class FlightController : SplitterEventListener
     }
     private void Start()
     {
-        transform.GetComponent<SplitterSubscriber>().AppliedPhysics.centerOfMass = Vector3.zero;
+        transform.GetComponent<SplitterSubscriber>().AppliedPhysics.centerOfMass = -Vector3.up;
         GoalRotation = transform.rotation;
 
         mFwd1 = Fwd1.transform.GetComponent<Renderer>().material;
@@ -97,13 +107,15 @@ public class FlightController : SplitterEventListener
         MaybeTakeHitToStabilization(other);
     }
 
+    SplitterSubscriber _otherSubscriber;
     private void MaybeTakeHitToStabilization(Collision other)
     {
+        
         //bail if this collision is from an object occurring within your simulation
         if (
             transform.GetComponent<SplitterAnchor>() != null
             &&
-            other.body.GetComponent<SplitterSubscriber>()
+            other.body.GetComponent<SplitterSubscriber>() != null
             &&
             transform.GetComponent<SplitterAnchor>().IsInMySimulation(other.body.GetComponent<SplitterSubscriber>())
 
@@ -115,11 +127,17 @@ public class FlightController : SplitterEventListener
         _target = body.AppliedPhysics.rotation;
         StabilizationCapability = 0f;
 
-        if (potentialController != null && other.relativeVelocity.magnitude > 5f)
+        //camera shake
+        Vector3 relVel;
+        if (potentialController != null)
         {
+            relVel = RelativeVelocity(transform.GetComponent<Rigidbody>(), other.body as Rigidbody, other.contacts.First().point);
+            if (relVel.sqrMagnitude <= 25f)
+                return;
+
             potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>().AddInput(new CameraShakeInput
             {
-                Amplitude = .18f * other.relativeVelocity.magnitude / 1000f,
+                Amplitude = relVel.sqrMagnitude / 5000f,
                 Frequency = 10f,
                 Decay = .8f,
                 Asymmetry = new Vector2(.8f, .64f),
@@ -174,7 +192,7 @@ public class FlightController : SplitterEventListener
     }
     void DebugScene()
     {
-        FlightRotationVisual.rotation = GoalRotation;
+        //FlightRotationVisual.rotation = GoalRotation;
     }
     private void HandlePilotSeat()
     {
@@ -184,6 +202,7 @@ public class FlightController : SplitterEventListener
             if (controlled)
             {
                 potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
+                Door.Open = false;
                 _target = transform.rotation;
                 controllerLookTransform = potentialController.GetComponent<RigidbodyFpsController>().VerticalLook;
                 foreach (var light in InteriorLights)
@@ -194,6 +213,7 @@ public class FlightController : SplitterEventListener
             else
             {
                 controllerLookTransform = null;
+                Door.Open = true;
                 if (potentialController != null)
                     potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = false;
                 foreach (var light in InteriorLights)
@@ -382,6 +402,7 @@ public class FlightController : SplitterEventListener
     }
     private void FixedUpdate()
     {
+        _thrustInput = Vector3.zero;
         if (controlled)
         {
             Move();
@@ -427,22 +448,20 @@ public class FlightController : SplitterEventListener
     Stabilizer _simSubStabilizer;
     void SetDirection()
     {
-        
-
         if (!controllable)
         {
             GoalRotation = body.AppliedPhysics.rotation;
             return;
         }
 
-        if (controlled && (Input.GetKey(KeyCode.Tab) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E)))
+        if (controlled)
         {
-            if (Input.GetKey(KeyCode.Tab))
+            if (LookRotationInstalled && Input.GetKey(KeyCode.Tab))
                 _target = controllerLookTransform.rotation;
 
-            if (Input.GetKey(KeyCode.Q))
+            if (RollInstalled && Input.GetKey(KeyCode.Q))
                 _target = _target * Quaternion.AngleAxis(1f * RollSensitivity, Vector3.forward);
-            if (Input.GetKey(KeyCode.E))
+            if (RollInstalled && Input.GetKey(KeyCode.E))
                 _target = _target * Quaternion.AngleAxis(-1f * RollSensitivity, Vector3.forward);
         }
 
@@ -451,32 +470,59 @@ public class FlightController : SplitterEventListener
         if (StabilizationCapability > 1f)
             StabilizationCapability = 1f;
 
-        /*if (transform.GetComponent<SplitterSubscriber>() != null &&
-            transform.GetComponent<SplitterSubscriber>().Anchor != null)
-        {
-            _simSubStabilizer = transform.GetComponent<SplitterSubscriber>()
-                 .Anchor.GetSubSim(transform.GetComponent<SplitterSubscriber>())
-                 .gameObject.GetComponent<Stabilizer>();
-            _simSubStabilizer.TargetRotation = transform.GetComponent<SplitterSubscriber>().Anchor.TranslateWorldRotationToSimRotation(_target);
-            _simSubStabilizer.Capability = StabilizationCapability;
-        }
-        if (transform.GetComponent<Stabilizer>() != null)
-        {
-            transform.GetComponent<Stabilizer>().TargetRotation = _target;
-            transform.GetComponent<Stabilizer>().Capability = StabilizationCapability;
-        }*/
+        if (!StablizerInstalled && !Input.GetKey(KeyCode.Tab))
+            StabilizationCapability = 0f;
 
         GoalRotation = Quaternion.Slerp(GoalRotation, _target, Mathf.Clamp01(Time.fixedDeltaTime / .5f));
+        
         GoalRotation = Quaternion.Slerp(body.AppliedPhysics.rotation, GoalRotation, StabilizationCapability);
         _target = Quaternion.Slerp(body.AppliedPhysics.rotation, _target, StabilizationCapability);
     }
     private void Rotate()
     {
-
-        //Debug.Log("Rotating... stabilization is " + StabilizationCapability);
-        //if(StabilizationCapability == 1f)
         body.SmoothRotate(GoalRotation, maxRotateSpeed, rotateFactor, dampenFactor, Mathf.Pow(StabilizationCapability, 4f));
 
+    }
+
+    private Vector3 RelativeVelocity(Rigidbody origin, Rigidbody measure)
+    {
+        SplitterSubscriber originSubscriber = origin.transform.GetComponent<SplitterSubscriber>();
+        SplitterSubscriber measureSubscriber = measure.transform.GetComponent<SplitterSubscriber>();
+
+        Vector3 originPointVel;
+        if (originSubscriber != null)
+            originPointVel = originSubscriber.AppliedPhysics.velocity;
+        else
+            originPointVel = origin.velocity;
+
+        Vector3 measurePointVel;
+        if (measureSubscriber != null)
+            measurePointVel = measureSubscriber.AppliedPhysics.velocity;
+        else
+            measurePointVel = measure.velocity;
+
+        return measurePointVel - originPointVel;
+
+    }
+
+    private Vector3 RelativeVelocity(Rigidbody origin, Rigidbody measure, Vector3 WorldPos)
+    {
+        SplitterSubscriber originSubscriber = origin.transform.GetComponent<SplitterSubscriber>();
+        SplitterSubscriber measureSubscriber = measure.transform.GetComponent<SplitterSubscriber>();
+
+        Vector3 originPointVel;
+        if (originSubscriber != null)
+            originPointVel = originSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
+        else
+            originPointVel = origin.GetPointVelocity(WorldPos);
+
+        Vector3 measurePointVel;
+        if (measureSubscriber != null)
+            measurePointVel = measureSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
+        else
+            measurePointVel = measure.GetPointVelocity(WorldPos);
+
+        return measurePointVel - originPointVel;
     }
 
 }

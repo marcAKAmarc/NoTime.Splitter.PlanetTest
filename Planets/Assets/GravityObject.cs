@@ -113,7 +113,7 @@ public class GravityObject : SplitterEventListener
             Gizmos.DrawLine(transform.position, field.transform.position);
     }
 
-    public override void OnEnterAnchor(SplitterEvent evt)
+    /*public override void OnEnterAnchor(SplitterEvent evt)
     {
         //we want to keep this on in WorldSpace so that we can read from it
         if (splitterSubscriber != null && evt.Subscriber.gameObject.GetInstanceID() == splitterSubscriber.gameObject.GetInstanceID())
@@ -131,13 +131,13 @@ public class GravityObject : SplitterEventListener
                     x.Field.transform.GetInstanceID() == evt.SimulatedSubscriber.GetComponent<GravityObject>().field.transform.GetInstanceID()
                 ).ToList();
         }
-    }
+    }*/
 
-    public override void OnExitAnchor(SplitterEvent evt)
+    /*public override void OnExitAnchor(SplitterEvent evt)
     {
         if (evt.Subscriber.gameObject.GetInstanceID() == splitterSubscriber.gameObject.GetInstanceID())
             ApplyGravity = true;
-    }
+    }*/
     private void OnDisable()
     {
         var Breaka = "here";
