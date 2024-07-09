@@ -31,9 +31,44 @@ namespace NoTime.Splitter.Core
         private static void OnInvestigatoryEvents(string message) => InvestigatoryEvents?.Invoke(message);
 
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+#else
         [RuntimeInitializeOnLoadMethod]
+#endif
         private static void Init()
         {
+
+#if UNITY_EDITOR
+            Debug.Log("Splitter App Start Init");
+            //if we are not reloading the domain, we must clear out actions
+            if(SplitterSimulate != null)
+                foreach (Delegate d in SplitterSimulate.GetInvocationList())
+                {
+                    SplitterSimulate -= (Action)d;
+                }
+            if(SplitterPhysicsExport != null)
+                foreach (Delegate d in SplitterPhysicsExport.GetInvocationList())
+                {
+                    SplitterPhysicsExport -= (Action)d;
+                }
+            if(SplitterPhysicsSync != null)
+                foreach (Delegate d in SplitterPhysicsSync.GetInvocationList())
+                {
+                    SplitterPhysicsSync -= (Action)d;
+                }
+            if(SplitterHardSync != null)
+                foreach (Delegate d in SplitterHardSync.GetInvocationList())
+                {
+                    SplitterHardSync -= (Action)d;
+                }
+            if(InvestigatoryEvents != null)
+                foreach (Delegate d in InvestigatoryEvents.GetInvocationList())
+                {
+                    InvestigatoryEvents -= (Action<string>)d;
+                }
+#endif
+
             var fixedUpdateSystems = PlayerLoop.GetCurrentPlayerLoop().subSystemList.Where(x => x.type.Name == "FixedUpdate").First();
             var preUpdateSystem = PlayerLoop.GetCurrentPlayerLoop().subSystemList.Where(x => x.type.Name == "PreUpdate").First();
             var updateSystem = PlayerLoop.GetCurrentPlayerLoop().subSystemList.Where(x => x.type.Name == "Update").First();

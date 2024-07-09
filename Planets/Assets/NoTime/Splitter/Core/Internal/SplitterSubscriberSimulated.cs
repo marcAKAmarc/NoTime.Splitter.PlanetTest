@@ -15,9 +15,24 @@ namespace NoTime.Splitter.Internal
         [HideInInspector]
         public List<Collider> CurrentAnchorTriggers;
 
+        private List<Component> OnSimCollisionEnterReceivers;
+        private List<Component> OnSimCollisionExitReceivers;
+        private List<Component> OnSimCollisionStayReceivers;
+
         private void Awake()
         {
             CurrentAnchorTriggers = new List<Collider>();
+        }
+        private void Start()
+        {
+            OnSimCollisionStayReceivers = Authentic.GetComponentsInChildren<Component>().Where(x => HasMethod(x, "OnSimulationCollisionStay")).ToList();
+            OnSimCollisionExitReceivers = Authentic.GetComponentsInChildren<Component>().Where(x => HasMethod(x, "OnSimulationCollisionExit")).ToList();
+            OnSimCollisionEnterReceivers = Authentic.GetComponentsInChildren<Component>().Where(x => HasMethod(x, "OnSimulationCollisionEnter")).ToList();
+        }
+        private bool HasMethod(object objectToCheck, string methodName)
+        {
+            var type = objectToCheck.GetType();
+            return type.GetMethod(methodName) != null;
         }
         private void OnTriggerEnter(Collider other)
         {
@@ -69,8 +84,27 @@ namespace NoTime.Splitter.Internal
         //Pass through events
         private void OnCollisionEnter(Collision collision)
         {
+            foreach(var m in OnSimCollisionEnterReceivers)
+            {
+                m.SendMessage("OnSimulationCollisionEnter", new SplitterEvent
+                {
+                    Anchor = this.Anchor,
+                    SimulatedSubscriber = this.transform,
+                    Subscriber = Authentic,
+                    SimulatedAnchor = null,
+                    Collision = collision
+                }, SendMessageOptions.DontRequireReceiver);
+            }
+            /*Authentic.BroadcastMessage("OnSimulationCollisionEnter", new SplitterEvent
+            {
+                Anchor = this.Anchor,
+                SimulatedSubscriber = this.transform,
+                Subscriber = Authentic,
+                SimulatedAnchor = null,
+                Collision = collision
+            }, SendMessageOptions.DontRequireReceiver);*/
             //Debug.Log("splitter Col enter");
-            Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
+            /*Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
             {
                 x.SendMessage("OnSimulationCollisionEnter", new SplitterEvent
                 {
@@ -80,13 +114,34 @@ namespace NoTime.Splitter.Internal
                     SimulatedAnchor = null,
                     Collision = collision
                 }, SendMessageOptions.DontRequireReceiver);
-            });
+            });*/
         }
 
         private void OnCollisionStay(Collision collision)
         {
             //Debug.Log("splitter Col Stay");
-            Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
+
+            foreach (var m in OnSimCollisionStayReceivers)
+            {
+                m.SendMessage("OnSimulationCollisionStay", new SplitterEvent
+                {
+                    Anchor = this.Anchor,
+                    SimulatedSubscriber = this.transform,
+                    Subscriber = Authentic,
+                    SimulatedAnchor = null,
+                    Collision = collision
+                }, SendMessageOptions.DontRequireReceiver);
+            }
+            /*Authentic.BroadcastMessage("OnSimulationCollisionStay", new SplitterEvent
+            {
+                Anchor = this.Anchor,
+                SimulatedSubscriber = this.transform,
+                Subscriber = Authentic,
+                SimulatedAnchor = null,
+                Collision = collision
+            }, SendMessageOptions.DontRequireReceiver);*/
+
+            /*Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
             {
                 x.SendMessage("OnSimulationCollisionStay", new SplitterEvent
                 {
@@ -96,12 +151,34 @@ namespace NoTime.Splitter.Internal
                     SimulatedAnchor = null,
                     Collision = collision
                 }, SendMessageOptions.DontRequireReceiver);
-            });
+            });*/
         }
 
         private void OnCollisionExit(Collision collision)
         {
-            Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
+
+            foreach (var m in OnSimCollisionExitReceivers)
+            {
+                m.SendMessage("OnSimulationCollisionExit", new SplitterEvent
+                {
+                    Anchor = this.Anchor,
+                    SimulatedSubscriber = this.transform,
+                    Subscriber = Authentic,
+                    SimulatedAnchor = null,
+                    Collision = collision
+                }, SendMessageOptions.DontRequireReceiver);
+            }
+
+            /*Authentic.BroadcastMessage("OnSimulationCollisionExit", new SplitterEvent
+            {
+                Anchor = this.Anchor,
+                SimulatedSubscriber = this.transform,
+                Subscriber = Authentic,
+                SimulatedAnchor = null,
+                Collision = collision
+            }, SendMessageOptions.DontRequireReceiver);
+            */
+            /*Authentic.GetComponentsInChildren<Transform>().ToList().ForEach(x =>
             {
                 x.SendMessage("OnSimulationCollisionExit", new SplitterEvent
                 {
@@ -111,7 +188,7 @@ namespace NoTime.Splitter.Internal
                     SimulatedAnchor = null,
                     Collision = collision
                 }, SendMessageOptions.DontRequireReceiver);
-            });
+            });*/
         }
 
     }

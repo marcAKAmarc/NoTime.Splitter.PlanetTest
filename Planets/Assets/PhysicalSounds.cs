@@ -56,7 +56,7 @@ public class PhysicalSounds : MonoBehaviour
     }
     private void OnCollisionEnterSounds(Vector3 worldPoint, float impulseSquareMagnitude)
     {
-        Debug.Log("enter sounds");
+        //Debug.Log("enter sounds");
 
         if (impulseSquareMagnitude < 1f)
             return;
@@ -240,31 +240,37 @@ public class PhysicalSounds : MonoBehaviour
         }*/
     }
 
+    ContactPoint[] contacts = new ContactPoint[1];
     public void OnCollisionEnter(Collision collision)
     {
         if(CollisionIsNatural(collision)
             && !CollisionIsScrape(collision.impulse, collision.relativeVelocity)
         )
         {
+            collision.GetContacts(contacts);
             OnCollisionEnterSounds(
-                collision.contacts[0].point,
+                contacts[0].point,
                 collision.impulse.sqrMagnitude
             );
         }
     }
+    
     public void OnCollisionStay(Collision collision)
     {
+        
+
         if (CollisionIsNatural(collision)
             && CollisionIsScrape(collision.impulse, collision.relativeVelocity)
         )
         {
+            collision.GetContacts(contacts);
             OnCollisionStaySounds(
-                collision.contacts[0].point,
+                contacts[0].point,
                 collision.impulse.sqrMagnitude,
                 (
-                    collision.contacts[0].thisCollider.attachedRigidbody.GetPointVelocity(collision.contacts[0].point)
+                    contacts[0].thisCollider.attachedRigidbody.GetPointVelocity(contacts[0].point)
                     -
-                    collision.contacts[0].otherCollider.attachedRigidbody.GetPointVelocity(collision.contacts[0].point)
+                    contacts[0].otherCollider.attachedRigidbody.GetPointVelocity(contacts[0].point)
                 ).sqrMagnitude
             );
         }
@@ -272,25 +278,31 @@ public class PhysicalSounds : MonoBehaviour
 
     public void OnSimulationCollisionEnter(SplitterEvent evt)
     {
-        if(!CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+        if (!CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+        {
+            evt.Collision.GetContacts(contacts);
             OnCollisionEnterSounds(
-                evt.Anchor.AnchorPointToWorldPoint(evt.Collision.contacts[0].point),
+                evt.Anchor.AnchorPointToWorldPoint(contacts[0].point),
                 evt.Collision.impulse.sqrMagnitude
             );
+        }
     }
 
     public void OnSimulationCollisionStay(SplitterEvent evt)
     {
         if (CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+        {
+            evt.Collision.GetContacts(contacts);
             OnCollisionStaySounds(
-                evt.Anchor.AnchorPointToWorldPoint(evt.Collision.contacts[0].point),
+                evt.Anchor.AnchorPointToWorldPoint(contacts[0].point),
                 evt.Collision.impulse.sqrMagnitude,
                 (
-                    evt.Collision.contacts[0].thisCollider.attachedRigidbody.GetPointVelocity(evt.Collision.contacts[0].point) 
+                    contacts[0].thisCollider.attachedRigidbody.GetPointVelocity(contacts[0].point)
                     -
-                    evt.Collision.contacts[0].otherCollider.attachedRigidbody.GetPointVelocity(evt.Collision.contacts[0].point)
+                    contacts[0].otherCollider.attachedRigidbody.GetPointVelocity(contacts[0].point)
                 ).sqrMagnitude
             );
+        }
     }
 
     void Update()

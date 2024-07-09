@@ -1,4 +1,5 @@
 using NoTime.Splitter.Core;
+using NoTime.Splitter.Internal;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,12 @@ namespace NoTime.Splitter
         [HideInInspector]
         [SerializeField]
         private List<SplitterAnchor> AnchorStack;
+
+        [HideInInspector]
+        [SerializeField]
+        private SplitterAnchor ManuallyEnteredAnchor;
+
+        public List<SplitterSubscriber> JointedSubscribers;
 
         [HideInInspector]
         [SerializeField]
@@ -179,6 +186,10 @@ namespace NoTime.Splitter
 
         private bool NeedToUpdateContext()
         {
+            //in a manually entered anchor
+            if (ManuallyEnteredAnchor != null && ManuallyEnteredAnchor.GetInstanceID() == Anchor.GetInstanceID())
+                return false;
+
             //null values for both
             if (Anchor == null && AnchorStack.FirstOrDefault() == null)
                 return false;
@@ -277,6 +288,39 @@ namespace NoTime.Splitter
         //    //    AnchorStack.Add(Anchor);
         //    //}
         //}
+
+        public void ManualEnterAnchor(SplitterAnchor anchor)
+        {
+
+            if (ManuallyEnteredAnchor != null && ManuallyEnteredAnchor.GetInstanceID() == anchor.GetInstanceID())
+                return;
+
+            if (ManuallyEnteredAnchor != null)
+                ManualExitAnchor();
+
+            if (Anchor != null)
+                HandleExitSplitterContext();
+
+            HandleEnterSplitterContext(anchor);
+
+            ManuallyEnteredAnchor = anchor;
+        }
+
+        public void ManualExitAnchor()
+        {
+            if (ManuallyEnteredAnchor == null)
+                return;
+
+            //should never have to check this i think...
+            if(ManuallyEnteredAnchor.GetInstanceID() != Anchor.GetInstanceID())
+            {
+                //?
+            }
+
+            HandleExitSplitterContext();
+            ManuallyEnteredAnchor = null;
+        }
+
         private void HandleEnterSplitterContext(SplitterAnchor anchor)
         {
             var result = anchor.RegisterInScene(this);

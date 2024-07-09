@@ -336,10 +336,7 @@ namespace NoTime.Splitter
         }
         private void SetupLocalTransformSyncCache(SplitterSubscriber subscriber, GameObject newGo)
         {
-            //!!!!!!!!!!!!!!!!
-
             List<MatchedTransform> Matches = new List<MatchedTransform>();
-
 
             for (var i = 0; i < subscriber.GetComponentsInChildren<Transform>().Where(x => x.GetInstanceID() != subscriber.transform.GetInstanceID()).Count(); i++)
             {
@@ -918,7 +915,7 @@ namespace NoTime.Splitter
         }
         private WaitForFixedUpdate _waitForFixedUpdate = new WaitForFixedUpdate();
 
-        private static List<int> _cleanListKeys = new List<int>();
+        private List<int> _cleanListKeys = new List<int>();
         private void CleanIdToMainGo()
         {
             _cleanListKeys.Clear();
@@ -1101,8 +1098,10 @@ namespace NoTime.Splitter
                 SceneManager.UnloadSceneAsync(Scene.Value);
         }
 
+        
         void OnEnable()
         {
+            Debug.Log("SplitterAnchor On Enable");
             SplitterSystem.SplitterSimulate += Simulate;
             SplitterSystem.SplitterPhysicsExport += Export;
             SplitterSystem.SplitterPhysicsSync += PhysicsSync;

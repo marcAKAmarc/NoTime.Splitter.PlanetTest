@@ -59,7 +59,7 @@ public class PickUpBehaviour : MonoBehaviour
             {
                 Rigidbody rb = hit.collider.GetComponentInParent<Rigidbody>();
 
-                if (rb != null && rb.transform.name == "just a ball")
+                if (rb != null && rb.mass <= 10)
                 {
                     pickedRigidbody = rb;
                     pickupOffset = pickedRigidbody.position - transform.position;
