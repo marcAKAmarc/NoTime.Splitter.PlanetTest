@@ -30,6 +30,7 @@ public class ActivatorBehaviour : MonoBehaviour
 
         ray.origin = transform.position;
         ray.direction = transform.forward;
+        ray.origin += -transform.forward;
 
         if (press)
         {
