@@ -202,7 +202,7 @@ public class FlightController : SplitterEventListener
             if (controlled)
             {
                 potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
-                Door.DoorRequestState = BrassShipDoorBehavior.DoorRequestStates.closed;
+                //Door.DoorRequestState = BrassShipDoorBehavior.DoorRequestStates.closed;
                 _target = transform.rotation;
                 controllerLookTransform = potentialController.GetComponent<RigidbodyFpsController>().VerticalLook;
                 foreach (var light in InteriorLights)
@@ -213,7 +213,7 @@ public class FlightController : SplitterEventListener
             else
             {
                 controllerLookTransform = null;
-                Door.DoorRequestState = BrassShipDoorBehavior.DoorRequestStates.open;
+                //Door.DoorRequestState = BrassShipDoorBehavior.DoorRequestStates.open;
                 if (potentialController != null)
                     potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = false;
                 foreach (var light in InteriorLights)
