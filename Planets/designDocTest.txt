@@ -1,0 +1,22 @@
+Life Crystals
+ -scattered on planet surface
+ -in orbit in asteroids
+ -minable?
+ -have to be put in the bin to synthesize into a health item
+
+BIN!
+ -must have a bin
+ -Crystals go in / health item comes out
+ -Pretty much the homebase
+ -Can't move it. (for now)
+
+ITEMS IN GENERAL
+ -hold left click to carry
+ -tap right click to use 
+   -for example, you can carry health items and equipables, but you must "use" them to benefit from their function like gaining health
+
+
+Pickaxe
+ -this is something carry like normal if you want, but when you equip with right click, it goes to off-hand. and then you can use it by pressing right click again.  and there is another for dropping some preset key.
+
+
