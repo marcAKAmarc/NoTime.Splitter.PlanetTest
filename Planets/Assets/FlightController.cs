@@ -17,7 +17,7 @@ public class FlightController : SplitterEventListener
     public BrassShipDoorBehavior Door;
     public Transform potentialController;
     public Transform controllerLookTransform;
-    public bool controllable = false;
+    public bool passengerPresent = false;
     public bool controlled = false;
     public SplitterSubscriber body;
     public float MoveForce;
@@ -83,7 +83,7 @@ public class FlightController : SplitterEventListener
     {
         if (other.GetComponent<RigidbodyFpsController>())
         {
-            controllable = true;
+            passengerPresent = true;
             potentialController = other.transform;
 
         }
@@ -93,7 +93,7 @@ public class FlightController : SplitterEventListener
         if (other.GetComponent<RigidbodyFpsController>())
         {
             potentialController = null;
-            controllable = false;
+            passengerPresent = false;
         }
     }
 
@@ -196,14 +196,16 @@ public class FlightController : SplitterEventListener
     }
     private void HandlePilotSeat()
     {
-        if (controllable == true && Input.GetKeyDown(KeyCode.CapsLock))
+        _target = transform.rotation;
+        if (passengerPresent == true && Input.GetKeyDown(KeyCode.CapsLock))
         {
+
             controlled = !controlled;
             if (controlled)
             {
                 potentialController.GetComponent<RigidbodyFpsController>().inControllerPosition = controlled;
                 //Door.DoorRequestState = BrassShipDoorBehavior.DoorRequestStates.closed;
-                _target = transform.rotation;
+                
                 controllerLookTransform = potentialController.GetComponent<RigidbodyFpsController>().VerticalLook;
                 foreach (var light in InteriorLights)
                 {
@@ -448,11 +450,11 @@ public class FlightController : SplitterEventListener
     Stabilizer _simSubStabilizer;
     void SetDirection()
     {
-        if (!controllable)
+        /*if (!passengerPresent)
         {
             GoalRotation = body.AppliedPhysics.rotation;
             return;
-        }
+        }*/
 
         if (controlled)
         {

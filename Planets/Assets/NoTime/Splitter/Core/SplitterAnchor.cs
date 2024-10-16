@@ -208,9 +208,35 @@ namespace NoTime.Splitter
 
             newGo.transform.localScale = subscriber.transform.lossyScale;
 
-            //we only want to be kinematic at the lowest level... for now i guess.
+
+            //update subscriber properties
+            //velocity? NO
+            //angularvelocity? NO
+            var subRigid = subscriber.GetComponent<Rigidbody>();
+            subRigid.drag = 0f;
+            subRigid.angularDrag = 0f;
+            //subRigid.mass = 1f;
+            subRigid.useGravity = false;
+            //max depenetration velocity?
+            ////we only want to be kinematic at the lowest level... for now i guess.
             if (newGo.GetComponent<Rigidbody>().isKinematic)
                 subscriber.GetComponent<Rigidbody>().isKinematic = false;
+            subRigid.freezeRotation = false;
+            subRigid.constraints = RigidbodyConstraints.None;
+            //collision detection mode?
+            //center of mass? NO
+            //world center of mass? NO
+            //inertiaTensorRotation?
+            //inertiaTensor?
+            //position - no gets immediately updated
+            //rotation - no gets immediately updated
+            //interpolation - no, this is only front end
+            //solverIterations?
+            //sleepThreshold?
+            subRigid.maxAngularVelocity = float.PositiveInfinity;
+            //solverVelocity Iterations?
+            //solverIterationCount?
+            
 
             if (!newGo.GetComponent<Rigidbody>().isKinematic)
             {
@@ -287,8 +313,6 @@ namespace NoTime.Splitter
             newGo.GetComponent<SplitterSubscriber>().enabled = false;
             Destroy(newGo.GetComponent<SplitterSubscriber>());
 
-            //subscriber.GetComponent<Rigidbody>().mass = 1f;
-            subscriber.GetComponent<Rigidbody>().drag = 0f;
 
             //visibility
             if (!subscriber.SimulationVisible)
@@ -313,10 +337,6 @@ namespace NoTime.Splitter
             }
 
             //send UnityMessagesHere
-            /*foreach (var gobj in newGo.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
-            {
-                gobj.SendMessage("OnRigidContextSubscriberEntersAnchor", new SplitterContextEvent { Anchor = this, SimulatedSubscriber = newGo.transform, Subscriber = subscriber, SimulatedAnchor = PhysicsAnchorGO.transform }, SendMessageOptions.DontRequireReceiver);
-            }*/
             foreach (var gobj in subscriber.transform.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
             {
                 gobj.SendMessage("OnEnterAnchor", new SplitterEvent { Anchor = this, SimulatedSubscriber = newGo.transform, Subscriber = subscriber, SimulatedAnchor = PhysicsAnchorGO.transform }, SendMessageOptions.DontRequireReceiver);
@@ -351,20 +371,6 @@ namespace NoTime.Splitter
             }
             PhysicsGoIdToLocalSyncs.Add(newGo.GetInstanceID(), Matches);
         }
-
-        //UNUSED
-        public Transform GetSimulatedTransform(SplitterSubscriber subscriber, Transform subTransform)
-        {
-            return PhysicsGoIdToLocalSyncs[
-                idToPhysicsGo[
-                    subscriber.transform.GetInstanceID()
-                ].gameObject.GetInstanceID()
-            ].Where(x =>
-                x.mainTransform.GetInstanceID() == subTransform.GetInstanceID()
-            ).Select(x =>
-                x.physicsTransform
-            ).FirstOrDefault();
-        }
         public void UnregisterInScene(SplitterSubscriber subscriber)
         {
             if (!ids.ContainsKey(subscriber.gameObject.GetInstanceID()))
@@ -396,14 +402,32 @@ namespace NoTime.Splitter
                         )
                     );
             }
-            //update constraints
-            subscriber.GetComponent<Rigidbody>().constraints = physicsRigid.constraints;
-            //update kinematic
-            subscriber.GetComponent<Rigidbody>().isKinematic = physicsRigid.isKinematic;
-            //update mass
-            subscriber.GetComponent<Rigidbody>().mass = physicsRigid.mass;
-            //update drag
-            subscriber.GetComponent<Rigidbody>().drag = physicsRigid.drag;
+
+            //update subscriber properties
+            //velocity? NO
+            //angularvelocity? NO
+            var subRigid = subscriber.GetComponent<Rigidbody>();
+            subRigid.drag = physicsRigid.drag;
+            subRigid.angularDrag = physicsRigid.angularDrag;
+            subRigid.mass = physicsRigid.mass;
+            subRigid.useGravity = physicsRigid.useGravity;
+            //max depenetration velocity?
+            subRigid.isKinematic = physicsRigid.isKinematic;
+            subRigid.freezeRotation = physicsRigid.freezeRotation;
+            subRigid.constraints = physicsRigid.constraints;
+            //collision detection mode?
+            //center of mass? NO
+            //world center of mass? NO
+            //inertiaTensorRotation?
+            //inertiaTensor?
+            //position - no gets immediately updated
+            //rotation - no gets immediately updated
+            //interpolation - no, this is only front end
+            //solverIterations?
+            //sleepThreshold?
+            subRigid.maxAngularVelocity = physicsRigid.maxAngularVelocity;
+            //solverVelocity Iterations?
+            //solverIterationCount?
 
             //enable all monobehaviours in RunInSimulatedSpace
             foreach (var behaviour in subscriber.RunInSimulatedSpace)
@@ -412,11 +436,6 @@ namespace NoTime.Splitter
             }
 
             //send unity messages
-            /*foreach (var gobj in physicsGo.transform.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
-            {
-                gobj.SendMessage("OnRigidContextSubscriberExitsAnchor", new SplitterContextEvent { Anchor = this, SimulatedSubscriber = physicsGo.transform, Subscriber = subscriber, SimulatedAnchor = PhysicsAnchorGO.transform }, SendMessageOptions.DontRequireReceiver);
-            }*/
-
             foreach (var gobj in subscriber.transform.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
             {
                 gobj.SendMessage("OnExitAnchor", new SplitterEvent { Anchor = this, SimulatedSubscriber = physicsGo.transform, Subscriber = subscriber, SimulatedAnchor = PhysicsAnchorGO.transform }, SendMessageOptions.DontRequireReceiver);
@@ -492,9 +511,7 @@ namespace NoTime.Splitter
         {
             if (!ids.ContainsKey(subscriber.gameObject.GetInstanceID()))
                 return;
-
-            //Debug.Log("Applying Collision at " + Time.time);
-
+            
             Vector3 impulse = collision.impulse;
             if (Vector3.Dot(impulse, collision.GetContact(0).normal) < 0f)
                 impulse *= -1f;
@@ -927,9 +944,9 @@ namespace NoTime.Splitter
         }
         public void Simulate()
         {
-            /*#if UNITY_2022_2_OR_NEWER
-                        PhysicsScene.ResetInterpolationPoses();
-            #endif*/
+/*#if UNITY_2022_2_OR_NEWER
+            PhysicsScene.ResetInterpolationPoses();
+#endif*/
             //Do move positions / rotations here
             PhysicsScene.Simulate(Time.fixedDeltaTime);
         }
@@ -1101,7 +1118,6 @@ namespace NoTime.Splitter
         
         void OnEnable()
         {
-            Debug.Log("SplitterAnchor On Enable");
             SplitterSystem.SplitterSimulate += Simulate;
             SplitterSystem.SplitterPhysicsExport += Export;
             SplitterSystem.SplitterPhysicsSync += PhysicsSync;

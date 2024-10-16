@@ -1,15 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine.Internal;
 using UnityEngine;
-using NoTime.Splitter;
-using System.Runtime.InteropServices.WindowsRuntime;
-using JetBrains.Annotations;
 
 namespace NoTime.Splitter.Core
 {
@@ -82,6 +72,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
+                    body.angularVelocity = value;
                     anchor.ApplyAngularVelocity(value, subscriber);
                 }
             }
@@ -104,7 +95,8 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.drag = value;
+                    //we update this upon unregistration
+                    //body.drag = value;
                     anchor.ApplyDrag(value, subscriber);
                 }
             }
@@ -128,7 +120,7 @@ namespace NoTime.Splitter.Core
                 else
                 {
                     body.angularDrag = value;
-                    anchor.ApplyDrag(value, subscriber);
+                    anchor.ApplyAngularDrag(value, subscriber);
                 }
             }
         }
@@ -197,11 +189,11 @@ namespace NoTime.Splitter.Core
                 else
                 {
                     body.maxDepenetrationVelocity = value;
-                    anchor.ApplyMaxDepenetrationVelocity (value, subscriber);
+                    anchor.ApplyMaxDepenetrationVelocity(value, subscriber);
                 }
             }
         }
-        
+
         // Summary:
         //     Controls whether physics affects the rigidbody.
         public bool isKinematic
@@ -216,7 +208,7 @@ namespace NoTime.Splitter.Core
                     body.isKinematic = value;
                 else
                 {
-                    body.isKinematic = value;
+                    //body.isKinematic = value;
                     anchor.ApplyIsKinematic(value, subscriber);
                 }
             }
@@ -304,7 +296,7 @@ namespace NoTime.Splitter.Core
             }
             set
             {
-                if(!subscriber.Simulating())
+                if (!subscriber.Simulating())
                 {
                     body.centerOfMass = value;
                 }
@@ -364,7 +356,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.inertiaTensor= value;
+                    body.inertiaTensor = value;
                     anchor.ApplyInertiaTensor(value, subscriber);
                 }
             }
@@ -388,7 +380,10 @@ namespace NoTime.Splitter.Core
         {
             get
             {
-                return body.position;
+                if (!subscriber.Simulating())
+                    return body.position;
+                else
+                    return anchor.GetPosition(subscriber);
             }
             set
             {
@@ -399,6 +394,9 @@ namespace NoTime.Splitter.Core
                 else
                 {
                     anchor.ApplyPosition(value, subscriber);
+                    //must do the immediate update with move position / move rotation
+                    body.position =
+                        anchor.AnchorPointToWorldPoint(subscriber.GetSimulationBody().position);
                 }
             }
         }
@@ -428,6 +426,7 @@ namespace NoTime.Splitter.Core
                 else
                 {
                     anchor.ApplyRotation(value, subscriber);
+                    body.rotation = anchor.GetApplyRotation(subscriber);
                 }
             }
         }
@@ -451,7 +450,7 @@ namespace NoTime.Splitter.Core
                 else
                 {
                     body.interpolation = value;
-                    anchor.ApplyInterpolation(value, subscriber);
+                    //anchor.ApplyInterpolation(value, subscriber);
                 }
             }
         }
@@ -518,7 +517,7 @@ namespace NoTime.Splitter.Core
                 }
             }
         }
-    
+
 
         //
         // Summary:
@@ -647,7 +646,13 @@ namespace NoTime.Splitter.Core
             if (!subscriber.Simulating())
                 body.MovePosition(position);
             else
+            {
                 anchor.ApplyMovePosition(position, subscriber);
+                //must do the immediate update with move position / move rotation
+                body.MovePosition(
+                    anchor.AnchorPointToWorldPoint(subscriber.GetSimulationBody().position)
+                );
+            }
         }
 
         //
@@ -662,7 +667,12 @@ namespace NoTime.Splitter.Core
             if (!subscriber.Simulating())
                 body.MoveRotation(rotation);
             else
+            {
                 anchor.ApplyMoveRotation(rotation, subscriber);
+                body.MoveRotation(
+                    anchor.TranslateAnchorRotationToWorldRotation(subscriber.GetSimulationBody().rotation)
+                );
+            }
         }
 
         //
@@ -1097,12 +1107,12 @@ namespace NoTime.Splitter.Core
         //
         //   mode:
         //     Type of force to apply.
-        public void AddForceAtPosition(Vector3 force, Vector3 worldPosition,  ForceMode mode)
+        public void AddForceAtPosition(Vector3 force, Vector3 position, ForceMode mode)
         {
             if (!subscriber.Simulating())
-                body.AddForceAtPosition(force, worldPosition, mode);
+                body.AddForceAtPosition(force, position, mode);
             else
-                anchor.ApplyAddForceAtPosition(force, worldPosition, mode, subscriber);
+                anchor.ApplyAddForceAtPosition(force, position, mode, subscriber);
         }
 
         //
@@ -1144,7 +1154,7 @@ namespace NoTime.Splitter.Core
         //
         //   mode:
         //     The method used to apply the force to its targets.
-        public void AddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier,ForceMode mode)
+        public void AddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier, ForceMode mode)
         {
             if (!subscriber.Simulating())
                 body.AddExplosionForce(explosionForce, explosionPosition, explosionRadius, upwardsModifier, mode);
@@ -1220,7 +1230,7 @@ namespace NoTime.Splitter.Core
             }
         }
 
-        public bool SweepTest(Vector3 direction, out RaycastHit hitInfo,float maxDistance, QueryTriggerInteraction queryTriggerInteraction)
+        public bool SweepTest(Vector3 direction, out RaycastHit hitInfo, float maxDistance, QueryTriggerInteraction queryTriggerInteraction)
         {
             //should always be done outside of the simulation!
             return body.SweepTest(direction, out hitInfo, maxDistance, queryTriggerInteraction);
