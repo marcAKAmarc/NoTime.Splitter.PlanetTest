@@ -1,12 +1,10 @@
-using NoTime.Splitter.Core;
-using NoTime.Splitter.Helpers;
-using NoTime.Splitter.Internal;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using NoTime.Splitter.Helpers;
+using NoTime.Splitter.Internal;
+using NoTime.Splitter.Core;
 
 namespace NoTime.Splitter
 {
@@ -29,9 +27,12 @@ namespace NoTime.Splitter
         private Scene MainScene;
         private string SceneName;
         private GameObject PhysicsAnchorGO;
+        private SplitterAnchorSimulation PhysicsAnchor;
         private Rigidbody body = null;
 
-
+        [HideInInspector]
+        [SerializeField]
+        private List<GameObject> subscribers;
         [HideInInspector]
         [SerializeField]
         private DictionaryIntInt ids;
@@ -66,6 +67,8 @@ namespace NoTime.Splitter
 
         private void Awake()
         {
+            if (subscribers == null)
+                subscribers = new List<GameObject>();
             if (ids == null)
                 ids = new DictionaryIntInt();
             if (idToPhysicsGo == null)
@@ -78,10 +81,22 @@ namespace NoTime.Splitter
             if (transform.GetComponent<Rigidbody>() != null)
                 body = transform.GetComponent<Rigidbody>();
         }
+
+        
         void Start()
         {
             if (Scene == null)
                 CreateAnchorSimulationScene();
+        }
+
+        internal Transform GetAnchorSimulation()
+        {
+            if (PhysicsAnchorGO == null)
+                return null;
+            else if (PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>() == null)
+                return null;
+            else
+                return PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>().transform;
         }
 
         private void CreateAnchorSimulationScene()
@@ -124,6 +139,7 @@ namespace NoTime.Splitter
             }
 
             PhysicsAnchorGO.AddComponent<SplitterAnchorSimulation>();
+            PhysicsAnchor = PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>();
             PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>().Anchor = this;
             PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>().DeactivateTriggerColliders =
                 PhysicsAnchorGO.GetComponent<SplitterAnchor>().StayTriggers;
@@ -144,7 +160,7 @@ namespace NoTime.Splitter
                 throw new UnityException("Simulated Anchor has a Scene.  Scene: " + Scene.Value.name);
             }
             Destroy(PhysicsAnchorGO.GetComponent<SplitterAnchor>());
-            foreach (var subsription in PhysicsAnchorGO.GetComponentsInChildren<SplitterSubscriber>().ToList())
+            foreach (SplitterSubscriber subsription in PhysicsAnchorGO.GetComponentsInChildren<SplitterSubscriber>().ToList())
             {
                 subsription.enabled = false;
                 Destroy(subsription);
@@ -271,6 +287,7 @@ namespace NoTime.Splitter
 
             newGo.name = newGo.name + "-Physics";
 
+            subscribers.Add(subscriber.gameObject);
             ids.Add(subscriber.gameObject.GetInstanceID(), newGo.GetInstanceID());
             idToPhysicsGo.Add(subscriber.gameObject.GetInstanceID(), new GoRigid()
             {
@@ -373,61 +390,68 @@ namespace NoTime.Splitter
         }
         public void UnregisterInScene(SplitterSubscriber subscriber)
         {
-            if (!ids.ContainsKey(subscriber.gameObject.GetInstanceID()))
+            if (!ids.ContainsKey(subscriber.gameObject.GetInstanceID())
+                ||
+                //this could get us in trouble
+                PhysicsAnchorGO == null
+            )
                 return;
 
             var physicsGo = idToPhysicsGo[subscriber.gameObject.GetInstanceID()].gameObject;
             var physicsRigid = idToPhysicsGo[subscriber.gameObject.GetInstanceID()].rigidbody;
 
-            if (!subscriber.GetComponent<Rigidbody>().isKinematic)
-            {
-                //velocity
-                subscriber.GetComponent<Rigidbody>().velocity =
-                    transform.TransformDirection(
-                        PhysicsAnchorGO.transform.InverseTransformDirection(
-                            physicsRigid.velocity
-                        )
-
-                    )
-                    +
-                    this.GetUltimatePointVelocity(
-                        subscriber.GetComponent<Rigidbody>().position
-                    );
-
-                //angularVelocity
-                subscriber.GetComponent<Rigidbody>().angularVelocity =
-                    this.transform.TransformDirection(
-                        PhysicsAnchorGO.transform.InverseTransformDirection(
-                            physicsRigid.angularVelocity
-                        )
-                    );
-            }
-
-            //update subscriber properties
-            //velocity? NO
-            //angularvelocity? NO
             var subRigid = subscriber.GetComponent<Rigidbody>();
-            subRigid.drag = physicsRigid.drag;
-            subRigid.angularDrag = physicsRigid.angularDrag;
-            subRigid.mass = physicsRigid.mass;
-            subRigid.useGravity = physicsRigid.useGravity;
-            //max depenetration velocity?
-            subRigid.isKinematic = physicsRigid.isKinematic;
-            subRigid.freezeRotation = physicsRigid.freezeRotation;
-            subRigid.constraints = physicsRigid.constraints;
-            //collision detection mode?
-            //center of mass? NO
-            //world center of mass? NO
-            //inertiaTensorRotation?
-            //inertiaTensor?
-            //position - no gets immediately updated
-            //rotation - no gets immediately updated
-            //interpolation - no, this is only front end
-            //solverIterations?
-            //sleepThreshold?
-            subRigid.maxAngularVelocity = physicsRigid.maxAngularVelocity;
-            //solverVelocity Iterations?
-            //solverIterationCount?
+            if (subRigid != null)
+            {
+                if (!subscriber.GetComponent<Rigidbody>().isKinematic)
+                {
+                    //velocity
+                    subscriber.GetComponent<Rigidbody>().velocity =
+                        transform.TransformDirection(
+                            PhysicsAnchorGO.transform.InverseTransformDirection(
+                                physicsRigid.velocity
+                            )
+
+                        )
+                        +
+                        this.GetUltimatePointVelocity(
+                            subscriber.GetComponent<Rigidbody>().position
+                        );
+
+                    //angularVelocity
+                	subscriber.GetComponent<Rigidbody>().AddTorque(
+                    	subscriber.GetUltimateAngularVelocity()
+                    	- subscriber.GetComponent<Rigidbody>().angularVelocity
+                    	,
+                    	ForceMode.VelocityChange
+                	);
+                }
+
+                //update subscriber properties
+                //velocity? NO
+                //angularvelocity? NO
+                subRigid.drag = physicsRigid.drag;
+                subRigid.angularDrag = physicsRigid.angularDrag;
+                subRigid.mass = physicsRigid.mass;
+                subRigid.useGravity = physicsRigid.useGravity;
+                //max depenetration velocity?
+                subRigid.isKinematic = physicsRigid.isKinematic;
+                subRigid.freezeRotation = physicsRigid.freezeRotation;
+                subRigid.constraints = physicsRigid.constraints;
+                //collision detection mode?
+                //center of mass? NO
+                //world center of mass? NO
+                //inertiaTensorRotation?
+                //inertiaTensor?
+                //position - no gets immediately updated
+                //rotation - no gets immediately updated
+                //interpolation - no, this is only front end
+                //solverIterations?
+                //sleepThreshold?
+                subRigid.maxAngularVelocity = physicsRigid.maxAngularVelocity;
+                //solverVelocity Iterations?
+                //solverIterationCount?
+            }
 
             //enable all monobehaviours in RunInSimulatedSpace
             foreach (var behaviour in subscriber.RunInSimulatedSpace)
@@ -444,6 +468,7 @@ namespace NoTime.Splitter
             idToMainGo.Remove(physicsGo.GetInstanceID());
             idToPhysicsGo.Remove(subscriber.gameObject.GetInstanceID());
             ids.Remove(subscriber.gameObject.GetInstanceID());
+            subscribers.Remove(subscriber.gameObject);
             PhysicsGoIdToLocalSyncs.Remove(physicsGo.GetInstanceID());
             Destroy(physicsGo);
         }
@@ -484,8 +509,9 @@ namespace NoTime.Splitter
 
         public void OnCollisionEnter(Collision collision)
         {
-
-            if(collision.body.GetComponent<SplitterSubscriber>() != null
+            if (
+                collision.body != null 
+                && collision.body.GetComponent<SplitterSubscriber>() != null
                 && ids.ContainsKey(collision.body.GetComponent<SplitterSubscriber>().gameObject.GetInstanceID()))
             {
                 NegateMyCollision(collision);
@@ -494,7 +520,9 @@ namespace NoTime.Splitter
         public void OnCollisionStay(Collision collision)
         {
 
-            if (collision.body.GetComponent<SplitterSubscriber>() != null
+            if (
+                collision.body != null
+                && collision.body.GetComponent<SplitterSubscriber>() != null
                 && ids.ContainsKey(collision.body.GetComponent<SplitterSubscriber>().gameObject.GetInstanceID()))
             {
                 NegateMyCollision(collision);
@@ -506,7 +534,6 @@ namespace NoTime.Splitter
         int _cnt = 0;
         Vector3 _avgContactPoint = Vector3.zero;
         Rigidbody physicsRigidToGetCollision;
-        float forceRatio;
         internal void ApplyCollision(SplitterSubscriber subscriber, Collision collision)
         {
             if (!ids.ContainsKey(subscriber.gameObject.GetInstanceID()))
@@ -529,12 +556,14 @@ namespace NoTime.Splitter
                 _avgContactPoint += _contactPoints[_cnt].point;
             }
             _avgContactPoint = _avgContactPoint * 1f / _contactCount;
+            
             physicsRigidToGetCollision.transform.GetComponent<Rigidbody>().AddForceAtPosition(
                 PhysicsAnchorGO.transform.TransformDirection(transform.InverseTransformDirection(impulse)),
                 physicsRigidToGetCollision.transform.TransformPoint(subscriber.transform.InverseTransformPoint(_avgContactPoint)),
                 ForceMode.Impulse
             );
         }
+
         internal void NegateMyCollision(Collision collision)
         {
             //Debug.Log("Negating Collision caused by anchor " + gameObject.name + " with " + collision.body.name);
@@ -585,7 +614,6 @@ namespace NoTime.Splitter
             }
         }
         
-
         internal void ApplyAddForce(Vector3 force, ForceMode mode, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
@@ -604,7 +632,7 @@ namespace NoTime.Splitter
                 mode
             );
         }
-
+        
         internal void ApplyAddRelativeForce(Vector3 relForce, ForceMode mode, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
@@ -622,7 +650,7 @@ namespace NoTime.Splitter
                 mode
             );
         }
-
+        
         internal void ApplyAddTorque(Vector3 torque, ForceMode mode, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
@@ -631,7 +659,7 @@ namespace NoTime.Splitter
                 mode
             );
         }
-
+        
         internal void ApplyAddExplosionForce(float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardModifier, ForceMode mode, SplitterSubscriber subscriber)
         {
 
@@ -651,8 +679,8 @@ namespace NoTime.Splitter
                         1f -
                         Mathf.Sqrt(
                             (
-                                (_simApplicationPosition - _simExplosionPosition).sqrMagnitude
-                                /
+                                (_simApplicationPosition - _simExplosionPosition).sqrMagnitude 
+                                / 
                                 Mathf.Pow(explosionRadius, 2)
                             )
                         )
@@ -708,7 +736,7 @@ namespace NoTime.Splitter
         internal void ApplyVelocity(Vector3 velocity, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
-            _Sim.rigidbody.velocity =
+            _Sim.rigidbody.velocity = 
                 PhysicsAnchorGO.transform.TransformDirection(
                     transform.InverseTransformDirection(velocity)
                 ) - GetUltimatePointVelocity(subscriber.AppliedPhysics.position);
@@ -725,7 +753,7 @@ namespace NoTime.Splitter
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
             return this.transform.TransformPoint(PhysicsAnchorGO.transform.InverseTransformPoint(_Sim.rigidbody.position));
         }
-
+        
         internal void ApplyMovePosition(Vector3 position, SplitterSubscriber subscriber)
         {
             _Sim = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
@@ -950,30 +978,38 @@ namespace NoTime.Splitter
             //Do move positions / rotations here
             PhysicsScene.Simulate(Time.fixedDeltaTime);
         }
+
+        int _ei;
         public void Export()
         {
-            CleanIdToMainGo();
-            foreach (var goRigid in idToMainGo.Values)
+            //CleanIdToMainGo();
+            _ei = 0;
+            for (; _ei < subscribers.Count; _ei++)
             {
-                UpdateSubscriberRigidbody(goRigid.gameObject);
+                UpdateSubscriberRigidbody(subscribers[_ei].gameObject);
             }
         }
 
+        int _psi;
         public void PhysicsSync()
         {
-            foreach (var goRigid in idToMainGo.Values)
+            _psi = 0;
+            for (; _psi < subscribers.Count; _psi++)
             {
-                SyncSubscriberRigidbody(goRigid.gameObject);
+                SyncSubscriberRigidbody(subscribers[_psi].gameObject);
             }
         }
+
+        int _hsi;
         public void HardSync()
         {
             /*#if UNITY_2022_2_OR_NEWER
                         PhysicsScene.InterpolateBodies();
             #endif*/
-            foreach (var goRigid in idToMainGo.Values)
+            _hsi = 0;
+            for(; _hsi < subscribers.Count; _hsi++)
             {
-                SyncSubscriberRigidbody(goRigid.gameObject);
+                SyncSubscriberRigidbody(subscribers[_hsi].gameObject);
             }
         }
         private GoRigid _SimSubscriber;
@@ -1043,6 +1079,8 @@ namespace NoTime.Splitter
                 )
             );
         }
+
+
         public void SyncSubscriberTransform(GameObject mainGo)
         {
             //this ruins interpolation...
@@ -1109,13 +1147,26 @@ namespace NoTime.Splitter
         {
             return PhysicsAnchorGO;
         }
+        bool _quitting;
+        private void OnApplicationQuit()
+        {
+            _quitting = true;
+        }
         private void OnDestroy()
         {
+            //if anchor deleted mid play, unregister subscribers
+            if (gameObject.scene.isLoaded && !_quitting && PhysicsAnchorGO != null) //Was Deleted
+            {
+                foreach (GoRigid _gr in idToMainGo.Select(x => x.Value).ToList())
+                {
+                    UnregisterInScene(_gr.gameObject.GetComponent<SplitterSubscriber>());
+                    _gr.gameObject.GetComponent<SplitterSubscriber>().HandleAnchorDestruction(this);
+                }
+            }
             if (Scene != null)
                 SceneManager.UnloadSceneAsync(Scene.Value);
         }
 
-        
         void OnEnable()
         {
             SplitterSystem.SplitterSimulate += Simulate;

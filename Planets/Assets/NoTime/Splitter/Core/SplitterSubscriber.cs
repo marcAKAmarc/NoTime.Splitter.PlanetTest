@@ -25,8 +25,6 @@ namespace NoTime.Splitter
         [SerializeField]
         private SplitterAnchor ManuallyEnteredAnchor;
 
-        public List<SplitterSubscriber> JointedSubscribers;
-
         [HideInInspector]
         [SerializeField]
         private List<Collider> CurrentAnchorTriggers;
@@ -129,6 +127,7 @@ namespace NoTime.Splitter
         private void ProcessPotentialAnchorExit(Collider other)
         {
             RemoveFromTriggerStack(other);
+            CleanStacks();
             UpdateAnchorStackFromTriggerStack();
         }
         private void OnTriggerEnter(Collider other)
@@ -145,10 +144,9 @@ namespace NoTime.Splitter
                 //keep current anchor
                 (Anchor != null && x.gameObject.GetInstanceID() == Anchor.gameObject.GetInstanceID())
                 ||
-                //keep if we have _entrance_ triggers for this anchor
+                //keep if we have triggers for this anchor
+                //TODO:  shouldn't this be specific to stay anchors?
                 CurrentAnchorTriggers.Any(t =>
-                    /*t.gameObject.GetComponentInParent<SplitterAnchor>().EntranceTriggers.Any(et=>et.gameObject.GetInstanceID() == t.gameObject.GetInstanceID())
-                    &&*/
                     t.gameObject.GetComponentInParent<SplitterAnchor>().gameObject.GetInstanceID() == x.gameObject.GetInstanceID())
             ).ToList();
         }
@@ -183,6 +181,7 @@ namespace NoTime.Splitter
         {
             CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x.GetInstanceID() != collider.GetInstanceID()).ToList();
         }
+        
 
         private bool NeedToUpdateContext()
         {
@@ -221,12 +220,12 @@ namespace NoTime.Splitter
                 StartCoroutine(UpdateContextAtEndOfFixedUpdate());
         }
         WaitForFixedUpdate _updateWait = new WaitForFixedUpdate();
-        IEnumerator UpdateContextAtEndOfFixedUpdate()
+        private IEnumerator UpdateContextAtEndOfFixedUpdate()
         {
             yield return _updateWait;
             CheckAndExecuteContextUpdate();
         }
-        IEnumerator UpdateSubscriberAtEndOfFixedUpdate()
+        private IEnumerator UpdateSubscriberAtEndOfFixedUpdate()
         {
             yield return _updateWait;
             if (Anchor != null)
@@ -240,16 +239,7 @@ namespace NoTime.Splitter
             //check if we would just re enter this context.  bail if so.
             if (!NeedToUpdateContext())
                 return;
-            /*if (this.enabled
-                && AnchorStack.FirstOrDefault() != null
-                && Anchor != null
-                && AnchorStack.FirstOrDefault() == Anchor)
-                return;*/
-
-            if (transform.name.Contains("Control"))
-            {
-                var breaka = "here";
-            }
+            
             if (Anchor != null)
             {
                 HandleExitSplitterContext(Anchor);
@@ -258,6 +248,27 @@ namespace NoTime.Splitter
             {
                 HandleEnterSplitterContext(AnchorStack.FirstOrDefault());
             }
+        }
+
+        public void HandleAnchorDestruction(SplitterAnchor anchor)
+        {
+            foreach (Collider col in Anchor.StayTriggers.Union(Anchor.EntranceTriggers))
+                RemoveFromTriggerStack(col);
+            RemoveFromAnchorStack(anchor);
+            Anchor = null;
+            CleanStacks();
+
+        }
+        private void RemoveFromStacks(SplitterAnchor anchor)
+        {
+            RemoveFromAnchorStack(anchor);
+            foreach (Collider collider in anchor.StayTriggers)
+                RemoveFromTriggerStack(collider);
+        }
+        private void CleanStacks()
+        {
+            CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x != null).ToList();
+            AnchorStack = AnchorStack.Where(x => x != null).ToList();
         }
 
         //[ContextMenu("Set Anchor From Location - WARNING: BACKUP SCENE BEFORE USE")]
@@ -289,14 +300,14 @@ namespace NoTime.Splitter
         //    //}
         //}
 
-        public void ManualEnterAnchor(SplitterAnchor anchor)
+        public void ManuallyEnterAnchor(SplitterAnchor anchor)
         {
 
             if (ManuallyEnteredAnchor != null && ManuallyEnteredAnchor.GetInstanceID() == anchor.GetInstanceID())
                 return;
 
             if (ManuallyEnteredAnchor != null)
-                ManualExitAnchor();
+                ManuallyExitAnchor();
 
             if (Anchor != null)
                 HandleExitSplitterContext();
@@ -306,16 +317,10 @@ namespace NoTime.Splitter
             ManuallyEnteredAnchor = anchor;
         }
 
-        public void ManualExitAnchor()
+        public void ManuallyExitAnchor()
         {
             if (ManuallyEnteredAnchor == null)
                 return;
-
-            //should never have to check this i think...
-            if(ManuallyEnteredAnchor.GetInstanceID() != Anchor.GetInstanceID())
-            {
-                //?
-            }
 
             HandleExitSplitterContext();
             ManuallyEnteredAnchor = null;
@@ -342,7 +347,7 @@ namespace NoTime.Splitter
         private void OnCollisionEnter(Collision collision)
         {
             ProcessPotentialAnchorEntrance(collision.collider);
-            //return;
+
             if (!Simulating())
                 return;
             if (!InvolvedInMySimulation(collision.transform))
@@ -352,7 +357,6 @@ namespace NoTime.Splitter
         }
         private void OnCollisionStay(Collision collision)
         {
-            //return;
             if (!Simulating())
                 return;
             if (!InvolvedInMySimulation(collision.transform))
@@ -364,6 +368,22 @@ namespace NoTime.Splitter
         {
             ProcessPotentialAnchorExit(collision.collider);
         }
+        internal void DestroyComponentWithoutUnregistration()
+        {
+            Anchor = null;
+            Destroy(this);
+        }
+        bool _quitting;
+        private void OnApplicationQuit()
+        {
+            _quitting = true;
+        }
+        private void OnDestroy()
+        {
+            if (Anchor != null && !_quitting)
+                HandleExitSplitterContext(Anchor);
+        }
+        
         private bool InvolvedInMySimulation(Transform t)
         {
             //if no anchor or anchor is not mine

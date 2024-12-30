@@ -22,7 +22,6 @@ namespace NoTime.Splitter.Helpers
             return values[keys.IndexOf(key)];
         }
 
-        int _i;
         public bool ContainsKey(int key)
         {
             _i = 0;

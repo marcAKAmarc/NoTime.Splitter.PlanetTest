@@ -40,7 +40,6 @@ namespace NoTime.Splitter.Core
         {
 
 #if UNITY_EDITOR
-            Debug.Log("Splitter App Start Init");
             //if we are not reloading the domain, we must clear out actions
             if(SplitterSimulate != null)
                 foreach (Delegate d in SplitterSimulate.GetInvocationList())
