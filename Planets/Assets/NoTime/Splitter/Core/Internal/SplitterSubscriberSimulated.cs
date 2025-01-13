@@ -88,6 +88,12 @@ namespace NoTime.Splitter.Internal
         }
 
 
+
+        private string evtOnSimCollisionEnter = "OnSimulationCollisionEnter";
+        private string evtOnSimCollisionStay = "OnSimulationCollisionStay";
+        private string evtOnSimCollisionExit = "OnSimulationCollisionExit";
+
+        private SplitterEvent evtInfo = new SplitterEvent();
         //Pass through events
         private void OnCollisionEnter(Collision collision)
         {
@@ -97,14 +103,17 @@ namespace NoTime.Splitter.Internal
 
             foreach(var m in OnSimCollisionEnterReceivers)
             {
-                m.SendMessage("OnSimulationCollisionEnter", new SplitterEvent
-                {
-                    Anchor = this.Anchor,
-                    SimulatedSubscriber = this.transform,
-                    Subscriber = Authentic,
-                    SimulatedAnchor = this.Anchor.GetAnchorSimulation(),
-                    Collision = collision
-                }, SendMessageOptions.DontRequireReceiver);
+                evtInfo.Anchor = this.Anchor;
+                evtInfo.SimulatedSubscriber = this.transform;
+                evtInfo.Subscriber = Authentic;
+                evtInfo.SimulatedAnchor = this.Anchor.GetAnchorSimulation();
+                evtInfo.Collision = collision;
+
+                m.SendMessage(
+                    evtOnSimCollisionEnter, 
+                    evtInfo, 
+                    SendMessageOptions.DontRequireReceiver
+                );
             }
         }
 
@@ -112,14 +121,17 @@ namespace NoTime.Splitter.Internal
         {
             foreach (var m in OnSimCollisionStayReceivers)
             {
-                m.SendMessage("OnSimulationCollisionStay", new SplitterEvent
-                {
-                    Anchor = this.Anchor,
-                    SimulatedSubscriber = this.transform,
-                    Subscriber = Authentic,
-                    SimulatedAnchor = this.Anchor.GetAnchorSimulation(),
-                    Collision = collision
-                }, SendMessageOptions.DontRequireReceiver);
+                evtInfo.Anchor = this.Anchor;
+                evtInfo.SimulatedSubscriber = this.transform;
+                evtInfo.Subscriber = Authentic;
+                evtInfo.SimulatedAnchor = this.Anchor.GetAnchorSimulation();
+                evtInfo.Collision = collision;
+
+                m.SendMessage(
+                    evtOnSimCollisionStay, 
+                    evtInfo, 
+                    SendMessageOptions.DontRequireReceiver
+                );
             }
         }
 
@@ -128,14 +140,16 @@ namespace NoTime.Splitter.Internal
 
             foreach (var m in OnSimCollisionExitReceivers)
             {
-                m.SendMessage("OnSimulationCollisionExit", new SplitterEvent
-                {
-                    Anchor = this.Anchor,
-                    SimulatedSubscriber = this.transform,
-                    Subscriber = Authentic,
-                    SimulatedAnchor = this.Anchor.GetAnchorSimulation(),
-                    Collision = collision
-                }, SendMessageOptions.DontRequireReceiver);
+                evtInfo.Anchor = this.Anchor;
+                evtInfo.SimulatedSubscriber = this.transform;
+                evtInfo.Subscriber = Authentic;
+                evtInfo.SimulatedAnchor = this.Anchor.GetAnchorSimulation();
+                evtInfo.Collision = collision;
+                m.SendMessage(
+                    evtOnSimCollisionExit,
+                    evtInfo,
+                    SendMessageOptions.DontRequireReceiver
+                );
             }
         }
     }

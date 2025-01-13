@@ -2,7 +2,7 @@
 
 namespace NoTime.Splitter
 {
-    public struct SplitterEvent
+    public class SplitterEvent
     {
         public SplitterAnchor Anchor;
         public Transform SimulatedAnchor;

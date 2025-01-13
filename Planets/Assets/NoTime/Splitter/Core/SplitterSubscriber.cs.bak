@@ -373,9 +373,14 @@ namespace NoTime.Splitter
             Anchor = null;
             Destroy(this);
         }
+        bool _quitting;
+        private void OnApplicationQuit()
+        {
+            _quitting = true;
+        }
         private void OnDestroy()
         {
-            if (Anchor != null)
+            if (Anchor != null && !_quitting)
                 HandleExitSplitterContext(Anchor);
         }
         

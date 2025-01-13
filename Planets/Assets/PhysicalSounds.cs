@@ -44,6 +44,7 @@ public class PhysicalSounds : MonoBehaviour
 {
     public List<HitSoundData> HitSounds;
     public List<ScrapeSoundData> ScrapeSounds;
+    public float minimumImpulse;
 
     private float _vol;
     private Transform _t;
@@ -243,7 +244,8 @@ public class PhysicalSounds : MonoBehaviour
     ContactPoint[] contacts = new ContactPoint[1];
     public void OnCollisionEnter(Collision collision)
     {
-        if(CollisionIsNatural(collision)
+        if( CollisionMeetsThreshold(collision)
+            && CollisionIsNatural(collision)
             && !CollisionIsScrape(collision.impulse, collision.relativeVelocity)
         )
         {
@@ -259,7 +261,9 @@ public class PhysicalSounds : MonoBehaviour
     {
         
 
-        if (CollisionIsNatural(collision)
+        if (
+            CollisionMeetsThreshold(collision)
+            && CollisionIsNatural(collision)
             && CollisionIsScrape(collision.impulse, collision.relativeVelocity)
         )
         {
@@ -278,7 +282,10 @@ public class PhysicalSounds : MonoBehaviour
 
     public void OnSimulationCollisionEnter(SplitterEvent evt)
     {
-        if (!CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+        if (
+            CollisionMeetsThreshold(evt.Collision)
+            && !CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity)    
+        )
         {
             evt.Collision.GetContacts(contacts);
             OnCollisionEnterSounds(
@@ -290,7 +297,9 @@ public class PhysicalSounds : MonoBehaviour
 
     public void OnSimulationCollisionStay(SplitterEvent evt)
     {
-        if (CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
+        if (
+            CollisionMeetsThreshold(evt.Collision)
+            && CollisionIsScrape(evt.Collision.impulse, evt.Collision.relativeVelocity))
         {
             evt.Collision.GetContacts(contacts);
             OnCollisionStaySounds(
@@ -340,6 +349,10 @@ public class PhysicalSounds : MonoBehaviour
         }
     }
 
+    private bool CollisionMeetsThreshold(Collision collision)
+    {
+        return collision.impulse.sqrMagnitude > Mathf.Pow(minimumImpulse, 2f);
+    }
     private bool CollisionIsNatural(Collision collision)
     {
         //i am subscriber of collider's anchor

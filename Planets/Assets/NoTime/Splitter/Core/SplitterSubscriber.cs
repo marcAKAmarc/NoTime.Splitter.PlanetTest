@@ -1,5 +1,4 @@
 using NoTime.Splitter.Core;
-using NoTime.Splitter.Internal;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,16 +16,9 @@ namespace NoTime.Splitter
         [HideInInspector]
         public SplitterAnchor Anchor;
 
-        [HideInInspector]
-        [SerializeField]
+
         private List<SplitterAnchor> AnchorStack;
-
-        [HideInInspector]
-        [SerializeField]
         private SplitterAnchor ManuallyEnteredAnchor;
-
-        [HideInInspector]
-        [SerializeField]
         private List<Collider> CurrentAnchorTriggers;
 
         [Tooltip("Render simulated anchor")]
@@ -54,25 +46,31 @@ namespace NoTime.Splitter
             else
                 return Anchor.GetSimulationBody(this);
         }
+
+        SplitterAnchor _otherAnchor;
+        SplitterAnchor _attachedAnchor;
         private void ProcessPotentialAnchorEntrance(Collider other)
         {
-            if (other.gameObject.GetComponentInParent<SplitterAnchor>() != null
+            _otherAnchor = other.gameObject.GetComponentInParent<SplitterAnchor>();
+            _attachedAnchor = gameObject.GetComponent<SplitterAnchor>();
+
+            if (_otherAnchor != null
                 &&
-                other.gameObject.GetComponentInParent<SplitterAnchor>().enabled
+                _otherAnchor.enabled
                 && !(
-                    gameObject.GetComponent<SplitterAnchor>() != null
+                    _attachedAnchor != null
                     &&
-                    gameObject.GetComponent<SplitterAnchor>().enabled
+                    _attachedAnchor.enabled
                     &&
-                    gameObject.GetComponent<SplitterAnchor>().EntrancePriority <= other.GetComponentInParent<SplitterAnchor>().EntrancePriority
+                    _attachedAnchor.EntrancePriority <= other.GetComponentInParent<SplitterAnchor>().EntrancePriority
                 )
             )
             {
                 //if activator or deactivator, track
                 if (
-                    other.gameObject.GetComponentInParent<SplitterAnchor>().StayTriggers.Any(x => x.GetInstanceID() == other.GetInstanceID())
+                    _otherAnchor.StayTriggers.Any(x => x.GetInstanceID() == other.GetInstanceID())
                     ||
-                    other.gameObject.GetComponentInParent<SplitterAnchor>().EntranceTriggers.Any(x => x.GetInstanceID() == other.GetInstanceID())
+                    _otherAnchor.EntranceTriggers.Any(x => x.GetInstanceID() == other.GetInstanceID())
                 )
                     AddTriggerStack(other);
 
@@ -80,20 +78,20 @@ namespace NoTime.Splitter
                 //add to anchor stack
                 if (
                     CurrentAnchorTriggers.Any(y =>
-                        other.gameObject.GetComponentInParent<SplitterAnchor>().EntranceTriggers.Any(
+                        _otherAnchor.EntranceTriggers.Any(
                             x => x.GetInstanceID() == y.GetInstanceID()
                         )
                     )
                     &&
                     CurrentAnchorTriggers.Any(y =>
-                        other.gameObject.GetComponentInParent<SplitterAnchor>().StayTriggers.Any(
+                        _otherAnchor.StayTriggers.Any(
                             x => x.GetInstanceID() == y.GetInstanceID()
                         )
                     )
                 )
                 {
                     AddToAnchorStack(
-                        other.gameObject.GetComponentInParent<SplitterAnchor>()
+                        _otherAnchor
                     );
                 }
             }
@@ -104,9 +102,15 @@ namespace NoTime.Splitter
             }
         }
 
+
+
         private void OnDisable()
         {
-            UpdateContext();
+            if (!_quitting && gameObject.scene.isLoaded)
+            {
+                if (Anchor != null)
+                    HandleExitSplitterContext();
+            }
             //SplitterSystem.InvestigatoryEvents -= Investigate;
         }
 
@@ -225,14 +229,6 @@ namespace NoTime.Splitter
             yield return _updateWait;
             CheckAndExecuteContextUpdate();
         }
-        private IEnumerator UpdateSubscriberAtEndOfFixedUpdate()
-        {
-            yield return _updateWait;
-            if (Anchor != null)
-            {
-                Anchor.UpdateSubscriberRigidbody(this.gameObject);
-            }
-        }
 
         private void CheckAndExecuteContextUpdate()
         {
@@ -242,7 +238,7 @@ namespace NoTime.Splitter
             
             if (Anchor != null)
             {
-                HandleExitSplitterContext(Anchor);
+                HandleExitSplitterContext();
             }
             if (this.enabled && AnchorStack.FirstOrDefault() != null)
             {
@@ -270,35 +266,6 @@ namespace NoTime.Splitter
             CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x != null).ToList();
             AnchorStack = AnchorStack.Where(x => x != null).ToList();
         }
-
-        //[ContextMenu("Set Anchor From Location - WARNING: BACKUP SCENE BEFORE USE")]
-        //public void SetAnchorFromLocation()
-        //{
-        //    //This is bad as it could really mess up someone's scene
-        //    Physics.Simulate(.00000001f);
-        //    //Old failed attempt at accomplishing this the correct way:
-        //    //var result = Physics.OverlapSphere(transform.position, 1f, LayerMask.GetMask("Default"), QueryTriggerInteraction.Collide);
-        //    //var sanityAnchor = result.Where(x =>
-        //    //        x.isTrigger
-        //    //        && x.gameObject.GetComponentInParent<RigidContextAnchor>() != null
-        //    //        && x.gameObject.GetComponentInParent<RigidContextAnchor>().enabled
-        //    //).ToList();
-        //    //Anchor = result.Where(x =>
-        //    //        x.isTrigger
-        //    //        && x.gameObject.GetComponentInParent<RigidContextAnchor>() != null
-        //    //        && x.gameObject.GetComponentInParent<RigidContextAnchor>().enabled
-        //    //        //not self collision
-        //    //        && gameObject.GetComponentInParent<RigidContextAnchor>().gameObject.GetInstanceID() != gameObject.GetComponentInParent<RigidContextAnchor>().gameObject.GetInstanceID()
-        //    //    )
-        //    //    .OrderByDescending(x => x.gameObject.GetComponentInParent<RigidContextAnchor>().EntrancePriority)
-        //    //    .Select(x => x.gameObject.GetComponentInParent<RigidContextAnchor>())
-        //    //    .FirstOrDefault();
-        //    //AnchorStack.Clear();
-        //    //if (Anchor != null)
-        //    //{
-        //    //    AnchorStack.Add(Anchor);
-        //    //}
-        //}
 
         public void ManuallyEnterAnchor(SplitterAnchor anchor)
         {
@@ -333,7 +300,7 @@ namespace NoTime.Splitter
             Anchor = anchor;
         }
 
-        private void HandleExitSplitterContext(bool leaveOnStack = false)
+        private void HandleExitSplitterContext()
         {
             Anchor.UnregisterInScene(this);
 
@@ -350,7 +317,7 @@ namespace NoTime.Splitter
 
             if (!Simulating())
                 return;
-            if (!InvolvedInMySimulation(collision.transform))
+            if (!InvolvedInMySimulation(collision))
             {
                 Anchor.ApplyCollision(this, collision);
             }
@@ -359,7 +326,7 @@ namespace NoTime.Splitter
         {
             if (!Simulating())
                 return;
-            if (!InvolvedInMySimulation(collision.transform))
+            if (!InvolvedInMySimulation(collision))
             {
                 Anchor.ApplyCollision(this, collision);
             }
@@ -368,11 +335,7 @@ namespace NoTime.Splitter
         {
             ProcessPotentialAnchorExit(collision.collider);
         }
-        internal void DestroyComponentWithoutUnregistration()
-        {
-            Anchor = null;
-            Destroy(this);
-        }
+
         bool _quitting;
         private void OnApplicationQuit()
         {
@@ -380,88 +343,52 @@ namespace NoTime.Splitter
         }
         private void OnDestroy()
         {
-            if (Anchor != null && !_quitting)
-                HandleExitSplitterContext(Anchor);
+            if (Anchor != null && !_quitting && gameObject.scene.isLoaded)
+                HandleExitSplitterContext();
         }
-        
-        private bool InvolvedInMySimulation(Transform t)
+
+        SplitterAnchor _invInSim_FoundAnchor;
+        SplitterSubscriber _invInSim_FoundSub;
+        private bool InvolvedInMySimulation(Collision t)
         {
+
+
             //if no anchor or anchor is not mine
             //AND
             //no subscriber or subscriber not in my anchor
             //then not in my simulation
-            if (
-                (t.GetComponentInParent<SplitterAnchor>() == null
+
+            /*if (
+                (t.transform.GetComponentInParent<SplitterAnchor>() == null
                     ||
-                    t.GetComponentInParent<SplitterAnchor>().GetInstanceID()
+                    t.transform.GetComponentInParent<SplitterAnchor>().GetInstanceID()
                     != Anchor.GetInstanceID()
                 ) &&
-                (t.GetComponentInParent<SplitterSubscriber>() == null || t.GetComponentInParent<SplitterSubscriber>().Anchor == null || t.GetComponentInParent<SplitterSubscriber>().Anchor.GetInstanceID() != Anchor.GetInstanceID())
+                (t.transform.GetComponentInParent<SplitterSubscriber>() == null || t.transform.GetComponentInParent<SplitterSubscriber>().Anchor == null || t.transform.GetComponentInParent<SplitterSubscriber>().Anchor.GetInstanceID() != Anchor.GetInstanceID())
             )
                 return false;
             else
+                return true;*/
+
+            //same logic, just optimized:
+
+            //as long as we know that subscribers MUST have a rigidbody,
+            //we can assume that this transform has the subscriber and not reach to parent
+            _invInSim_FoundSub = t.transform.GetComponent<SplitterSubscriber>();
+
+            if (_invInSim_FoundSub != null
+                && _invInSim_FoundSub.Anchor != null
+                && _invInSim_FoundSub.Anchor == Anchor
+            )
                 return true;
-        }
 
-        public Vector3 GetUltimatePointVelocity(Vector3 WorldPoint)
-        {
-            if (Anchor == null)
-                return transform.GetComponent<Rigidbody>().GetPointVelocity(WorldPoint);
+            _invInSim_FoundAnchor = t.transform.GetComponentInParent<SplitterAnchor>();
 
-            if (Anchor.transform.GetComponent<SplitterSubscriber>() != null)
-                return
-                    Anchor.transform.TransformDirection(
-                        Anchor.GetSim().transform.InverseTransformDirection(
-                            Anchor.GetSubSim(this).rigidbody.GetPointVelocity(
-                                Anchor.GetSim().gameObject.transform.TransformPoint(Anchor.transform.InverseTransformPoint(WorldPoint))
-                            )
-                        )
-                    )
-                    +
-                    Anchor.transform.GetComponent<SplitterSubscriber>().GetUltimatePointVelocity(WorldPoint);
-            else
-                return
-                    Anchor.transform.TransformDirection(
-                        Anchor.GetSim().transform.InverseTransformDirection(
-                            Anchor.GetSubSim(this).rigidbody.GetPointVelocity(
-                                Anchor.GetSim().gameObject.transform.TransformPoint(Anchor.transform.InverseTransformPoint(WorldPoint))
-                            )
-                        )
-                    )
-                    +
-                    Anchor.GetPointVelocity(WorldPoint);
-        }
+            if (_invInSim_FoundAnchor != null
+                && _invInSim_FoundAnchor == Anchor)
+                return true;
 
-        public Vector3 GetUltimateAngularVelocity()
-        {
-            if (Anchor == null)
-                return transform.GetComponent<Rigidbody>().angularVelocity;
-
-            if (Anchor.transform.GetComponent<SplitterSubscriber>() != null)
-                return
-                    Anchor.transform.TransformDirection(
-                        Anchor.GetSim().transform.InverseTransformDirection(
-                            Anchor.GetSubSim(this).rigidbody.angularVelocity
-                        )
-                    )
-                    +
-                    Anchor.transform.GetComponent<SplitterSubscriber>().GetUltimateAngularVelocity();
-            if (Anchor.transform.GetComponent<Rigidbody>() != null)
-                return
-                    Anchor.transform.TransformDirection(
-                        Anchor.GetSim().transform.InverseTransformDirection(
-                            Anchor.GetSubSim(this).rigidbody.angularVelocity
-                        )
-                    )
-                    +
-                    Anchor.transform.GetComponent<Rigidbody>().angularVelocity;
-            else
-                return
-                    Anchor.transform.TransformDirection(
-                        Anchor.GetSim().transform.InverseTransformDirection(
-                            Anchor.GetSubSim(this).rigidbody.angularVelocity
-                        )
-                    );
+            return false;
         }
     }
 }

@@ -18,6 +18,7 @@ public class TractorBeamBehavior : MonoBehaviour
     public bool ViewBeam;
     public Transform NormalizedBeamVisualization;
     private List<Transform> beamVisuals = new List<Transform>();
+    private List<Collider> colliders;
     // Start is called before the first frame update
     void Start()
     {
@@ -25,14 +26,17 @@ public class TractorBeamBehavior : MonoBehaviour
         hits = new RaycastHit[5];
         myRigid = transform.GetComponentInParent<Rigidbody>();
         mySubscriber = transform.GetComponentInParent<SplitterSubscriber>();
+        colliders = transform.GetComponents<Collider>().ToList();
     }
+
+    int i;
     void Update()
     {
         doIt = Input.GetKey(KeyCode.T);
-        
-        foreach(var col in transform.GetComponents<Collider>())
+
+        for (; i < colliders.Count; i++)
         {
-            col.enabled = doIt;
+            colliders[i].enabled = doIt;
         }
         
         //Debug.Log("dO IT: " + doIt.ToString());

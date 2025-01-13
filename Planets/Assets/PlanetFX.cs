@@ -187,8 +187,11 @@ public class PlanetFX : MonoBehaviour
     }
     private void AtmospherePreRender()
     {
-        foreach (var ad in Atmospheres)
+        foreach (AtmosphereData ad in Atmospheres)
         {
+            if (ad.PlanetTransform == null)
+                continue;
+
             if (ad._initialScale == Vector3.zero)
                 ad._initialScale = ad.PlanetAtmosphereTexture.localScale;
 
@@ -326,6 +329,8 @@ public class PlanetFX : MonoBehaviour
     {
         foreach (var f in Facades)
         {
+            if (f.Facade == null)
+                continue;
 
             float sqrDist = (transform.position - f.Facade.position).sqrMagnitude;
 
