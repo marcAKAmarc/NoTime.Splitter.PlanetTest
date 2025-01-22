@@ -105,7 +105,7 @@ public class GravityObject : SplitterEventListener
         }
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
 
@@ -113,31 +113,6 @@ public class GravityObject : SplitterEventListener
             Gizmos.DrawLine(transform.position, field.transform.position);
     }
 
-    /*public override void OnEnterAnchor(SplitterEvent evt)
-    {
-        //we want to keep this on in WorldSpace so that we can read from it
-        if (splitterSubscriber != null && evt.Subscriber.gameObject.GetInstanceID() == splitterSubscriber.gameObject.GetInstanceID())
-        {
-            this.enabled = true;
-            ApplyGravity = false;
-        }
-
-        //get existing fieldColliders and set them up
-        if (evt.SimulatedAnchor.GetComponentInChildren<GravityField>() != null)
-        {
-            evt.SimulatedSubscriber.GetComponent<GravityObject>().field = evt.SimulatedAnchor.GetComponentInChildren<GravityField>();
-            evt.SimulatedSubscriber.GetComponent<GravityObject>().fieldColliders =
-                fieldColliders.Where(x =>
-                    x.Field.transform.GetInstanceID() == evt.SimulatedSubscriber.GetComponent<GravityObject>().field.transform.GetInstanceID()
-                ).ToList();
-        }
-    }*/
-
-    /*public override void OnExitAnchor(SplitterEvent evt)
-    {
-        if (evt.Subscriber.gameObject.GetInstanceID() == splitterSubscriber.gameObject.GetInstanceID())
-            ApplyGravity = true;
-    }*/
     private void OnDisable()
     {
         var Breaka = "here";

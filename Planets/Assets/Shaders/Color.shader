@@ -13,7 +13,7 @@ Shader "Custom/Color"
     }
     SubShader
     {
-        Tags { "Queue" = "Overlay" "RenderType" = "Transparent"}
+        Tags { "Queue" = "Transparent" "RenderType" = "Transparent"}
         Blend[_SrcBlend][_DstBlend]
         BlendOp[_BlendOp]
         Pass
@@ -28,12 +28,11 @@ Shader "Custom/Color"
             float4 _SunlightDir;
             float _MinimumLight;
 
+
             struct appdata
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
-                
-
             };
 
             struct v2f
