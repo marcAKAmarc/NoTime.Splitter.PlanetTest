@@ -70,7 +70,7 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _FarFade: 99999
-    - _FogMaxDist: 50
+    - _FogMaxDist: 451.3
     - _FogMinDist: 10
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -82,7 +82,7 @@ Material:
     - _NightPow: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _PlanetSurfaceRadius: 210
+    - _PlanetSurfaceRadius: 214
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -94,7 +94,7 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _NightColor: {r: 0, g: 0, b: 0, a: 1}
     - _PlanetWorldOrigin: {r: 402, g: 0, b: 2742, a: 0}
-    - _RimColorDay: {r: 1, g: 0, b: 0.0379858, a: 1}
-    - _RimColorNight: {r: 1, g: 0.3882353, b: 0, a: 1}
+    - _RimColorDay: {r: 1, g: 0.43396223, b: 0, a: 1}
+    - _RimColorNight: {r: 1, g: 0, b: 0.33168316, a: 1}
     - _SunlightDir: {r: -0.321, g: -0.766, b: 0.566, a: 0}
   m_BuildTextureStacks: []

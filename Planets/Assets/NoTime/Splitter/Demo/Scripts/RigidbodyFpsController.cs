@@ -40,6 +40,8 @@ namespace NoTime.Splitter.Demo
             _verticalLook = VerticalLook;
             VerticalLookStart = Quaternion.identity;
         }
+
+        bool freezeLook;
         void Update()
         {
             rotationX += Input.GetAxis("Mouse X") * sensitivityX;
@@ -47,6 +49,7 @@ namespace NoTime.Splitter.Demo
             ShouldJump = ShouldJump || Input.GetKeyDown(KeyCode.Space);
             JetpackUp = (!Grounded && Input.GetKeyDown(KeyCode.Space)) || (JetpackUp && Input.GetKey(KeyCode.Space));
             JetpackDown = (!Grounded && Input.GetKeyDown(KeyCode.LeftShift)) || (JetpackDown && Input.GetKey(KeyCode.LeftShift));
+            freezeLook = Input.GetKey(KeyCode.F);
         }
         Vector3 previousPosition;
         bool Moved = false;
@@ -58,7 +61,8 @@ namespace NoTime.Splitter.Demo
 
             GroundCheck();
 
-            Look();
+            if(!freezeLook)
+                Look();
 
             if (_rotateToGravity)
                 AlignRotationWithGravity();
@@ -259,7 +263,7 @@ namespace NoTime.Splitter.Demo
 
         }
 
-        private void OnDrawGizmos()
+        private void OnDrawGizmosSelected()
         {
 
             Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
