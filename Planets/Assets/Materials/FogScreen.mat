@@ -58,7 +58,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AtmosphereMaxRadius: 250
+    - _AtmosphereMaxRadius: 256.4
     - _BlendOp: 4
     - _BumpScale: 1
     - _Cutoff: 0.5
@@ -70,7 +70,7 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _FarFade: 99999
-    - _FogMaxDist: 451.3
+    - _FogMaxDist: 354.6
     - _FogMinDist: 10
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -95,6 +95,6 @@ Material:
     - _NightColor: {r: 0, g: 0, b: 0, a: 1}
     - _PlanetWorldOrigin: {r: 402, g: 0, b: 2742, a: 0}
     - _RimColorDay: {r: 1, g: 0.43396223, b: 0, a: 1}
-    - _RimColorNight: {r: 1, g: 0, b: 0.33168316, a: 1}
+    - _RimColorNight: {r: 1, g: 0.09962939, b: 0, a: 1}
     - _SunlightDir: {r: -0.321, g: -0.766, b: 0.566, a: 0}
   m_BuildTextureStacks: []

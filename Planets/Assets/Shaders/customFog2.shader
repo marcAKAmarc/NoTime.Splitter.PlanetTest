@@ -151,7 +151,7 @@ Shader "Custom/ScreenSpaceFog2"
                 float3 uvForward = normalize(worldPosition - _WorldSpaceCameraPos);
 
                 //get dist to planet
-                float3 fogRayStart = _WorldSpaceCameraPos + uvForward * _FogMinDist;
+                float3 fogRayStart = _WorldSpaceCameraPos + uvForward; //* _FogMinDist;
                 float distPlanet = distance(fogRayStart, _PlanetWorldOrigin);
 
                 float3 theta = acos(dot(uvForward, normalize(_PlanetWorldOrigin - fogRayStart)));
@@ -162,6 +162,7 @@ Shader "Custom/ScreenSpaceFog2"
                 
                 float distInFog = sqrt(   max(0,pow(_AtmosphereMaxRadius, 2) - pow(opposite, 2)));
                 float distInPlanet = sqrt(max(0,pow(_PlanetSurfaceRadius, 2) - pow(opposite, 2)));
+                
                 
                 //---don't need and maybe incorrect----
                 float distAmtSide1 = max(0, min(adjacent, distInFog) - distInPlanet);
@@ -178,6 +179,7 @@ Shader "Custom/ScreenSpaceFog2"
 
                 float3 startPosFog = fogRayStart + (uvForward * (adjacent - startDistFromCenter));
                 float3 endPosFog = startPosFog + (uvForward * totalDist);
+                float3 midPosFog = startPosFog + (uvForward * totalDist) / 2;
 
                 //dayNight stuff
                 float dayNightEnter = clamp(
@@ -213,7 +215,8 @@ Shader "Custom/ScreenSpaceFog2"
 
 
                 //depth fading stuff
-                float fogAmt = (max(0, min(sceneZ, totalDist) - _FogMinDist)) / (_FogMaxDist - _FogMinDist);
+                float sceneZInFog = sceneZ - max(0,adjacent - distInFog);
+                float fogAmt = (max(0, min(sceneZInFog, totalDist) - _FogMinDist)) / (_FogMaxDist - _FogMinDist);
                 float depthPow = lerp(_DepthPowSurface, _DepthPowSpace, i.amtInSpace);
                 float depthFactor = lerp(_DepthFactorSurface, _DepthFactorSpace, i.amtInSpace);
                 float depthFading = saturate((abs(pow(fogAmt, depthPow))) / depthFactor);
@@ -231,13 +234,15 @@ Shader "Custom/ScreenSpaceFog2"
                             ), 0, 1
                         ),
                         //this tightens things up as we leave the planet
-                        1 + 10*max(distPlanet/(2*_AtmosphereMaxRadius),1)
+                        1 + (
+                            500 * clamp((distPlanet-(_PlanetSurfaceRadius+10)) / (2 * _AtmosphereMaxRadius), 0, 1)
+                        )
                     )
                     ;
 
                 //startPosFog sunAmt
                 //ss - sunstart
-                float ssTheta = acos(dot(-_SunlightDir, normalize(_PlanetWorldOrigin - startPosFog))); 
+                float ssTheta = acos(dot(-normalize(_SunlightDir), normalize(_PlanetWorldOrigin - startPosFog)));
                 float ssDistToPlanet = distance(_PlanetWorldOrigin, startPosFog);
                 float ssOpposite = ssDistToPlanet * sin(ssTheta);
                 float ssAdjacent = ssDistToPlanet * cos(ssTheta);
@@ -246,25 +251,62 @@ Shader "Custom/ScreenSpaceFog2"
                 float ssDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(ssOpposite, 2)));
 
                 //0 if planet has value, otherwise 1
-                float ssPlanetCancel = clamp(ssDistInPlanet / .000001, 0, 1);
-                float ssAdjNegCancel = 1;// clamp(ssAdjacent / .000001, 0, 1);
+                float ssNoPlanetCancel = clamp(ssDistInPlanet / .000001, 0, 1);
+                float ssAdjNegCancel = clamp(ssAdjacent / .000001, 0, 1);
                 
                 
-                //float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetCancel * ssAdjNegCancel);
+                //float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssNoPlanetCancel * ssAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
                 //we need to fade, so we just subtract based on P
                 //float ssPlanetGradualCancel = clamp(ssDistInPlanet / 50, 0, 1);
                 //just increase the first number as much as you want.  the more, the quicker the transition.
                 float ssPlanetGradualCancel = clamp(20*(1 - sin(acos(ssDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
-                float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetGradualCancel * ssPlanetCancel * ssAdjNegCancel);
+                float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetGradualCancel * ssNoPlanetCancel * ssAdjNegCancel);
+                ssTotalDist = ssTotalDist * (1 - ssNoPlanetCancel);
                 //float ssAmt = ssTotalDist/maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
-                float ssAmt = clamp(ssTotalDist / (maxSunTravelDist * .25), 0, 1);
+                float ssAmt = clamp(ssTotalDist / (maxSunTravelDist * .1), 0, 1);
+
+
+
+
+
+             //midPosFog smTotalDist
+                ///////////////start here!
+                float smTheta = acos(dot(-normalize(_SunlightDir), normalize(_PlanetWorldOrigin - midPosFog)));
+                float smDistToPlanet = distance(_PlanetWorldOrigin, midPosFog);
+                float smOpposite = smDistToPlanet * sin(smTheta);
+                float smAdjacent = smDistToPlanet * cos(smTheta);
+
+                float smDistInFog = sqrt(max(0, pow(_AtmosphereMaxRadius, 2) - pow(smOpposite, 2)));
+                float smDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(smOpposite, 2)));
+
+                //0 if planet has value, otherwism 1
+                float smNoPlanetCancel = clamp(smDistInPlanet / .000001, 0, 1); //JUST READDED WAS 0
+                float smAdjNegCancel = 1;//clamp(smAdjacent / .000001, 0, 1);
+
+                //float smTotalDist = smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smNoPlanetCancel * smAdjNegCancel);
+                //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
+                //we need to fade, so we just subtract basmd on P
+                //float smPlanetGradualCancel = clamp(smDistInPlanet / 500, 0, 1);
+                //that worked okay, but sunsmt would flicker out of existence when it crossmd into shadow instead of fade.
+                //just increasm the first number as much as you want.  the more, the quicker the transition.
+                float smPlanetGradualCancel = clamp(20 * (1 - sin(acos(smDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
+
+                float smTotalDist = smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smPlanetGradualCancel * smNoPlanetCancel * smAdjNegCancel);
+                smTotalDist = smTotalDist * smPlanetGradualCancel /*JUSTREADDED:*/ * (1 - smNoPlanetCancel);
+                //float smAmt = smTotalDist / maxSunTravelDist;
+                //this worked great, but we want full blown sunset when standing on the planet
+                float smAmt = clamp(smTotalDist / (maxSunTravelDist * .1), 0, 1);
+
+
+
+
 
             //endPosFog seTotalDist
                 ///////////////start here!
-                float seTheta = acos(dot(-_SunlightDir, normalize(_PlanetWorldOrigin - endPosFog)));
+                float seTheta = acos(dot(-normalize(_SunlightDir), normalize(_PlanetWorldOrigin - endPosFog)));
                 float seDistToPlanet = distance(_PlanetWorldOrigin, endPosFog);
                 float seOpposite = seDistToPlanet * sin(seTheta);
                 float seAdjacent = seDistToPlanet * cos(seTheta);
@@ -273,10 +315,10 @@ Shader "Custom/ScreenSpaceFog2"
                 float seDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(seOpposite, 2)));
 
                 //0 if planet has value, otherwise 1
-                float sePlanetCancel = clamp(seDistInPlanet / .000001, 0, 1);
+                float seNoPlanetCancel = clamp(seDistInPlanet / .000001, 0, 1);
                 float seAdjNegCancel = clamp(seAdjacent / .000001, 0, 1);
 
-                //float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * sePlanetCancel * seAdjNegCancel);
+                //float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * seNoPlanetCancel * seAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
                 
                 //we need to fade, so we just subtract based on P
@@ -285,22 +327,27 @@ Shader "Custom/ScreenSpaceFog2"
                 //just increase the first number as much as you want.  the more, the quicker the transition.
                 float sePlanetGradualCancel = clamp(20 * (1 - sin(acos(seDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
-                float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * sePlanetGradualCancel * sePlanetCancel * seAdjNegCancel);
+                float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog)  * sePlanetGradualCancel * seNoPlanetCancel * seAdjNegCancel);
+                seTotalDist = seTotalDist * (1-seNoPlanetCancel);
                 //float seAmt = seTotalDist/maxSunTravelDist;
+                
                 //this worked great, but we want full blown sunset when standing on the planet
-                float seAmt = clamp(seTotalDist / (maxSunTravelDist * .25),0,1);
+                float seAmt = clamp(seTotalDist / (maxSunTravelDist * .1),0,1);
 
                 
                 //take 'er on home
-                float sunsetAmt = max(ssAmt , seAmt) * .5 * amtTowardSun;
+                float sunsetAmt = clamp(max(max(ssAmt, smAmt) , seAmt) * amtTowardSun * depthFading, 0, 1);
                 float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(3.14159 * (1 - dayNight)) + 1) / 2);               
                 float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(3.14159*(1 - dayNight))+1)/2);
-                float4 atmosphereColor = lerp(dayNightColor, sunsetColor, clamp(cos(3.14159 * (1 - sunsetAmt))+1,0,1)/2);
+                float4 atmosphereColor = (dayNightColor*depthFading) + (sunsetColor * sunsetAmt);//lerp(dayNightColor, sunsetColor, sunsetAmt);
                 return 
                     //lerp(_NightColor, _DayColor, sunsetAmt)
-                    atmosphereColor
+                    //atmosphereColor
                     //dayNightColor
-                    * depthFading    
+                    //* depthFading    
+                    //ssNoPlanetCancel +
+                    seAmt
+                    //atmosphereColor
                 ;
 
                 

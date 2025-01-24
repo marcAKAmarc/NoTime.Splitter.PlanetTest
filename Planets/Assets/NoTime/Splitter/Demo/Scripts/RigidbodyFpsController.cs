@@ -61,15 +61,16 @@ namespace NoTime.Splitter.Demo
 
             GroundCheck();
 
-            if(!freezeLook)
-                Look();
+            
+            Look();
 
             if (_rotateToGravity)
                 AlignRotationWithGravity();
 
             Move();
 
-            SpaceRotate();
+            if(!freezeLook)
+                SpaceRotate();
 
             Jump();
 
