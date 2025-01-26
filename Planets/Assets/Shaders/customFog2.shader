@@ -223,22 +223,25 @@ Shader "Custom/ScreenSpaceFog2"
 
                 ///sunset stuff
                 float maxSunTravelDist = 2 * sqrt(pow(_AtmosphereMaxRadius, 2) - pow(_PlanetSurfaceRadius, 2));
-                float amtTowardSun = 
-                    pow(
-                        clamp(
-                            dot(
-                                uvForward,
-                                -normalize(
-                                    _SunlightDir
-                                )
-                            ), 0, 1
-                        ),
+                float amtTowardSun =
+                    
+                        dot(
+                            uvForward,
+                            -normalize(
+                                _SunlightDir
+                            )
+                       
+                    );
+                //put in [0,1] range
+                amtTowardSun = (amtTowardSun + 1) / 2;
+                amtTowardSun = pow(
+                        amtTowardSun,
                         //this tightens things up as we leave the planet
                         1 + (
                             500 * clamp((distPlanet-(_PlanetSurfaceRadius+10)) / (2 * _AtmosphereMaxRadius), 0, 1)
                         )
                     )
-                    ;
+                ;
 
                 //startPosFog sunAmt
                 //ss - sunstart
@@ -263,10 +266,10 @@ Shader "Custom/ScreenSpaceFog2"
                 float ssPlanetGradualCancel = clamp(20*(1 - sin(acos(ssDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
                 float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetGradualCancel * ssNoPlanetCancel * ssAdjNegCancel);
-                ssTotalDist = ssTotalDist * (1 - ssNoPlanetCancel);
-                //float ssAmt = ssTotalDist/maxSunTravelDist;
+                ssTotalDist = ssTotalDist /*(1 - ssNoPlanetCancel)*/;
+                float ssAmt = ssTotalDist/maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
-                float ssAmt = clamp(ssTotalDist / (maxSunTravelDist * .1), 0, 1);
+                //float ssAmt = clamp(ssTotalDist / (maxSunTravelDist * .1), 0, 1);
 
 
 
@@ -284,7 +287,7 @@ Shader "Custom/ScreenSpaceFog2"
 
                 //0 if planet has value, otherwism 1
                 float smNoPlanetCancel = clamp(smDistInPlanet / .000001, 0, 1); //JUST READDED WAS 0
-                float smAdjNegCancel = 1;//clamp(smAdjacent / .000001, 0, 1);
+                float smAdjNegCancel = clamp(smAdjacent / .000001, 0, 1);
 
                 //float smTotalDist = smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smNoPlanetCancel * smAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
@@ -293,12 +296,14 @@ Shader "Custom/ScreenSpaceFog2"
                 //that worked okay, but sunsmt would flicker out of existence when it crossmd into shadow instead of fade.
                 //just increasm the first number as much as you want.  the more, the quicker the transition.
                 float smPlanetGradualCancel = clamp(20 * (1 - sin(acos(smDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
+                //this will fuck up negatives, aka sampling points close to the horizon toward the sun.  so we push back to one when adjNegCancel = 0
+                //smPlanetGradualCancel = smPlanetGradualCancel + (1 - smPlanetGradualCancel) * (1-smAdjNegCancel);
 
                 float smTotalDist = smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smPlanetGradualCancel * smNoPlanetCancel * smAdjNegCancel);
-                smTotalDist = smTotalDist * smPlanetGradualCancel /*JUSTREADDED:*/ * (1 - smNoPlanetCancel);
-                //float smAmt = smTotalDist / maxSunTravelDist;
+                smTotalDist = smTotalDist * smPlanetGradualCancel /** (1 - smNoPlanetCancel)*/;
+                float smAmt = smTotalDist / maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
-                float smAmt = clamp(smTotalDist / (maxSunTravelDist * .1), 0, 1);
+                //float smAmt = clamp(smTotalDist / (maxSunTravelDist .1), 0, 1);
 
 
 
@@ -328,25 +333,24 @@ Shader "Custom/ScreenSpaceFog2"
                 float sePlanetGradualCancel = clamp(20 * (1 - sin(acos(seDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
                 float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog)  * sePlanetGradualCancel * seNoPlanetCancel * seAdjNegCancel);
-                seTotalDist = seTotalDist * (1-seNoPlanetCancel);
-                //float seAmt = seTotalDist/maxSunTravelDist;
-                
+                seTotalDist = seTotalDist * sePlanetGradualCancel;//(1-seNoPlanetCancel);
+                float seAmt = seTotalDist/maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
-                float seAmt = clamp(seTotalDist / (maxSunTravelDist * .1),0,1);
+                //float seAmt = clamp(seTotalDist / (maxSunTravelDist * .1),0,1);
 
                 
                 //take 'er on home
-                float sunsetAmt = clamp(max(max(ssAmt, smAmt) , seAmt) * amtTowardSun * depthFading, 0, 1);
+                float sunsetAmt = clamp(max(max(ssAmt, smAmt) , seAmt) * amtTowardSun /** pow(depthFading, .5)*/, 0, 1);
                 float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(3.14159 * (1 - dayNight)) + 1) / 2);               
                 float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(3.14159*(1 - dayNight))+1)/2);
                 float4 atmosphereColor = (dayNightColor*depthFading) + (sunsetColor * sunsetAmt);//lerp(dayNightColor, sunsetColor, sunsetAmt);
                 return 
                     //lerp(_NightColor, _DayColor, sunsetAmt)
-                    //atmosphereColor
+                    atmosphereColor
                     //dayNightColor
-                    //* depthFading    
+                    * depthFading    
                     //ssNoPlanetCancel +
-                    seAmt
+                    //ssAmt *.2 * amtTowardSun
                     //atmosphereColor
                 ;
 
