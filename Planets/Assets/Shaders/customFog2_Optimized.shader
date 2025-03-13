@@ -1,4 +1,4 @@
-Shader "Custom/ScreenSpaceFog2"
+Shader "Custom/ScreenSpaceFog2Optimized"
 {
 
     //IT ALL LOOKS GOOD WITH INCREASED FOG DIST IN SPACE AND
@@ -28,8 +28,11 @@ Shader "Custom/ScreenSpaceFog2"
         _DepthPowSurface("Depth Pow Surface", float) = 1
         _DepthFactorSpace("Depth Factor Space", float) = .07
         _DepthPowSpace("Depth Pow Space", float) = 1.93
+
+        _AtmoDensitySurface("Atmosphere Density Surface", float) = 1
+        _AtmoDensitySpace("Atmosphere Density Space", float) = 1
     }
-    SubShader
+        SubShader
     {
         //Tags { "Queue" = "Transparent" "RenderType" = "Transparent"}
         Tags { "RenderType" = "Transparent" "IgnoreProjector" = "True" "Queue" = "Transparent" }
@@ -57,6 +60,9 @@ Shader "Custom/ScreenSpaceFog2"
             float _DepthFactorSpace;
             float _DepthPowSpace;
 
+            float _AtmoDensitySurface;
+            float _AtmoDensitySpace;
+
             float _NearFade;
             float _FarFade;
             float _FogMinDist;
@@ -66,6 +72,8 @@ Shader "Custom/ScreenSpaceFog2"
             float _PlanetSurfaceRadius;
             float4 _SunlightDir;
             float _MinimumLight;
+
+            
 
             static const float PI = 3.14159;
 
@@ -98,22 +106,22 @@ Shader "Custom/ScreenSpaceFog2"
                 o.camRelativeWorldPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1.0)).xyz - _WorldSpaceCameraPos;
                 o.dayNight = clamp(dot(
                     normalize(
-                        _PlanetWorldOrigin-_WorldSpaceCameraPos
-                    ), 
+                        _PlanetWorldOrigin - _WorldSpaceCameraPos
+                    ),
                     normalize(_SunlightDir)
                 ),-1,1);
-                
+
                 o.amtInSpace = clamp((distance(_WorldSpaceCameraPos, _PlanetWorldOrigin) - _PlanetSurfaceRadius) / (_AtmosphereMaxRadius - _PlanetSurfaceRadius), 0, 1);
-                
+
                 o.screenPos = ComputeScreenPos(o.pos);
                 COMPUTE_EYEDEPTH(o.screenPos.z);
-                
+
                 return o;
             }
 
             half4 frag(v2f i) : SV_Target
             {
-                
+
                 float2 screenUV = i.projPos.xy / i.projPos.w;
 
                 // sample depth texture
@@ -137,8 +145,8 @@ Shader "Custom/ScreenSpaceFog2"
                 //BUT THIS IS UNUSED
                 //float3 worldPos = viewPlane * sceneZ + _WorldSpaceCameraPos;
                 //worldPos = mul(unity_CameraToWorld, float4(worldPos, 1.0));
-                
-               
+
+
                 ////////////
                 /*float3 pixToCamSized = _WorldSpaceCameraPos.xyz - worldPos;
                 float3 pixToPlanetSized;
@@ -162,16 +170,19 @@ Shader "Custom/ScreenSpaceFog2"
                 float opposite = distPlanet * sin(theta);
 
                 float adjacent = distPlanet * cos(theta);
-                
-                float distInFog = sqrt(   max(0,pow(_AtmosphereMaxRadius, 2) - pow(opposite, 2)));
+
+                float distInFog = sqrt(max(0,pow(_AtmosphereMaxRadius, 2) - pow(opposite, 2)));
                 float distInPlanet = sqrt(max(0,pow(_PlanetSurfaceRadius, 2) - pow(opposite, 2)));
-                
-                
+
+                float atmoDensity = ((1 - (
+                    (clamp(opposite, _PlanetSurfaceRadius, _AtmosphereMaxRadius) - _PlanetSurfaceRadius)
+                    / (_AtmosphereMaxRadius - _PlanetSurfaceRadius)
+                    )) * (_AtmoDensitySurface - _AtmoDensitySpace)) + _AtmoDensitySpace;
                 //---don't need and maybe incorrect----
                 //float distAmtSide1 = max(0, min(adjacent, distInFog) - distInPlanet);
                 //float distAmtSide2 = max(0, min(distInFog, distInFog + adjacent));
                 //--------------------------------------
-                
+
                 //0 if planet has value, otherwise 1
                 float planetCancel = clamp(distInPlanet / .00001, 0, 1);
                 float adjNegCancel = clamp(adjacent / .000001, 0, 1);
@@ -195,8 +206,8 @@ Shader "Custom/ScreenSpaceFog2"
                         )
                     ), -1, 1
                 );
-               
-                
+
+
 
                 float dayNightExit = clamp(
                     dot(
@@ -227,24 +238,24 @@ Shader "Custom/ScreenSpaceFog2"
                 ///sunset stuff
                 float maxSunTravelDist = 2 * sqrt(pow(_AtmosphereMaxRadius, 2) - pow(_PlanetSurfaceRadius, 2));
                 float amtTowardSun =
-                    
+
                         dot(
                             uvForward,
                             -normalize(
                                 _SunlightDir
                             )
-                       
+
                     );
                 //put in [0,1] range
                 amtTowardSun = (amtTowardSun + 1) / 2;
                 amtTowardSun = pow(
                         amtTowardSun,
-                        //this tightens things up as we leave the planet
-                        1 + (
-                            500 * clamp((distPlanet-(_PlanetSurfaceRadius+10)) / (2 * _AtmosphereMaxRadius), 0, 1)
-                        )
+                    //this tightens things up as we leave the planet
+                    1 + (
+                        500 * clamp((distPlanet - (_PlanetSurfaceRadius + 10)) / (2 * _AtmosphereMaxRadius), 0, 1)
                     )
-                ;
+                )
+            ;
 
                 //startPosFog sunAmt
                 //ss - sunstart
@@ -259,18 +270,18 @@ Shader "Custom/ScreenSpaceFog2"
                 //0 if planet has value, otherwise 1
                 float ssNoPlanetCancel = clamp(ssDistInPlanet / .000001, 0, 1);
                 float ssAdjNegCancel = clamp(ssAdjacent / .000001, 0, 1);
-                
-                
+
+
                 //float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssNoPlanetCancel * ssAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
                 //we need to fade, so we just subtract based on P
                 //float ssPlanetGradualCancel = clamp(ssDistInPlanet / 50, 0, 1);
                 //just increase the first number as much as you want.  the more, the quicker the transition.
-                float ssPlanetGradualCancel = clamp(20*(1 - sin(acos(ssDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
+                float ssPlanetGradualCancel = clamp(20 * (1 - sin(acos(ssDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
                 float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetGradualCancel * ssNoPlanetCancel * ssAdjNegCancel);
                 ssTotalDist = ssTotalDist /*(1 - ssNoPlanetCancel)*/;
-                float ssAmt = ssTotalDist/maxSunTravelDist;
+                float ssAmt = ssTotalDist / maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
                 //float ssAmt = clamp(ssTotalDist / (maxSunTravelDist * .1), 0, 1);
 
@@ -328,36 +339,37 @@ Shader "Custom/ScreenSpaceFog2"
 
                 //float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * seNoPlanetCancel * seAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
-                
+
                 //we need to fade, so we just subtract based on P
                 //float sePlanetGradualCancel = clamp(seDistInPlanet / 500, 0, 1);
                 //that worked okay, but sunset would flicker out of existence when it crossed into shadow instead of fade.
                 //just increase the first number as much as you want.  the more, the quicker the transition.
                 float sePlanetGradualCancel = clamp(20 * (1 - sin(acos(seDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
-                float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog)  * sePlanetGradualCancel * seNoPlanetCancel * seAdjNegCancel);
+                float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * sePlanetGradualCancel * seNoPlanetCancel * seAdjNegCancel);
                 seTotalDist = seTotalDist * sePlanetGradualCancel;//(1-seNoPlanetCancel);
-                float seAmt = seTotalDist/maxSunTravelDist;
+                float seAmt = seTotalDist / maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
                 //float seAmt = clamp(seTotalDist / (maxSunTravelDist * .1),0,1);
 
-                
+
                 //take 'er on home
                 float sunsetAmt = clamp(max(max(ssAmt, smAmt) , seAmt) * amtTowardSun /** pow(depthFading, .5)*/, 0, 1);
-                float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(PI * (1 - dayNight)) + 1) / 2);               
-                float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(PI*(1 - dayNight))+1)/2);
-                float4 atmosphereColor = (dayNightColor*depthFading) + (sunsetColor * sunsetAmt);//lerp(dayNightColor, sunsetColor, sunsetAmt);
-                return 
+                float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(PI * (1 - dayNight)) + 1) / 2);
+                float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(PI * (1 - dayNight)) + 1) / 2);
+                float4 atmosphereColor = (dayNightColor * (1-sunsetAmt)) + (sunsetColor * sunsetAmt);//lerp(dayNightColor, sunsetColor, sunsetAmt);
+                return
                     //lerp(_NightColor, _DayColor, sunsetAmt)
                     atmosphereColor
                     //dayNightColor
-                    * depthFading    
+                    * depthFading
+                    * atmoDensity
                     //ssNoPlanetCancel +
                     //ssAmt *.2 * amtTowardSun
                     //atmosphereColor
                 ;
 
-                
+
             }
             ENDCG
         }
