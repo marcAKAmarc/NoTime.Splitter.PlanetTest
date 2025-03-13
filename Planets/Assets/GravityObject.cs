@@ -7,8 +7,8 @@ using UnityEngine;
 [Serializable]
 public struct FieldCollider
 {
-    public Collider collider;
     public GravityField Field;
+    public int Count;
 }
 public class GravityObject : SplitterEventListener
 {
@@ -17,8 +17,8 @@ public class GravityObject : SplitterEventListener
     public float GravityAcceleration = 0f;
     public float GravityDistance = 0f;
     public bool ApplyGravity = true;
-    public int MaximumGravityPriorityLayer = 999;
-    [HideInInspector]
+    public float MaximumGravityPriorityLayer = 999;
+    //[HideInInspector]
     public List<FieldCollider> fieldColliders;
 
     private SplitterSubscriber splitterSubscriber;
@@ -33,13 +33,25 @@ public class GravityObject : SplitterEventListener
             fieldColliders = new List<FieldCollider>();
     }
     int _insertAt;
+    int _i = 0;
     private void OnTriggerEnter(Collider other)
     {
         GravityField otherField = other.GetComponentInParent<GravityField>();
+        
         if (otherField == null)
             return;
         if (otherField.PriorityLayer > MaximumGravityPriorityLayer)
             return;
+        for (_i = 0; _i < fieldColliders.Count; _i++)
+        {
+            if (fieldColliders[_i].Field == otherField)
+            {
+                //update
+                fieldColliders[_i] = new FieldCollider() { Count = fieldColliders[_i].Count + 1, Field = otherField };
+                return;
+            }
+        }
+
 
         _insertAt = 0;
         while (_insertAt < fieldColliders.Count)
@@ -49,19 +61,39 @@ public class GravityObject : SplitterEventListener
             _insertAt += 1;
         }
         if (_insertAt == fieldColliders.Count)
-            fieldColliders.Add(new FieldCollider { collider = other, Field = otherField });
+            fieldColliders.Add(new FieldCollider { Field = otherField, Count = 1 });
         else
-            fieldColliders.Insert(_insertAt, new FieldCollider { collider = other, Field = otherField });
-        //fieldColliders = fieldColliders.OrderByDescending(x => x.Field.PriorityLayer).ToList();
+            fieldColliders.Insert(_insertAt, new FieldCollider { Field = otherField, Count = 1 });
+        
         UpdateFieldFromFields();
     }
+    private FieldCollider _fieldColliderToRemove;
+    private int _removalIndex;
     private void OnTriggerExit(Collider other)
     {
         GravityField otherField = other.GetComponentInParent<GravityField>();
         if (otherField == null)
             return;
-        fieldColliders = fieldColliders.Where(x => x.Field != null && x.collider.GetInstanceID() != other.GetInstanceID()).ToList();
-        fieldColliders = fieldColliders.OrderByDescending(x => x.Field.PriorityLayer).ToList();
+
+        for (_i = 0; _i < fieldColliders.Count; _i++)
+        {
+            if (fieldColliders[_i].Field == otherField)
+            {
+                if (fieldColliders[_i].Count == 1)
+                    fieldColliders.RemoveAt(_i);
+                else
+                {
+                    //decrement
+                    fieldColliders[_i] = new FieldCollider()
+                    {
+                        Count = fieldColliders[_i].Count - 1,
+                        Field = fieldColliders[_i].Field,
+                    };
+                }
+                break;
+            }
+        }
+        //fieldColliders = fieldColliders.OrderByDescending(x => x.Field.PriorityLayer).ToList();
         UpdateFieldFromFields();
     }
 

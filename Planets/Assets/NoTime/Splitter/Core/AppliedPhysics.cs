@@ -10,7 +10,6 @@ namespace NoTime.Splitter.Core
     {
         private Rigidbody body;
         private SplitterSubscriber subscriber;
-
         private SplitterAnchor anchor
         {
             get
@@ -25,12 +24,35 @@ namespace NoTime.Splitter.Core
             body = _body;
         }
 
+        public Transform transform
+        {
+            get
+            {
+                //this always returns the transform in the main scene
+                return body.transform;
+            }
+        }
+
+#if UNITY_6000_0_OR_NEWER
+        [Obsolete("AppliedPhysics.velocity is obsolete. Please change the reference to AppliedPhysics.linearVelocity.", false)]
+#endif
         //
         // Summary:
         //     The velocity vector of the rigidbody. It represents the rate of change of Rigidbody
         //     position.
         public Vector3 velocity
         {
+
+#if UNITY_6000_0_OR_NEWER
+            get
+            {
+                return linearVelocity;
+            }
+            set
+            {
+                linearVelocity = value;
+            }
+#else
             get
             {
                 if (!subscriber.Simulating())
@@ -50,7 +72,26 @@ namespace NoTime.Splitter.Core
                     anchor.ApplyVelocity(value, subscriber);
                 }
             }
+#endif
         }
+
+#if UNITY_6000_0_OR_NEWER
+        public Vector3 linearVelocity{
+            get{
+                return body.linearVelocity;
+            }
+            set{
+                if (!subscriber.Simulating())
+                {
+                    body.linearVelocity = value;
+                }
+                else
+                {
+                    anchor.ApplyLinearVelocity(value, subscriber);
+                }
+            }
+        }
+#endif
 
         //
         // Summary:
@@ -78,11 +119,26 @@ namespace NoTime.Splitter.Core
             }
         }
 
+#if UNITY_6000_0_OR_NEWER
+        [Obsolete("AppliedPhysics.drag is obsolete. Please change the reference to AppliedPhysics.linearDamping.", false)]
+#endif
         //
         // Summary:
         //     The drag of the object.
         public float drag
         {
+
+#if UNITY_6000_0_OR_NEWER
+            get
+            {
+                return linearDamping;
+            }
+            set
+            {
+                linearDamping = value;
+            }
+#else
+
             get
             {
                 return body.drag;
@@ -99,8 +155,26 @@ namespace NoTime.Splitter.Core
                     anchor.ApplyDrag(value, subscriber);
                 }
             }
+#endif
         }
 
+#if UNITY_6000_0_OR_NEWER
+        public float linearDamping{
+            get{
+                return body.linearDamping;
+            }
+            set{
+                if (!subscriber.Simulating())
+                {
+                    body.linearDamping = value;
+                }
+                else
+                {
+                    anchor.ApplyLinearDamping(value, subscriber);
+                }
+            }
+        }
+#endif
         //
         // Summary:
         //     The angular drag of the object.

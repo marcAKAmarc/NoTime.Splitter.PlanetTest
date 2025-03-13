@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraShakeInput
+public struct CameraShakeInput
 {
-    public float Attack = .2f;
+    public float Attack;
     public float Amplitude;
     public float Frequency;
     public float Decay;
@@ -81,6 +81,7 @@ public class CameraShaker : MonoBehaviour
         {
             inputs.Add(new CameraShakeInput
             {
+                Attack = .2f,
                 Amplitude = testAmp,
                 Decay = testDecay,
                 Frequency = testFreq,

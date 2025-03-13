@@ -67,7 +67,7 @@ Shader "Custom/ScreenSpaceFog2"
             float4 _SunlightDir;
             float _MinimumLight;
 
-            const float pi = 3.14159;
+            static const float PI = 3.14159;
 
             struct appdata
             {
@@ -113,7 +113,7 @@ Shader "Custom/ScreenSpaceFog2"
 
             half4 frag(v2f i) : SV_Target
             {
-
+                
                 float2 screenUV = i.projPos.xy / i.projPos.w;
 
                 // sample depth texture
@@ -128,13 +128,15 @@ Shader "Custom/ScreenSpaceFog2"
                 // note: Something like normalize(i.camRelativeWorldPos.xyz) is what you'll see other
                 // examples do, but that is wrong! You need a vector that at a 1 unit view depth, not
                 // a1 unit magnitude.
-                float3 viewPlane = i.camRelativeWorldPos.xyz / dot(i.camRelativeWorldPos.xyz, unity_WorldToCamera._m20_m21_m22);
+                //BUT THIS IS UNUSED BESIDES WORLDPOS WHICH IS UNUSED
+                //float3 viewPlane = i.camRelativeWorldPos.xyz / dot(i.camRelativeWorldPos.xyz, unity_WorldToCamera._m20_m21_m22);
 
                 // calculate the world position
                 // multiply the view plane by the linear depth to get the camera relative world space position
                 // add the world space camera position to get the world space position from the depth texture
-                float3 worldPos = viewPlane * sceneZ + _WorldSpaceCameraPos;
-                worldPos = mul(unity_CameraToWorld, float4(worldPos, 1.0));
+                //BUT THIS IS UNUSED
+                //float3 worldPos = viewPlane * sceneZ + _WorldSpaceCameraPos;
+                //worldPos = mul(unity_CameraToWorld, float4(worldPos, 1.0));
                 
                
                 ////////////
@@ -147,7 +149,8 @@ Shader "Custom/ScreenSpaceFog2"
                 //float4 dist = distance(_WorldSpaceCameraPos, worldPos);
                 //this is just scenez
 
-                float3 viewForward = normalize(i.camRelativeWorldPos);
+                //this is unused
+                //float3 viewForward = normalize(i.camRelativeWorldPos);
                 float3 uvForward = normalize(worldPosition - _WorldSpaceCameraPos);
 
                 //get dist to planet
@@ -341,8 +344,8 @@ Shader "Custom/ScreenSpaceFog2"
                 
                 //take 'er on home
                 float sunsetAmt = clamp(max(max(ssAmt, smAmt) , seAmt) * amtTowardSun /** pow(depthFading, .5)*/, 0, 1);
-                float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(3.14159 * (1 - dayNight)) + 1) / 2);               
-                float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(3.14159*(1 - dayNight))+1)/2);
+                float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(PI * (1 - dayNight)) + 1) / 2);               
+                float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(PI*(1 - dayNight))+1)/2);
                 float4 atmosphereColor = (dayNightColor*depthFading) + (sunsetColor * sunsetAmt);//lerp(dayNightColor, sunsetColor, sunsetAmt);
                 return 
                     //lerp(_NightColor, _DayColor, sunsetAmt)

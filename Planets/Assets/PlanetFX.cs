@@ -126,7 +126,7 @@ public class PlanetFX : MonoBehaviour
     }
     private void DustSoundsStart()
     {
-        foreach (var dg in Dust)
+        /*foreach (var dg in Dust)
         {
             dg.AudioData = dg.DustGroup.GetComponentsInChildren<AudioSource>()
                 .Select(
@@ -136,7 +136,7 @@ public class PlanetFX : MonoBehaviour
                         source = x
                     }
                 ).ToList();
-        }
+        }*/
     }
     private void OnPreRender()
     {

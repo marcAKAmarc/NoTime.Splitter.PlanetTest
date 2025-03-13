@@ -367,7 +367,7 @@ public class PhysicalSounds : MonoBehaviour
         if (transform.GetComponent<SplitterAnchor>() != null &&
             collision.rigidbody.transform.GetComponent<SplitterSubscriber>() != null
             && transform.GetComponent<SplitterAnchor>().IsInMySimulation(
-                collision.collider.transform.GetComponent<SplitterSubscriber>()
+                collision.rigidbody.transform.GetComponent<SplitterSubscriber>()
             )
          )
             return false;

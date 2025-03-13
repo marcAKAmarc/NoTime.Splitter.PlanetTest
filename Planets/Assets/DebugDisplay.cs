@@ -9,7 +9,14 @@ public class DebugDisplay : MonoBehaviour
     private float timeSinceUiUpdate = 0f;
     private int frameCount = 0;
     private float fps = 0f;
-
+    private string[] nums = new string[100];
+    private void Start()
+    {
+        for(int i = 0; i < 100; i++)
+        {
+            nums[i] = i.ToString();
+        }
+    }
     // Update is called once per frame
     void Update()
     {
@@ -21,8 +28,8 @@ public class DebugDisplay : MonoBehaviour
             frameCount = 0;
             timeSinceUiUpdate = 0f;
 
-            Text1.text = "Fps: " + fps.ToString();
-            Text2.text = "Fps: " + fps.ToString();
+            Text1.text = nums[Mathf.Min(Mathf.FloorToInt(fps),99)];
+            Text2.text = nums[Mathf.Min(Mathf.FloorToInt(fps),99)];
 
         }
 

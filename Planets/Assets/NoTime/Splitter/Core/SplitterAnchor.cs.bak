@@ -8,7 +8,7 @@ using NoTime.Splitter.Core;
 
 namespace NoTime.Splitter
 {
-
+    
     public class SplitterAnchor : MonoBehaviour
     {
         [Tooltip("For example, ships have higher priority than planets.")]
@@ -969,24 +969,21 @@ namespace NoTime.Splitter
                 UpdateSubscriberRigidbody(subscribers[_ei].gameObject);
             }
 
-            /*_ei = 0;
-            for (; _ei < subscribers.Count; _ei++)
-            {
-                SyncSubscriberChildTransforms(subscribers[_ei].gameObject);
-            }*/
         }
 
         int _psi;
         public void PhysicsSync()
         {
 
-            if (!accuracy.IsMediumOrBetter())
-                return;
-            _psi = 0;
-            for (; _psi < subscribers.Count; _psi++)
+            if (accuracy.IsMediumOrBetter())
             {
-                SyncSubscriberRigidbody(subscribers[_psi].gameObject);
+                _psi = 0;
+                for (; _psi < subscribers.Count; _psi++)
+                {
+                    SyncSubscriberRigidbody(subscribers[_psi].gameObject);
+                }
             }
+
         }
 
         int _hsi;
@@ -998,13 +995,14 @@ namespace NoTime.Splitter
 
 
 
-            if (accuracy != PositionalAccuracy.High)
-                return;
-            
-            _hsi = 0;
-            for(; _hsi < subscribers.Count; _hsi++)
+            if (accuracy == PositionalAccuracy.High)
             {
-                SyncSubscriberTransform(subscribers[_hsi].gameObject);
+
+                _hsi = 0;
+                for (; _hsi < subscribers.Count; _hsi++)
+                {
+                    SyncSubscriberTransform(subscribers[_hsi].gameObject);
+                }
             }
 
             if (SyncTransforms)
@@ -1231,6 +1229,10 @@ namespace NoTime.Splitter
 
         public bool IsInMySimulation(SplitterSubscriber subscriber)
         {
+            if (subscriber == null)
+            {
+                var dude = "nah";
+            }
             return ids.ContainsKey(subscriber.gameObject.GetInstanceID());
         }
 

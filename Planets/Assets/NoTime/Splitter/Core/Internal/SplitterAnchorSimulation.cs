@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace NoTime.Splitter.Internal
+namespace NoTime.Splitter.Core.Internal
 {
     //This hides this script from the editor menus.
     //This script should never be manually added to a gameobject.

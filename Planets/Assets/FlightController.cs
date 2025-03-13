@@ -3,6 +3,7 @@ using NoTime.Splitter.Demo;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class FlightController : SplitterEventListener
 {
@@ -43,6 +44,10 @@ public class FlightController : SplitterEventListener
     private Quaternion GoalRotation;
     public Transform FlightRotationVisual;
     public List<InteriorLightBehavior> InteriorLights;
+
+    public List<Text> HintTexts;
+    private string PilotHint = "Press CAPSLOCK to pilot.";
+    private string ControlsHint = "W, A, S, D, LShift and Space to Move.\nQ, E, Tab to Rotate.\nCAPSLOCK to disengage.";
 
     Vector3 autopilotThrust;
     public void RegisterAutopilotThrust(Vector3 thrust)
@@ -86,6 +91,7 @@ public class FlightController : SplitterEventListener
             passengerPresent = true;
             potentialController = other.transform;
 
+            SetHintText(PilotHint);
         }
     }
     private void OnTriggerExit(Collider other)
@@ -94,9 +100,19 @@ public class FlightController : SplitterEventListener
         {
             potentialController = null;
             passengerPresent = false;
+            
+            SetHintText("");
         }
     }
 
+
+    private void SetHintText(string hint)
+    {
+        foreach(Text _text in HintTexts)
+        {
+            _text.text = hint;
+        }
+    }
     private void OnCollisionEnter(Collision other)
     {
         MaybeTakeHitToStabilization(other);
@@ -131,12 +147,13 @@ public class FlightController : SplitterEventListener
         Vector3 relVel;
         if (potentialController != null)
         {
-            relVel = RelativeVelocity(transform.GetComponent<Rigidbody>(), other.body as Rigidbody, other.contacts.First().point);
+            relVel = RelativeVelocity(transform.GetComponent<Rigidbody>(), other.body as Rigidbody, other.GetContact(0).point);
             if (relVel.sqrMagnitude <= 25f)
                 return;
 
             potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>().AddInput(new CameraShakeInput
             {
+                Attack = .2f,
                 Amplitude = relVel.sqrMagnitude / 5000f,
                 Frequency = 10f,
                 Decay = .8f,
@@ -182,6 +199,7 @@ public class FlightController : SplitterEventListener
         {
             potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>().AddInput(new CameraShakeInput
             {
+                Attack = .2f,
                 Amplitude = .0045f,
                 Frequency = 20,
                 Decay = .2f,
@@ -211,6 +229,8 @@ public class FlightController : SplitterEventListener
                 {
                     light.Switch(true);
                 }
+
+                SetHintText(ControlsHint);
             }
             else
             {

@@ -46,7 +46,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.velocity = value;
+                    //body.velocity = value;
                     anchor.ApplyVelocity(value, subscriber);
                 }
             }
@@ -72,7 +72,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.angularVelocity = value;
+                    //body.angularVelocity = value;
                     anchor.ApplyAngularVelocity(value, subscriber);
                 }
             }
@@ -95,7 +95,6 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    //we update this upon unregistration
                     //body.drag = value;
                     anchor.ApplyDrag(value, subscriber);
                 }
@@ -119,7 +118,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.angularDrag = value;
+                    //body.angularDrag = value;
                     anchor.ApplyAngularDrag(value, subscriber);
                 }
             }
@@ -165,7 +164,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.useGravity = value;
+                    //body.useGravity = value;
                     anchor.ApplyUseGravity(value, subscriber);
                 }
             }
@@ -231,7 +230,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.freezeRotation = value;
+                    //body.freezeRotation = value;
                     anchor.ApplyFreezeRotation(value, subscriber);
                 }
             }
@@ -512,7 +511,7 @@ namespace NoTime.Splitter.Core
                 }
                 else
                 {
-                    body.maxAngularVelocity = value;
+                    //body.maxAngularVelocity = value;
                     anchor.ApplyMaxAngularVelocity(value, subscriber);
                 }
             }

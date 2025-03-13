@@ -1,3 +1,4 @@
+using NoTime.Splitter.Core.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace NoTime.Splitter.Core
         public static event Action SplitterHardSync;
         public static event Action<string> InvestigatoryEvents;
 
-        private static void OnSpllitterSimulate() => SplitterSimulate?.Invoke();
+        private static void OnSplitterSimulate() => SplitterSimulate?.Invoke();
         private static void OnSplitterPhysicsExport() => SplitterPhysicsExport?.Invoke();
         private static void OnSplitterPhysicsSync() => SplitterPhysicsSync?.Invoke();
         private static void OnSplitterHardSync() => SplitterHardSync?.Invoke();
@@ -82,7 +83,7 @@ namespace NoTime.Splitter.Core
             var mySplitterSimulate = new PlayerLoopSystem
             {
                 subSystemList = null,
-                updateDelegate = OnSpllitterSimulate,
+                updateDelegate = OnSplitterSimulate,
                 type = typeof(SplitterSimulate)
             };
 
@@ -112,6 +113,9 @@ namespace NoTime.Splitter.Core
             //InitInvestigation();
 
             //printPlayerLoop();
+
+            //set up staticish data - does not require reload
+            Statics.Reset();
         }
 
         private static PlayerLoopSystem ReplaceSystem<T>(in PlayerLoopSystem loopSystem, PlayerLoopSystem systemToAdd) where T : struct

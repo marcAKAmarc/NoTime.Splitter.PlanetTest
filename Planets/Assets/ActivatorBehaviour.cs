@@ -3,18 +3,33 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst.CompilerServices;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ActivatorBehaviour : MonoBehaviour
 {
     public float reachDistance;
+    public int iconGrow = 2;
     private Ray ray;
+    public List<Text> texts;
+
+    private int originalSize;
+
+    private void Awake()
+    {
+        UnityEngine.Rendering.DebugManager.instance.enableRuntimeUI = false;
+    }
     // Start is called before the first frame update
     void Start()
     {
+        mask = LayerMask.GetMask("Default");
         ray = new Ray();
+        originalSize = texts[0].fontSize;
     }
 
     private bool press;
+    private RaycastHit hit;
+    private RaycastHit[] hits = new RaycastHit[1];
+    private ActivateBehaviour ab;
     // Update is called once per frame
     void Update()
     {
@@ -22,31 +37,48 @@ public class ActivatorBehaviour : MonoBehaviour
         {
             press = true;
         }
+        ab = RaycastToActivateBehaviour();
+
+        if (press && ab != null)
+        {
+            ab.Activate();
+        }
+        press = false;
+
+        if (ab)
+        {
+            foreach(Text text in texts)
+            {
+                text.fontStyle = FontStyle.Bold;
+                text.fontSize = originalSize + iconGrow;
+            }
+        }
+        else
+        {
+            foreach (Text text in texts)
+            {
+                text.fontStyle = FontStyle.Normal;
+                text.fontSize = originalSize;
+            }
+        }
+
+        
     }
 
-    private RaycastHit hit;
-    void FixedUpdate()
+    int mask;
+    private ActivateBehaviour RaycastToActivateBehaviour()
     {
-
         ray.origin = transform.position;
         ray.direction = transform.forward;
         ray.origin += -transform.forward;
-
-        if (press)
+        
+        Physics.Raycast(ray, out hit, reachDistance, mask, QueryTriggerInteraction.Collide);
+        if(hit.collider != null)
         {
-            //Debug.Log("Press");
-            if (Physics.Raycast(ray, out hit, reachDistance, LayerMask.GetMask("Default"), QueryTriggerInteraction.Collide))
-            {
-                //Debug.Log("hit");
-                ActivateBehaviour ab = hit.collider.GetComponentInParent<ActivateBehaviour>();
-
-                if (ab != null)
-                {
-                    Debug.Log("activate found");
-                    ab.Activate();
-                }
-            }
+            //Debug.Log("hit");
+            return hit.collider.GetComponentInParent<ActivateBehaviour>();
         }
-        press = false;
+        return null;
+        
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GravityField : SplitterEventListener
 {
-    public int PriorityLayer;
+    public float PriorityLayer;
     public float surfaceRadius;
     public float farRadius;
     public float surfaceForce;

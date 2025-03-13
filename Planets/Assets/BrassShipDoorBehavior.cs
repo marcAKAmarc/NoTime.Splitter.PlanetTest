@@ -50,7 +50,7 @@ public class BrassShipDoorBehavior : MonoBehaviour
         closedLimits = new JointLimits()
         {
             min = 0f,
-            max = 0f
+            max = .5f
         };
 
         openMotor = new JointMotor()
@@ -76,11 +76,8 @@ public class BrassShipDoorBehavior : MonoBehaviour
     {
         doorJoint.motor = stopMotor;
         doorJoint.useMotor = true;
-        //splitterSubscriber.ManualEnterAnchor(closedReference.GetComponentInParent<SplitterAnchor>());
     }
 
-    bool alignedWithClosure;
-    bool alignedWithOpen;
     bool touchingGround;
 
     private Ray ray;
@@ -89,31 +86,23 @@ public class BrassShipDoorBehavior : MonoBehaviour
     void FixedUpdate()
     {
         doorBody.centerOfMass = centerOfMass.position - doorBody.position;
-        //if (!Open && !alignedWithClosure && Quaternion.Angle(body.rotation, closedReference.rotation) > 1f)
         if(pr_doorRequestState == DoorRequestStates.closed && Quaternion.Angle(doorBody.rotation, closedReference.rotation) > 1f)
         {
             Debug.Log("start closing");
             //start closing
             doorJoint.motor = closeMotor;
-            //body.AddRelativeTorque(Vector3.right * ClosingForce);
-            //body.AddRelativeTorque(-transform.InverseTransformDirection(body.angularVelocity) * ClosingDamp);
         }
         else if(pr_doorRequestState == DoorRequestStates.closed)
         {
             Debug.Log("arrived at Closed");
-            //arriving to closed
-            //joint.limits = closedLimits;
             doorJoint.useLimits = true;
-            //alignedWithClosure = true;
-            //joint.useMotor = false;
             pr_doorRequestState = DoorRequestStates.stop;
-            SwitchToIntegratedDoor();
+            SwitchToIntegratedClosedDoor();
 
         }
 
         if(pr_doorRequestState == DoorRequestStates.open && !touchingGround  && Quaternion.Angle(doorBody.rotation, openedReference.rotation) > 3f)
         {
-            Debug.Log("START OPEN");
             doorJoint.useLimits = false;
             //start opening
             doorJoint.motor = openMotor;
@@ -143,7 +132,7 @@ public class BrassShipDoorBehavior : MonoBehaviour
         }
     }
 
-    private void SwitchToIntegratedDoor()
+    private void SwitchToIntegratedClosedDoor()
     {
         doorBody.position = DoorAtStart.position;
         doorBody.rotation = DoorAtStart.rotation;
@@ -151,9 +140,12 @@ public class BrassShipDoorBehavior : MonoBehaviour
         IntegratedDoor.gameObject.SetActive(true);
         IntegratedDoorCollider.gameObject.SetActive(true);
         this.GetComponent<Collider>().enabled = false;
-        //gameObject.SetActive(false);
     }
 
+    private void SwitchToIntegratedOpenDoor()
+    {
+            
+    }
     private void SwitchToIndependentDoor()
     {
         
