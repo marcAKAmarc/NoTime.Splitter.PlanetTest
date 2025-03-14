@@ -269,15 +269,21 @@ public class FlightController : SplitterEventListener
             eng.SetEngineOn(_thrustInput.y < 0);
 
     }
+    private Color _offColor;
+    private bool _setColor = true;
     void ThrustDisplayUpdate()
     {
-
+        if(_setColor)
+        {
+            _offColor = Color.Lerp(Color.black, Color.white, .25f);
+            _setColor = false;
+        }
         thrustDisplay += Vector3.ClampMagnitude(_thrustInput - thrustDisplay, Time.fixedDeltaTime);
 
         mFwd1.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 -thrustDisplay.z * 3f
             )
@@ -285,7 +291,7 @@ public class FlightController : SplitterEventListener
         mFwd2.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (-thrustDisplay.z - .333f) * 1.5f
             )
@@ -293,7 +299,7 @@ public class FlightController : SplitterEventListener
         mFwd3.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (-thrustDisplay.z - .666f) * 3f
             )
@@ -301,7 +307,7 @@ public class FlightController : SplitterEventListener
         mBack1.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 thrustDisplay.z * 3f
             )
@@ -309,7 +315,7 @@ public class FlightController : SplitterEventListener
         mBack2.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (thrustDisplay.z - .333f) * 1.5f
             )
@@ -317,7 +323,7 @@ public class FlightController : SplitterEventListener
         mBack3.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (thrustDisplay.z - .666f) * 3f
             )
@@ -326,7 +332,7 @@ public class FlightController : SplitterEventListener
         mRight1.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 -thrustDisplay.x * 3f
             )
@@ -334,7 +340,7 @@ public class FlightController : SplitterEventListener
         mRight2.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (-thrustDisplay.x - .333f) * 1.5f
             )
@@ -342,7 +348,7 @@ public class FlightController : SplitterEventListener
         mRight3.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (-thrustDisplay.x - .666f) * 3f
             )
@@ -350,7 +356,7 @@ public class FlightController : SplitterEventListener
         mLeft1.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 thrustDisplay.x * 3f
             )
@@ -358,7 +364,7 @@ public class FlightController : SplitterEventListener
         mLeft2.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (thrustDisplay.x - .333f) * 1.5f
             )
@@ -366,7 +372,7 @@ public class FlightController : SplitterEventListener
         mLeft3.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (thrustDisplay.x - .666f) * 3f
             )
@@ -375,7 +381,7 @@ public class FlightController : SplitterEventListener
         mUp1.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 -thrustDisplay.y * 3f
             )
@@ -383,7 +389,7 @@ public class FlightController : SplitterEventListener
         mUp2.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (-thrustDisplay.y - .333f) * 1.5f
             )
@@ -391,7 +397,7 @@ public class FlightController : SplitterEventListener
         mUp3.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (-thrustDisplay.y - .666f) * 3f
             )
@@ -399,7 +405,7 @@ public class FlightController : SplitterEventListener
         mDown1.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 thrustDisplay.y * 3f
             )
@@ -407,7 +413,7 @@ public class FlightController : SplitterEventListener
         mDown2.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (thrustDisplay.y - .333f) * 1.5f
             )
@@ -415,7 +421,7 @@ public class FlightController : SplitterEventListener
         mDown3.SetColor(
             "_EmissionColor",
             Color.Lerp(
-                Color.black,
+                _offColor,
                 _initialThrustDisplayColor,
                 (thrustDisplay.y - .666f) * 3f
             )

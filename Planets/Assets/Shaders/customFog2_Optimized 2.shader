@@ -1,4 +1,4 @@
-Shader "Custom/ScreenSpaceFog2Optimized"
+Shader "Custom/ScreenSpaceFog2Optimized2"
 {
 
     //IT ALL LOOKS GOOD WITH INCREASED FOG DIST IN SPACE AND
@@ -76,6 +76,7 @@ Shader "Custom/ScreenSpaceFog2Optimized"
             
 
             static const float PI = 3.14159;
+            static const float SMALL_NUMBER = .000001;
 
             struct appdata
             {
@@ -184,14 +185,14 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 //--------------------------------------
 
                 //0 if planet has value, otherwise 1
-                float planetCancel = clamp(distInPlanet / .00001, 0, 1);
-                float adjNegCancel = clamp(adjacent / .000001, 0, 1);
+                //float planetCancel = clamp(distInPlanet / .00001, 0, 1);
+                //float adjNegCancel = clamp(adjacent / .000001, 0, 1);
 
 
-                float totalDist = distInFog + min(distInFog, adjacent) - ((distInPlanet + distInFog) * planetCancel * adjNegCancel);
-                float startDistFromCenter = min(adjacent, distInFog);
+                float totalDist = distInFog + min(distInFog, adjacent) - ((distInPlanet + distInFog) * /*planetCancel this is this:*/clamp(distInPlanet / .00001, 0, 1) * /*adjNegCancel this is this:*/clamp(adjacent / SMALL_NUMBER, 0, 1));
+                //float startDistFromCenter = min(adjacent, distInFog);
 
-                float3 startPosFog = fogRayStart + (uvForward * (adjacent - startDistFromCenter));
+                float3 startPosFog = fogRayStart + (uvForward * (adjacent - /*startDistFromCenter this is this:*/min(adjacent, distInFog)));
                 float3 endPosFog = startPosFog + (uvForward * totalDist);
                 float3 midPosFog = startPosFog + (uvForward * totalDist) / 2;
 
@@ -268,8 +269,8 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 float ssDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(ssOpposite, 2)));
 
                 //0 if planet has value, otherwise 1
-                float ssNoPlanetCancel = clamp(ssDistInPlanet / .000001, 0, 1);
-                float ssAdjNegCancel = clamp(ssAdjacent / .000001, 0, 1);
+                //float ssNoPlanetCancel = clamp(ssDistInPlanet / .000001, 0, 1);
+                //float ssAdjNegCancel = clamp(ssAdjacent / .000001, 0, 1);
 
 
                 //float ssTotalDist = ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssNoPlanetCancel * ssAdjNegCancel);
@@ -280,7 +281,7 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 float ssPlanetGradualCancel = clamp(20 * (1 - sin(acos(ssDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
                 float ssAmt =
-                    (ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetGradualCancel * ssNoPlanetCancel * ssAdjNegCancel))
+                    (ssDistInFog + min(ssDistInFog, ssAdjacent) - ((ssDistInPlanet + ssDistInFog) * ssPlanetGradualCancel * /*ssNoPlanetCancel this is this:*/clamp(ssDistInPlanet / SMALL_NUMBER, 0, 1) * /*ssAdjNegCancel this is this:*/clamp(ssAdjacent / SMALL_NUMBER, 0, 1)))
                     / maxSunTravelDist;
                 //ssTotalDist = ssTotalDist /*(1 - ssNoPlanetCancel)*/;
                 //float ssAmt = ssTotalDist / maxSunTravelDist;
@@ -302,8 +303,8 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 float smDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(smOpposite, 2)));
 
                 //0 if planet has value, otherwism 1
-                float smNoPlanetCancel = clamp(smDistInPlanet / .000001, 0, 1); //JUST READDED WAS 0
-                float smAdjNegCancel = clamp(smAdjacent / .000001, 0, 1);
+                //float smNoPlanetCancel = clamp(smDistInPlanet / .000001, 0, 1); //JUST READDED WAS 0
+                //float smAdjNegCancel = clamp(smAdjacent / .000001, 0, 1);
 
                 //float smTotalDist = smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smNoPlanetCancel * smAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
@@ -316,7 +317,7 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 //smPlanetGradualCancel = smPlanetGradualCancel + (1 - smPlanetGradualCancel) * (1-smAdjNegCancel);
 
                 float smAmt = 
-                    (smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smPlanetGradualCancel * smNoPlanetCancel * smAdjNegCancel))
+                    (smDistInFog + min(smDistInFog, smAdjacent) - ((smDistInPlanet + smDistInFog) * smPlanetGradualCancel * /*smNoPlanetCancel this is this:*/clamp(smDistInPlanet / SMALL_NUMBER, 0, 1) * /*smAdjNegCancel - this is this:*/clamp(smAdjacent / SMALL_NUMBER, 0, 1)))
                      * smPlanetGradualCancel / maxSunTravelDist;
                 //float smAmt = smTotalDist / maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
@@ -337,8 +338,8 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 float seDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(seOpposite, 2)));
 
                 //0 if planet has value, otherwise 1
-                float seNoPlanetCancel = clamp(seDistInPlanet / .000001, 0, 1);
-                float seAdjNegCancel = clamp(seAdjacent / .000001, 0, 1);
+                //float seNoPlanetCancel = clamp(seDistInPlanet / .000001, 0, 1);
+                //float seAdjNegCancel = clamp(seAdjacent / .000001, 0, 1);
 
                 //float seTotalDist = seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * seNoPlanetCancel * seAdjNegCancel);
                 //that worked perfectly... too perfect as there was a sudden drop off when ss stepped out of the sun light.
@@ -350,7 +351,7 @@ Shader "Custom/ScreenSpaceFog2Optimized"
                 float sePlanetGradualCancel = clamp(20 * (1 - sin(acos(seDistInPlanet / (_PlanetSurfaceRadius)))), 0, 1);
 
                 float seAmt = 
-                        (seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * sePlanetGradualCancel * seNoPlanetCancel * seAdjNegCancel))
+                        (seDistInFog + min(seDistInFog, seAdjacent) - ((seDistInPlanet + seDistInFog) * sePlanetGradualCancel * /*seNoPlanetCancel this is this:*/clamp(seDistInPlanet / SMALL_NUMBER, 0, 1) * /*seAdjNegCancel this is this:*/ clamp(seAdjacent / SMALL_NUMBER, 0, 1)))
                         * sePlanetGradualCancel / maxSunTravelDist;//(1-seNoPlanetCancel);
                 //float seAmt = seTotalDist / maxSunTravelDist;
                 //this worked great, but we want full blown sunset when standing on the planet
