@@ -9,7 +9,7 @@ public class BinBehaviour : MonoBehaviour
         if(other.gameObject.GetComponentInChildren<LifeResourceBehaviour>() != null)
         {
             Destroy(other.gameObject);
-            //Create Health Item
+            //place StarGem on Bin > output
         }
     }
 }

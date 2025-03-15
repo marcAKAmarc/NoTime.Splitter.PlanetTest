@@ -15,6 +15,7 @@ namespace NoTime.Splitter
     [Icon("Assets/NoTime/Splitter/Core/Icons/EditorIcon.png")]
 #endif
 
+
     [RequireComponent(typeof(Rigidbody))]
     public class SplitterSubscriber : MonoBehaviour
     {
@@ -45,6 +46,10 @@ namespace NoTime.Splitter
         [HideInInspector]
         public bool SyncChildTransforms = false;
 
+
+
+        private SplitterAnchor _awakeAnchor;
+
         private struct AnchorTrigger
         {
             public Collider Collider;
@@ -53,7 +58,6 @@ namespace NoTime.Splitter
             public bool isEntranceTrigger;
         }
 
-        private SplitterAnchor _awakeAnchor; 
         private void Awake()
         {
             AppliedPhysics = new AppliedPhysics(this, transform.GetComponent<Rigidbody>());
@@ -420,7 +424,7 @@ namespace NoTime.Splitter
                 if(
                     CurrentAnchorTriggers[_i].Collider == null
                     || CurrentAnchorTriggers[_i].Collider.gameObject == null
-                    || CurrentAnchorTriggers[_i].Anchor != null
+                    || CurrentAnchorTriggers[_i].Anchor == null
                 )
                 {
                     CurrentAnchorTriggers.RemoveAt(_i);

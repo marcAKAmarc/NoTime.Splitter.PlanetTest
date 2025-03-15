@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>NoTime - Splitter</title>
+  
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+    <!-- Describe what your site is about -->
+    <meta name="description" content="A listing of product information about Splitter.  Splitter is a physics asset for Unity that helps to create and manage isolated physics scenes.">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href = "css\site.css">
+  </head>
+  <!-- This class is removed if the user has JavaScript enabled -->
+  <body> 
+    <div id="about" class='container'>
+      <div class='titleRow row'>
+        <div class='col-12 mainTitle display-1'>
+          Splitter
+        </div>
+      </div>
+      <div class='section'>
+        <hr/>
+        <div class='row itemRow align-items-start'>
+            <div class='col-xs-12 col-xl-6 col-xs-offset-3 col-xl-offset-0 buybox'>
+              <div class='row'>
+                <div class='col-12'>
+                  <p>Splitter will shortly be released as a Unity Asset, available for purchase in the Unity Asset Store.</p>
+                </div>
+              </div>
+              <div class='row'>
+                <div class='col-12'>
+                  <button type="button" class="btn btn-primary btn-lg">View in the Unity Asset Store</button>
+                </div>
+              </div>
+            </div>
+            <div class='col-xs-12 col-xl-6 col-xs-offset-3 col-xl-offset-0'>
+                <iframe class='topVidIframe' width="100%" height="315" src="https://www.youtube.com/embed/v_CCn35T0E0?si=SQW63UgUag57w9Cg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+      </div>
+      <div class='section'>
+        <div class='row subTitleRow'>
+          <div class='col-12 h2'>
+            About
+          </div>
+          <hr/>
+        </div>
+        <div class='row itemRow'>
+          <div class='col-12 productDescription'>
+            Splitter is a Unity framework developed by <a href = 'https://notimetechnology.com'>NoTime</a> that can be used to dynamically create and manage isolated physics contexts within Unity's built-in 3d physics engine (NVIDIA PhysX).  Isolated physics contexts are extremely useful for wrangling things like:
+            <ul>
+              <li>
+                Moving/Rotating platforms
+              </li>
+              <li>
+                Rideable Rigidbodies
+              </li>
+              <li>
+                Explorable Interiors of Moving Vehicles
+              </li>
+              <li>
+                Gravity Walls
+              </li>
+              <li>
+                Any nested combination of the above.  For example, an explorable aircraft carrier that rolls in the waves, which has moving platforms on the ship, and is all on a planet that is rotating and moving in space.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="anchor" id="news">
+      </div>
+      <div class='section'>
+        <div class='row subTitleRow'>
+          <div class='col-12 h2'>
+            News
+          </div>
+          <hr/>
+        </div>
+        <div class='row itemRow'>
+          <div class='col-12 productDescription'>
+            10/9/2024 -  Splitter needs testers!  If you are interested in receiving and evaluation copy of Splitter, and wouldn't mind giving some feedback, please send an email to Marc at <a href = "mailto: notime.technology@gmail.com">notime.technology@gmail.com</a>!
+          </div>
+        </div>
+      </div>
+      <div class="anchor" id="features">
+      </div>
+      <div class='section'>
+        <div class='row subTitleRow'>
+          <div class='col-12 h2'>
+            Features
+          </div>
+          <hr/>
+        </div>
+        <div class='row itemRow'>
+          <div class='col-12 productDescription'>
+            <ul>
+              <li>
+                Dynamically create and manage isolated physics scenes within Unity's built-in 3d physics engine (NVIDIA PhysX), and use them to control rigidbodies in your scene.
+              </li>
+              <li>
+                Transition rigidbodies to and from isolated physics scenes with smooth executions.
+              </li>
+              <li>
+                Splitter supports physical interaction between rigidbodies in separate physics scenes.
+              </li>
+              <li>
+                Splitter supports nesting isolated physics scenes inside of other isolated physics scenes :). 
+              </li>
+              <li>
+                Splitter requires no coding, but does expose useful events and methods if needed.
+              </li>
+              <li>
+                Splitter utilizes the GameObject.SendMessage to provide event level control to programmers. 
+              </li>
+              <li>
+                Splitter supports all of the standard Rigidbody applications across physics scenes.
+              </li>
+              <li>
+                Splitter's codebase is source-available!  All coding has been done in C# and is exposed as Unity script assets.
+              </li>
+              <li>
+                Splitter provides two systems to handle entry and exit (registration) into isolated physics scenes:  trigger-based registration, or manual registration via code. 
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="anchor" id="gettingstarted">
+      </div>
+      <div class='section'>
+        <div class='row subTitleRow'>
+          <div class='col-12 h2'>
+            Getting Started
+          </div>
+          <hr/>
+        </div>
+        <div class='section-sm'>
+          <div class = 'row'>
+            <div class = 'col-12'>
+            <ul>
+              <li>
+                First, purchase the asset <a href="">here</a> and import all of the contents of the package into your Unity project.
+              </li>
+              <li>
+                  Then, open and run the demo scene at [NoTime/Splitter/Demo/Scenes/DemoScene.unity].  It is likely that your use case will be featured in this scene.
+                </li>
+                <li>
+                  For a simpler, more straight forward example, open and run the simple example scene at [NoTime/Splitter/Demo/Scenes/SimpleExample].  Follow along with this video for a thorough understanding:
+            
+                  <div class = 'row'>
+                    <div class = 'col-sm-12 text-center'>
+                      <iframe width="560" height="315" src="https://www.youtube.com/embed/1dh8whjSR6E?si=BqFcUoUIv7OJskMa" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                  </div>
+              </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="anchor" id="component">
+      </div>
+      <div class='section'>
+        <div class='row subTitleRow'>
+          <div class='col-12 h2'>
+            Component Documentation
+          </div>
+          <hr/>
+        </div>
+        <div class='section-sm'>
+          <div class='row'>
+            <div class='col-12 h4 componentTitle'>
+              SplitterAnchor
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              Creates a 'physics anchor' and defines an isolated physics context.
+              <div class='row tipRow justify-content-center'>
+                <div class='col-10 rounded tipItem'>
+                  Tip:  The anchor's physical orientation in the isolated physics scene is defined by the anchor's local rotation.  If this proves to be confusing, try setting SimulationVisible to true to get a visual representation of the simulated anchor.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <p><strong>List&lt;Collider&gt; EntranceTriggers</strong> - A list of triggers that are used to define an entrance area.  When a subscriber triggers any of these triggers, the subscriber will be evaluated to be entered into this anchor's isolated physics context.  Caveat:  See EntrancePriority.</p>
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>List&lt;Collider&gt; StayTriggers</strong> - A list of triggers that are used to define a stay area.  As long as a subscriber who has entered this anchor's isolated physics context remains in contact with one of these triggers, the subscriber will continue to be simulated in this anchor's isolated physics context. Caveat: See the EntrancePriority property.
+              <div class='row tipRow justify-content-center'>
+                <div class='col-10 rounded tipItem'>
+                  Tip:  In general, the entrance triggers should be contained within the StayTriggers.  The StayTriggers should be slightly larger than the Entrance triggers.  This ensures that there is a buffer zone to prevent jittery rapid entrance/exit of an anchor.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>int EntrancePriority</strong> - Used to manage nested anchors.  Defines the priority this anchor takes over other overlapping anchors.  For example, imagine a scene with a boat in an ocean on a rotating planet, where the boat and the planet are both SplitterAnchors.  In this case, the entrance priority of the ship should be higher than the planet.  This way, if the player is already in the planet's physics simulation, we know it is okay to exit and enter the boat's physics simulation if triggered. 
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>bool SimulationVisible</strong> - This is made available for debugging only.  If this is true on start, then the simulated anchor will remain visible.  All simulated anchors can be found at the world position of Vector3(100, 100, 100). 
+            </div>
+          </div>
+        </div>
+
+
+
+        <div class='section-sm'>
+          <div class='row'>
+            <div class='col-12 h4 componentTitle'>
+              SplitterSubscriber
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              Gives a rigidbody the ability to interact with SplitterAnchors
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>List&lt;MonoBehaviour&gt; RunInSimulationSpace</strong> - A list of Monobehaviors that should be run in the context of the anchor's simulated space when possible.  When a splitter subscriber enter's an anchor, all RunInSimulationSpace scripts are disabled, then reinitialized in the simulation space.  When a splitter subscriber exits the anchor, the scripts in the simulation space are destroyed and the initial RunInSimulationSpace scripts are enabled again.  One common use for this is for player controls of a physical object.
+              <div class='row tipRow justify-content-center'>
+                <div class='col-10 rounded tipItem'>
+                  Tip:  This feature has been made available for non-coders to run existing scripts inside of anchor space.  Otherwise, it is usually easier for coders to program physical interactions using the SplitterSubscriber.AppliedPhysics class (see below).  
+                </div>
+              </div>
+              <div class='row tipRow justify-content-center'>
+                <div class='col-10 rounded tipItem'>
+                  NOTE:  References to <a href="https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Physics.html"><code>Physics</code></a> from scripts added to RunInSimulationSpace will not work properly!  This is because and physics queries made from the static physics class will be referencing the incorrect scene.  One work around is to instead make a similar call from <code>gameObject.scene.GetPhysicsScene()</code>.  So, for example, instead of using <code>Physics.Spherecast(...)</code>, use <code>gameObject.scene.GetPhysicsScene().Spherecast(...)</code>.  
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>bool SimulationVisible</strong> - This is made available for debugging only.  If this is true when the subscriber enters an anchor, then the simulated subscriber will remain visible.  All simulated anchors can be found at the world position of Vector3(100, 100, 100).
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="anchor" id="scripting">
+      </div>
+      <div class='section'>
+        <div class='subTitleRow'>
+          <div class='row'>
+            <div class='col-12 h2'>
+              Scripting Documentation
+            </div>
+            <hr/>
+          </div>
+          <div class = 'row'>
+            <div class = 'col-12 sectionInfo'>
+              This section contains information on additional Splitter component members that are only accessible via code.
+            </div>
+          </div>
+      </div>
+        <div class='section-sm'>
+          <div class="row">
+            <div class='col-12 h4 componentTitle'>
+              Splitter Subscriber
+            </div>
+          </div>
+          <div class = 'row itemRow'>
+            <div class='col-12'>
+              <strong>void ManuallyEnterAnchor(SplitterAnchor Anchor)</strong> - Call this function to have the SplitterSubscriber enter the context of the SplitterAnchor.  Note that this SplitterSubscriber will now remain in the physics scene of the SplitterAnchor until ManuallyExitAnchor() is called.
+            </div>
+          </div>
+          <div class = 'row itemRow'>
+            <div class='col-12'>
+              <strong>void ManuallyExitAnchor()</strong> - Call this function to have the SplitterSubscriber exit the current SplitterAnchor (if any).  Note that this will only work if it is called after previously calling ManuallyEnterAnchor(SplitterAnchor Anchor).
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>bool IsSimulating()</strong> - Returns true if the SplitterSubscriber is currently registered and simulating in the physics scene of an SplitterAnchor.  Otherwise, returns false. 
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>Rigidbody GetSimulationBody()</strong> - If this subscriber is currently in a simulation, it will return the Rigidbody of the subscriber within the simulation.  Otherwise, returns null.  This sort of information is usually not needed, but is made available for convenience.
+            </div>
+          </div>
+
+        </div>
+        <div class='section-sm'>
+          <div class="row">
+            <div class='col-12 h4 componentTitle'>
+              Applied Physics
+            </div>
+          </div>
+          <div class = 'row itemRow'>
+            <div class='col-12'>
+            This class is made accessible to all SplitterSubscribers to provide workflow improvements when applying physical changes to SplitterSubscribers.  <strong>If a script that makes physics applications to a SplitterSubscriber is not listed in the SplitterSubscribers RunInSimulationSpace&lt;Monobehaviour&gt;, then all physics applications to the SplitterSubscriber MUST be scripted through AppliedPhysics and NOT Rigidbody!</strong>  Normal Rigidbody methods and properties (i.e. Rigidbody.AddForce(...), Rigidbody.velocity, etc.) will not work when the SplitterSubscriber is in an SplitterAnchor's physical scene, as the SplitterSubscriber's Rigidbody will be controlled by the simulation.  Do not use AppliedPhysics in scripts that are listed in RunInSimulation.
+          </div>
+        </div>
+        <div class = 'row'>
+          <div class=col-12'>
+            This class contains a one-to-one implementation of <strong>all</strong> Rigidbody members. For example: 
+
+          <div class="code alert alert-secondary">    
+            <code> 
+              player.GetComponent&lt;Rigidbody&gt;().AddForce(transform.forward, 1f);
+            </code>    
+          </div>
+          -becomes-   
+          <div class="code alert alert-secondary">  
+            <code>
+              player.GetComponent&lt;SplitterSubscriber&gt;().AppliedPhysics.AddForce(transform.forward, 1f);
+            </code>
+          </div>
+          <p></p>
+          The same goes for properties normally found in the Rigidbody class.  For example:  
+          <div class="code alert alert-secondary">
+            <code>
+              player.GetComponent&lt;Rigidbody&gt;().velocity
+            </code>
+          </div>   
+          -becomes-
+          <div class="code alert alert-secondary">
+             <code>
+                player.GetComponent&lt;SplitterSubscriber&gt;().AppliedPhysics.velocity
+             </code> 
+          </div>
+          This is now a more accurate representation of velocity.
+
+          <div class='row tipRow justify-content-center'>
+              <div class='col-10 rounded tipItem'>
+                Tip:  The applied physics class should be used for all subscriber physical interactions, even when the subscriber is not in an anchor! 
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+        <div class='section-sm'>
+          <div class='row'>
+            <div class='col-12 h4 componentTitle'>
+              SplitterEventListener
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              Provides access to Splitter events.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              Some knowledge of the inner workings of Splitter is required when dealing with events.  When a subscriber triggers an anchor, a complete copy of the subscriber game object is made and entered into the anchor's physics simulation.   The SplitterEventListener's events allow us to access the simulated subscriber and simulated anchor.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              To utilize this event listener, have the relevant components inherit from SplitterEventListener instead of MonoBehaviour.  Then override any of the following public virtual methods as needed.
+          <div class='row tipRow justify-content-center'>
+            <div class='col-10 rounded tipItem'>
+              Tip:  Do you already have an inheritance structure setup?  Don't worry.  You do not have to explicitly inherit from SplitterEventListener.  Simply add a method with the same signature to your Monobehaviour and the splitter system will trigger the event.
+            </div>
+          </div>
+        </div>
+      </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>OnEnterAnchor(SplitterEvent evt)</strong> - Occurs for all components and child components on anchor gameObject.  Occurs when the subscriber successfully enters an anchor.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>OnExitAnchor(SplitterEvent evt)</strong> - Occurs for all components and child components on anchor gameObject.  Occurs when the subscriber successfully exits an anchor.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>OnSimulationStart(SplitterEvent evt)</strong> - Occurs for all components and child components on anchor gameObject.  Occurs when the anchor starts simulating a physics context.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>OnSimulationCollisionEnter(SplitterEvent evt)</strong> - Occurs for all components and child components on subscriber gameObject.  Occurs when a simulated subscriber encounters a collision.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>OnSimulationCollisionStay(SplitterEvent evt)</strong> - Occurs for all components and child components on subscriber gameObject.  Occurs when a simulated subscriber collision continues.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>OnSimulationCollisionExit(SplitterEvent evt)</strong> - Occurs for all components and child components on subscriber gameObject.  Occurs when a simulated subscriber exits a collision.
+            </div>
+          </div>
+        </div>
+
+        <div class='section-sm'>
+          <div class='row'>
+            <div class='col-12 h4 componentTitle'>
+              SplitterEvent
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              This class simply holds relevant information for events.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>SplitterAnchor Anchor</strong> - The SplitterAnchor associated with the event.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>Transform SimulatedAnchor</strong> - The transform of the simulated anchor associated with the event.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>SplitterSubscriber Subscriber</strong> - The SplitterSubscriber associated with the event.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>Transform SimulatedSubscriber</strong> - The transform of the simulated subscriber associated with the event.
+            </div>
+          </div>
+          <div class='row itemRow'>
+            <div class='col-12'>
+              <strong>Collision Collision</strong> - A Unity Engine Collision object containing all of the relevant info pertaining to collisions that occur inside a simulation.  Normal rigidbody collision events still occur, however the values in the Collision argument may be inaccurate.  To access accurate collision data, use the SplitterEventListener's correlated event.
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
+
+
+      <div class="anchor" id="contact">
+      </div>
+      <div class='section'>
+        <div class='row subTitleRow'>
+          <div class='col-12 h2'>
+            Contact
+          </div>
+          <hr/>
+        </div>
+        
+        <div class='row itemRow'>
+          <div class='col-12 productDescription'>
+            No Time is a small tech and media company located in Lehigh Valley, Pennsylvania, USA.
+          </div>
+          <div class='col-12 productDescription'>
+            Questions or Comments? Or just interested?  Feel free to contact us!
+          </div>
+          <div class='col-10'>
+              <ul>
+                <li>
+                  <a href = "mailto: notime.technology@gmail.com">notime.technology@gmail.com</a>
+                </li>
+                <li>
+                  <a href = "https://discord.gg/gmYAbdrazR">Join the NoTime discord!</a>
+                </li>
+                <li>
+                  <a href = "https://twitter.com/noTime_tech">Follow NoTime on Twitter: @noTime_tech</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="footer navbar fixed-bottom">
+        &#169;NoTime 2024
+      </div>
+
+
+
+      <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="https://notimetechnology.com">NoTime</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="#about">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#news">News</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#features">Features</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#gettingstarted">Getting Started</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#component">Component Documentation</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#scripting">Scripting Documentation</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#contact">Contact</a>
+            </li>
+          </ul>
+        
+      </div>
+    </div>
+  </nav>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+  </body>
+</html>

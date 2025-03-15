@@ -61,7 +61,7 @@ public class InteriorLightBehavior : MonoBehaviour
         }
         else if (On && val == false)
         {
-            Debug.Log("Off");
+            //Debug.Log("Off");
             SwitchTime = Time.time;
             On = false;
         }

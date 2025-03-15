@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 public class FlightController : SplitterEventListener
 {
+
+    public DrainerBehaviour Drainer;
+    private bool PoweredByDrainer;
     public bool StablizerInstalled;
     public bool RollInstalled;
     public bool LookRotationInstalled;
@@ -61,6 +64,9 @@ public class FlightController : SplitterEventListener
     }
     private void Start()
     {
+        if (Drainer != null)
+            Drainer.PowerEvents += OnPowerChange;
+
         transform.GetComponent<SplitterSubscriber>().AppliedPhysics.centerOfMass = -Vector3.up;
         GoalRotation = transform.rotation;
 
@@ -83,6 +89,10 @@ public class FlightController : SplitterEventListener
         mDown2 = Down2.transform.GetComponent<Renderer>().material;
         mDown3 = Down3.transform.GetComponent<Renderer>().material;
 
+    }
+    public void OnPowerChange(bool power)
+    {
+        PoweredByDrainer = power;
     }
     private void OnTriggerEnter(Collider other)
     {
@@ -215,7 +225,8 @@ public class FlightController : SplitterEventListener
     private void HandlePilotSeat()
     {
         _target = transform.rotation;
-        if (passengerPresent == true && Input.GetKeyDown(KeyCode.CapsLock))
+        if (passengerPresent == true &&
+            Input.GetKeyDown(KeyCode.CapsLock))
         {
 
             controlled = !controlled;
@@ -448,6 +459,8 @@ public class FlightController : SplitterEventListener
     private void Move()
     {
 
+        if (Drainer != null && !PoweredByDrainer)
+            return;
 
         _thrustInput = Vector3.zero;
         if (Input.GetKey(KeyCode.W))

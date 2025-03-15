@@ -13,7 +13,7 @@ public class AlignWithGravity : SplitterEventListener
     }
     private void AlignRotationWithGravity()
     {
-        if (transform.GetComponent<GravityObject>().GravityDistance > 300f)
+        if (transform.GetComponent<GravityObject>().GravityDistance > 260f)
             return;
         GravityForce = transform.GetComponent<GravityObject>().GravityDirection * transform.GetComponent<GravityObject>().GravityAcceleration;
         Quaternion target = Quaternion.FromToRotation(body.AppliedPhysics.rotation * Vector3.down, GravityForce.normalized);

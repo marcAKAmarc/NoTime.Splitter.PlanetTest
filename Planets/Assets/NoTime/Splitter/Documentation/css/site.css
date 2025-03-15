@@ -1,0 +1,87 @@
+/* Fonts
+--------------------------*/
+@import url("https://rsms.me/inter/inter-ui.css");
+
+/* Variables
+---------------------------*/
+.titleRow {
+  margin-bottom: 80px;
+  margin-top: 40px;
+}
+.mainTitle {
+  text-align: center;
+}
+.itemRow{
+  margin-bottom: 10px;
+}
+.subTitleRow{
+  margin-bottom:15px;
+}
+ul{
+  list-style-type: circle;
+}
+body{
+	padding-bottom:70px;
+	padding-top:40px;
+}
+.footer{
+	padding-left: 20px;
+	background-color: 	white;
+}
+.section{
+  margin-bottom:60px;
+}
+.section-sm{
+	margin-bottom:40px;
+}
+.tipItem{
+	margin-top:10px;
+	margin-bottom:10px;
+	border-width: 1px;
+	border-style: solid;
+	font-style: italic;
+	border-color: gray;
+	border-color: lightgray;
+	background-color: whitesmoke;
+	padding: 15px;
+}
+
+.buybox{
+	padding:30px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: lightgray;
+	background-color: whitesmoke;
+	margin-bottom: 30px;
+}
+.header{
+	padding:10px;
+}
+.code{
+	margin-bottom: 0px;
+}
+
+.anchor {
+    display: block;
+    position: relative;
+    top: -60px;
+    visibility: hidden;
+}
+
+.topVidIframe {
+    max-width: 630px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+table {
+    margin: 30px;
+}
+
+th, tr, td {
+    border: black;
+    border-width: thin;
+    border-style: solid;
+    padding: 10px;
+}

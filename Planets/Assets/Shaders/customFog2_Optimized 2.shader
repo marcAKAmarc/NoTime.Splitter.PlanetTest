@@ -359,7 +359,8 @@ Shader "Custom/ScreenSpaceFog2Optimized2"
 
 
                 //take 'er on home
-                float sunsetAmt = clamp(max(max(ssAmt, smAmt) , seAmt) * amtTowardSun /** pow(depthFading, .5)*/, 0, 1);
+                float sunsetAmt = /*clamp(max(max(ssAmt, smAmt), seAmt)*/
+                    clamp(((ssAmt + smAmt + seAmt)/3) * amtTowardSun /** pow(depthFading, .5)*/, 0, 1);
                 float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(PI * (1 - dayNight)) + 1) / 2);
                 float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(PI * (1 - dayNight)) + 1) / 2);
                 float4 atmosphereColor = (dayNightColor * (1-sunsetAmt)) + (sunsetColor * sunsetAmt);//lerp(dayNightColor, sunsetColor, sunsetAmt);

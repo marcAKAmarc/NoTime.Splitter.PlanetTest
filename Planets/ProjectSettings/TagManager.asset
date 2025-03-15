@@ -6,6 +6,7 @@ TagManager:
   tags:
   - GravitySource
   - Planet
+  - Drainable
   layers:
   - Default
   - TransparentFX

@@ -1,6 +1,7 @@
 
 using NoTime.Splitter;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 public class PickUpBehaviour : MonoBehaviour
@@ -26,6 +27,7 @@ public class PickUpBehaviour : MonoBehaviour
         mainCamera = Camera.main;
         ray.origin = transform.position;
         ray.direction = transform.forward;
+        mask = LayerMask.GetMask("Default");
 
         holderSubscriber = HolderBody.GetComponent<SplitterSubscriber>();
     }
@@ -45,6 +47,7 @@ public class PickUpBehaviour : MonoBehaviour
         }
     }
 
+    private int mask;
     void FixedUpdate()
     {
         if (!doIt)
@@ -55,7 +58,7 @@ public class PickUpBehaviour : MonoBehaviour
 
         if (press)
         {
-            if (Physics.Raycast(ray, out hit, pickupDistance, LayerMask.GetMask("Default"), QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(ray, out hit, pickupDistance, mask, QueryTriggerInteraction.Ignore))
             {
                 Rigidbody rb = hit.collider.GetComponentInParent<Rigidbody>();
 
