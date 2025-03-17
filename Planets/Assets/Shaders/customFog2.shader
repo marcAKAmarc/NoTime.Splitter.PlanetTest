@@ -113,48 +113,14 @@ Shader "Custom/ScreenSpaceFog2"
 
             half4 frag(v2f i) : SV_Target
             {
-                
-                float2 screenUV = i.projPos.xy / i.projPos.w;
-
-                // sample depth texture
-                float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV);
 
                 // get linear depth from the depth
-                float sceneZ = LinearEyeDepth(depth);
+                float sceneZ = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.projPos.xy / i.projPos.w));
 
-                float3 worldPosition = (sceneZ * normalize(i.uvPos.xyz - _WorldSpaceCameraPos.xyz)) + _WorldSpaceCameraPos.xyz;
-
-                // calculate the view plane vector
-                // note: Something like normalize(i.camRelativeWorldPos.xyz) is what you'll see other
-                // examples do, but that is wrong! You need a vector that at a 1 unit view depth, not
-                // a1 unit magnitude.
-                //BUT THIS IS UNUSED BESIDES WORLDPOS WHICH IS UNUSED
-                //float3 viewPlane = i.camRelativeWorldPos.xyz / dot(i.camRelativeWorldPos.xyz, unity_WorldToCamera._m20_m21_m22);
-
-                // calculate the world position
-                // multiply the view plane by the linear depth to get the camera relative world space position
-                // add the world space camera position to get the world space position from the depth texture
-                //BUT THIS IS UNUSED
-                //float3 worldPos = viewPlane * sceneZ + _WorldSpaceCameraPos;
-                //worldPos = mul(unity_CameraToWorld, float4(worldPos, 1.0));
-                
-               
-                ////////////
-                /*float3 pixToCamSized = _WorldSpaceCameraPos.xyz - worldPos;
-                float3 pixToPlanetSized;
-                float3 pixToSun = -_SunlightDir;*/
-                //////////
-
-
-                //float4 dist = distance(_WorldSpaceCameraPos, worldPos);
-                //this is just scenez
-
-                //this is unused
-                //float3 viewForward = normalize(i.camRelativeWorldPos);
-                float3 uvForward = normalize(worldPosition - _WorldSpaceCameraPos);
+                float3 uvForward = normalize(i.uvPos.xyz - _WorldSpaceCameraPos.xyz);
 
                 //get dist to planet
-                float3 fogRayStart = _WorldSpaceCameraPos + uvForward; //* _FogMinDist;
+                float3 fogRayStart = _WorldSpaceCameraPos + uvForward;
                 float distPlanet = distance(fogRayStart, _PlanetWorldOrigin);
 
                 float3 theta = acos(dot(uvForward, normalize(_PlanetWorldOrigin - fogRayStart)));
@@ -164,89 +130,113 @@ Shader "Custom/ScreenSpaceFog2"
                 float adjacent = distPlanet * cos(theta);
                 
                 float distInFog = sqrt(   max(0,pow(_AtmosphereMaxRadius, 2) - pow(opposite, 2)));
-                float distInPlanet = sqrt(max(0,pow(_PlanetSurfaceRadius, 2) - pow(opposite, 2)));
                 
                 float atmoDensity = ((1 - (
                     (clamp(opposite, _PlanetSurfaceRadius, _AtmosphereMaxRadius) - _PlanetSurfaceRadius)
                     / (_AtmosphereMaxRadius - _PlanetSurfaceRadius)
                     )));
-                //---don't need and maybe incorrect----
-                //float distAmtSide1 = max(0, min(adjacent, distInFog) - distInPlanet);
-                //float distAmtSide2 = max(0, min(distInFog, distInFog + adjacent));
-                //--------------------------------------
                 
 
 
-                float totalDist = distInFog + min(distInFog, adjacent) /* - ((distInPlanet + distInFog) * planetCancel * adjNegCancel)*/;
-                float startDistFromCenter = min(adjacent, distInFog);
+                float totalDist = distInFog + min(distInFog, adjacent);
 
-                float3 startPosFog = fogRayStart + (uvForward * (adjacent - startDistFromCenter));
+                float3 startPosFog = fogRayStart + (uvForward * (adjacent - min(adjacent, distInFog)));
                 float3 endPosFog = startPosFog + (uvForward * totalDist);
                 float3 midPosFog = startPosFog + (uvForward * totalDist) / 2;
 
                 
 
                 //dayNight stuff
-                float dayNightEnter = clamp(
-                    dot(
-                        normalize(
-                            startPosFog - _PlanetWorldOrigin
-                        ),
-                        normalize(
-                            -_SunlightDir
-                        )
-                    ), -1, 1
-                );
-               
-                
-
-                float dayNightExit = clamp(
-                    dot(
-                        normalize(
-                            endPosFog - _PlanetWorldOrigin
-                        ),
-                        normalize(
-                            -_SunlightDir
-                        )
-                    ), -1, 1
-                );
-                //convert [-1, 1] to [0, 1] - clamp to make it night at horizon, not back
-                /*float midnightNight = (-clamp(dayNightEnter, -1, 0) + -clamp(dayNightExit - 1, 0)) / 2, 0, 1);
-                dayNightEnter = clamp(dayNightEnter, 0, 1);
-                dayNightExit = clamp(dayNightExit, 0, 1);
-                float dayNight = clamp((dayNightEnter + dayNightExit) /2, 0, 1);*/
-
-                float dayNight = (((dayNightEnter + dayNightExit) / 2) + 1) / 2;
+                float dayNight = (
+                    (
+                        (
+                            /*day night enter*/
+                            clamp(
+                                dot(
+                                    normalize(
+                                        startPosFog - _PlanetWorldOrigin
+                                    ),
+                                    normalize(
+                                        -_SunlightDir
+                                    )
+                                ), -1, 1
+                            )
+                            +
+                            /*day night exit*/
+                            clamp(
+                                dot(
+                                    normalize(
+                                        endPosFog - _PlanetWorldOrigin
+                                    ),
+                                    normalize(
+                                        -_SunlightDir
+                                    )
+                                ), -1, 1
+                            )
+                        ) / 2
+                    ) + 1
+                ) / 2;
 
 
                 //depth fading stuff
-                float sceneZInFog = sceneZ - max(0,adjacent - distInFog);
-                float fogAmt = (max(0, min(sceneZInFog, totalDist) - _FogMinDist)) / (_FogMaxDist - _FogMinDist);
-                float depthPow = lerp(_DepthPowSurface, _DepthPowSpace, i.amtInSpace);
-                float depthFactor = lerp(_DepthFactorSurface, _DepthFactorSpace, i.amtInSpace);
-                float depthFading = saturate((abs(pow(fogAmt, depthPow))) / depthFactor);
+                float depthFading = saturate(
+                    (
+                        abs(
+                            pow(
+                                //fogAmt
+                                (
+                                    max(
+                                        0,
+                                        min(
+                                            /*scene z in fog*/
+                                            sceneZ - max(0, adjacent - distInFog)
+                                            , totalDist
+                                        ) - _FogMinDist
+                                    )
+                                ) / (_FogMaxDist - _FogMinDist)
+                                , 
+                                //depthPow
+                                lerp(_DepthPowSurface, _DepthPowSpace, i.amtInSpace)
+                            )
+                        )
+                    ) / //depthFactor:
+                    lerp(_DepthFactorSurface, _DepthFactorSpace, i.amtInSpace)
+                );
 
                 ///sunset stuff
                 float maxSunTravelDist = 2 * sqrt(pow(_AtmosphereMaxRadius, 2) - pow(_PlanetSurfaceRadius, 2));
-                float amtTowardSun =
+                /*float amtTowardSun =
                     
                         dot(
                             uvForward,
                             -normalize(
                                 _SunlightDir
                             )
-                       
-                    );
+                        );
                 //put in [0,1] range
-                amtTowardSun = (amtTowardSun + 1) / 2;
-                amtTowardSun = pow(
-                        amtTowardSun,
-                        //this tightens things up as we leave the planet
-                        1 + (
-                            500 * clamp((distPlanet-(_PlanetSurfaceRadius+10)) / (2 * _AtmosphereMaxRadius), 0, 1)
+                amtTowardSun = (
+                    dot(
+                        uvForward,
+                        -normalize(
+                            _SunlightDir
                         )
-                    )
-                ;
+                    ) + 1
+                ) / 2;*/
+                float amtTowardSun = pow(
+                    (
+                        dot(
+                            uvForward,
+                            -normalize(
+                                _SunlightDir
+                            )
+                        ) + 1
+                        ) / 2,
+                    //this tightens things up as we leave the planet
+                    1 + (
+                        500 * clamp((distPlanet - (_PlanetSurfaceRadius + 10)) / (2 * _AtmosphereMaxRadius), 0, 1)
+                        )
+                );
+                
 
                 //startPosFog sunAmt
                 //ss - sunstart
@@ -256,7 +246,6 @@ Shader "Custom/ScreenSpaceFog2"
                 float ssAdjacent = ssDistToPlanet * cos(ssTheta);
 
                 float ssDistInFog = sqrt(max(0, pow(_AtmosphereMaxRadius, 2) - pow(ssOpposite, 2)));
-                float ssDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(ssOpposite, 2)));
 
                 //0 if planet has value, otherwise 1
                 float ssNoPlanetCancel = clamp((_PlanetSurfaceRadius - ssOpposite) / 20, 0, 1);              
@@ -276,7 +265,6 @@ Shader "Custom/ScreenSpaceFog2"
                 float smAdjacent = smDistToPlanet * cos(smTheta);
 
                 float smDistInFog = sqrt(max(0, pow(_AtmosphereMaxRadius, 2) - pow(smOpposite, 2)));
-                float smDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(smOpposite, 2)));
 
                 //0 if planet has value, otherwism 1
                 
