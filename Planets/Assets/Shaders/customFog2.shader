@@ -166,15 +166,15 @@ Shader "Custom/ScreenSpaceFog2"
                 float distInFog = sqrt(   max(0,pow(_AtmosphereMaxRadius, 2) - pow(opposite, 2)));
                 float distInPlanet = sqrt(max(0,pow(_PlanetSurfaceRadius, 2) - pow(opposite, 2)));
                 
-                
+                float atmoDensity = ((1 - (
+                    (clamp(opposite, _PlanetSurfaceRadius, _AtmosphereMaxRadius) - _PlanetSurfaceRadius)
+                    / (_AtmosphereMaxRadius - _PlanetSurfaceRadius)
+                    )));
                 //---don't need and maybe incorrect----
                 //float distAmtSide1 = max(0, min(adjacent, distInFog) - distInPlanet);
                 //float distAmtSide2 = max(0, min(distInFog, distInFog + adjacent));
                 //--------------------------------------
                 
-                //0 if planet has value, otherwise 1
-                float planetCancel = clamp(distInPlanet / .00001, 0, 1);
-                float adjNegCancel = clamp(adjacent / .000001, 0, 1);
 
 
                 float totalDist = distInFog + min(distInFog, adjacent) /* - ((distInPlanet + distInFog) * planetCancel * adjNegCancel)*/;
@@ -259,8 +259,7 @@ Shader "Custom/ScreenSpaceFog2"
                 float ssDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(ssOpposite, 2)));
 
                 //0 if planet has value, otherwise 1
-                float ssNoPlanetCancel = clamp((_PlanetSurfaceRadius - ssOpposite) / 20, 0, 1);
-                float ssAdjNegCancel = clamp(ssAdjacent, 0, 1);               
+                float ssNoPlanetCancel = clamp((_PlanetSurfaceRadius - ssOpposite) / 20, 0, 1);              
                 float ssTotalDist = ((min(ssDistInFog, ssAdjacent) + ssDistInFog)) * (1 - ssNoPlanetCancel);
                 float ssAmt = clamp(ssTotalDist/maxSunTravelDist,0,1);
 
@@ -280,47 +279,24 @@ Shader "Custom/ScreenSpaceFog2"
                 float smDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(smOpposite, 2)));
 
                 //0 if planet has value, otherwism 1
-                float smOneWhenPlanetCollision = clamp((_PlanetSurfaceRadius-smOpposite) /20, 0, 1); //JUST READDED WAS 0
-                float smOneWhenAdjPositive = clamp(smAdjacent , 0, 1);
+                
                 float smTotalDist =
-                    ((min(smDistInFog, smAdjacent) + smDistInFog)) * (1 - smOneWhenPlanetCollision);
+                    ((min(smDistInFog, smAdjacent) + smDistInFog)) * (/*planet cancel*/1 - clamp((_PlanetSurfaceRadius - smOpposite) / 20, 0, 1));
 
                 float smAmt = clamp(smTotalDist / maxSunTravelDist, 0, 1);
-
-
-                //THIS SEEMS CORRECT.... MOVE TO OTHERS?
-
-
-            //endPosFog seTotalDist
-                ///////////////start here!
-                float seTheta = acos(dot(-normalize(_SunlightDir), normalize(_PlanetWorldOrigin - endPosFog)));
-                float seDistToPlanet = distance(_PlanetWorldOrigin, endPosFog);
-                float seOpposite = seDistToPlanet * sin(seTheta);
-                float seAdjacent = seDistToPlanet * cos(seTheta);
-
-                float seDistInFog = sqrt(max(0, pow(_AtmosphereMaxRadius, 2) - pow(seOpposite, 2)));
-                float seDistInPlanet = sqrt(max(0, pow(_PlanetSurfaceRadius, 2) - pow(seOpposite, 2)));
-
-                //0 if planet has value, otherwise 1
-                float seNoPlanetCancel = pow(clamp((_PlanetSurfaceRadius - seOpposite)/20 , 0, 1),1);
-                float seAdjNegCancel = clamp(seAdjacent, 0, 1);
-                float seTotalDist = ((min(seDistInFog, seAdjacent) + seDistInFog)) * (1-seNoPlanetCancel);
-                float seAmt = clamp(seTotalDist/maxSunTravelDist, 0, 1);
-                seAmt = pow(seAmt, 2);
 
 
 
                 
                 //take 'er on home
-                float sunsetAmt = clamp(max(ssAmt, smAmt) * amtTowardSun /** pow(depthFading, .5)*/, 0, 1);
+                float sunsetAmt = clamp(max(ssAmt, smAmt) * amtTowardSun , 0, 1);
                 float4 sunsetColor = lerp(_RimColorNight, _RimColorDay, (cos(PI * (1 - dayNight)) + 1) / 2);               
                 float4 dayNightColor = lerp(_NightColor, _DayColor, (cos(PI*(1 - dayNight))+1)/2);
-                float4 atmosphereColor = (dayNightColor*(1-sunsetAmt)*depthFading) + (sunsetColor * sunsetAmt * depthFading);//lerp(dayNightColor, sunsetColor, sunsetAmt);
+                float4 atmosphereColor = (dayNightColor*(1-sunsetAmt)) + (sunsetColor * sunsetAmt);
                 return
-                    //sunsetAmt * _RimColorNight
 
-                    
-                    atmosphereColor
+
+                    atmosphereColor * depthFading * atmoDensity
                     
 
                 ;
