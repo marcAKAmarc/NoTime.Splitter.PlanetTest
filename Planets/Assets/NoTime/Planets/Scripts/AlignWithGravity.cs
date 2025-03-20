@@ -21,7 +21,7 @@ public class AlignWithGravity : SplitterEventListener
             Quaternion.Slerp(
                 body.AppliedPhysics.rotation,
                 target * body.AppliedPhysics.rotation,
-                .05f * Mathf.Pow(transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f, 2f)
+                .05f * transform.GetComponent<GravityObject>().GravityAcceleration / 9.8f
         ));
 
         

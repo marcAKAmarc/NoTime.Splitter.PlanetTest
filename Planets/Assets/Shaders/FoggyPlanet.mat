@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FogScreen
-  m_Shader: {fileID: 4800000, guid: 294ee57d6f716b042b55021773d80c14, type: 3}
+  m_Name: FoggyPlanet
+  m_Shader: {fileID: 4800000, guid: 5294b68c0a951f34e98dd82ec9d362ae, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -21,7 +21,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: bb9441ad1e914614c84125c92ac95253, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -40,8 +40,12 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _HeightMap:
+        m_Texture: {fileID: 2800000, guid: 019c9c14a59c63f40aa359f74a836a1f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: b0701a45fb6c40346a84f5fd65653318, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -58,33 +62,21 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AtmoDensitySpace: 0
-    - _AtmoDensitySurface: 1
-    - _AtmosphereMaxRadius: 256.4
-    - _BlendOp: 4
+    - _BumpLevel: 0.64
     - _BumpScale: 1
     - _Cutoff: 0.5
-    - _DayPow: 1
-    - _DepthFactorSpace: 1
-    - _DepthFactorSurface: 1
-    - _DepthPowSpace: 1
-    - _DepthPowSurface: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _FarFade: 99999
-    - _FogMaxDist: 250
-    - _FogMinDist: 5
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _HeightPower: 0.0222
+    - _MainBlend: 0.445
     - _Metallic: 0
-    - _MinimumLight: 0.1
     - _Mode: 0
-    - _NearFade: 9999
-    - _NightPow: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _PlanetSurfaceRadius: 214
+    - _RimPower: 8
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -92,11 +84,15 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _DayColor: {r: 0.031372547, g: 0.49756542, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _NightColor: {r: 0, g: 0, b: 0, a: 1}
-    - _PlanetWorldOrigin: {r: 402, g: 0, b: 2742, a: 0}
-    - _RimColorDay: {r: 1, g: 0.43396223, b: 0, a: 1}
-    - _RimColorNight: {r: 1, g: 0.09962939, b: 0, a: 1}
-    - _SunlightDir: {r: -0.321, g: -0.766, b: 0.566, a: 0}
+    - _LargeColor: {r: 1, g: 0.99501103, b: 0, a: 1}
+    - _MainColor: {r: 0.40801182, g: 0.42452827, b: 0.36245102, a: 1}
+    - _MediumColor: {r: 1, g: 0.021577863, b: 0, a: 1}
+    - _RimColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SmallColor: {r: 0, g: 0.08628174, b: 1, a: 1}
+    - _TilingLarge: {r: 4, g: 530, b: 1, a: 1}
+    - _TilingMedium: {r: 8, g: 364, b: 1, a: 1}
+    - _TilingSmall: {r: 16, g: 272.8, b: 1, a: 1}
+    - _TilingTiny: {r: 128, g: 220, b: 1, a: 1}
+    - _TinyColor: {r: 0.5098038, g: 0.32156855, b: 0.28627446, a: 1}
   m_BuildTextureStacks: []

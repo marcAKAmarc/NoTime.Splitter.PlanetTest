@@ -4,30 +4,6 @@ using System.Linq;
 using UnityEngine;
 
 [Serializable]
-public class FacadeData
-{
-    public Transform Facade;
-    private Material[] Materials;
-    private Renderer[] Renderers;
-    public float transparentDistance;
-    public float opaqueDistance;
-
-    public Renderer[] GetRenderers()
-    {
-        return Renderers;
-    }
-    public Material[] GetMaterials()
-    {
-        return Materials;
-    }
-    public void Init()
-    {
-        Materials = Facade.GetComponentsInChildren<Renderer>().Select(r => r.material).ToArray();
-        Renderers = Facade.GetComponentsInChildren<Renderer>().ToArray();
-    }
-}
-
-[Serializable]
 public class AtmosphereData
 {
     public Transform PlanetTransform;
@@ -51,11 +27,6 @@ public class AtmosphereData
     //public float flareAlphaHorizon;
     public float SunScaleNoon;
     public float SunScaleHorizon;
-    public Transform PlanetAtmosphereTexture;
-    public Transform PlanetSurfaceAtmosphereTexture;
-    public float PlanetAtmosphereShiftMultiplier;
-    public float PlanetAtmosphereShiftScaler;
-    public Vector3 _initialScale;
     public Color EnvironmentalLightingColorDay;
     public Color EnvironmentalLightingColorNight;
 }
@@ -105,7 +76,6 @@ public class PlanetFX : MonoBehaviour
     public Color FlareColor;
     public float sunObjDistance;
     public Color DefaultEnvironmentalLightingColor;
-    public List<FacadeData> Facades;
     public bool DustActive;
     public List<DustData> Dust;
     public DustAvoidanceReporter DustAvoidanceReporter;
@@ -117,13 +87,9 @@ public class PlanetFX : MonoBehaviour
 
     private void Start()
     {
-        FacadesStart();
         DustSoundsStart();
     }
-    private void FacadesStart()
-    {
-        Facades.ForEach(x => x.Init());
-    }
+
     private void DustSoundsStart()
     {
         /*foreach (var dg in Dust)
@@ -143,7 +109,6 @@ public class PlanetFX : MonoBehaviour
 
         AtmospherePreRender();
         SunPreRender();
-        FacadesPreRender();
         DustPreRender();
     }
     AtmosphereData _closestAtmosphere;
@@ -192,8 +157,6 @@ public class PlanetFX : MonoBehaviour
             if (ad.PlanetTransform == null)
                 continue;
 
-            if (ad._initialScale == Vector3.zero)
-                ad._initialScale = ad.PlanetAtmosphereTexture.localScale;
 
             float x = ad.farRadius;
 
@@ -277,7 +240,7 @@ public class PlanetFX : MonoBehaviour
                     FlareAlpha
                 );*/
                 AtmosphereBlender.exposure = positionalExposure;
-                AtmosphereBlender.tint = new Color(tint.r, tint.g, tint.b, 1f);
+                //AtmosphereBlender.tint = new Color(tint.r, tint.g, tint.b, 1f);
                 AtmosphereBlender.blend = positionalBlend;
                 //RenderSettings.subtractiveShadowColor = Color.Lerp(Color.black, Color.Lerp(Color.blue, Color.white, .5f), positionalBlend);
                 SunFlare.sharedMaterial.color = flareColor;
@@ -302,73 +265,7 @@ public class PlanetFX : MonoBehaviour
                     activeZoneFactor
                 );
             }
-            
-
-            ad.PlanetAtmosphereTexture.rotation = Quaternion.LookRotation((ad.PlanetTransform.position - transform.position).normalized);
-            ad.PlanetSurfaceAtmosphereTexture.rotation = ad.PlanetAtmosphereTexture.rotation;
-            float angle = (Mathf.Deg2Rad * 90f) - Mathf.Acos(ad.nearRadius / x);
-            //Debug.Log("angle: " + angle.ToString());
-            ad.PlanetAtmosphereTexture.localScale = ad._initialScale * x * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(Mathf.Clamp01(ad.nearRadius / x))) / ad.nearRadius;
-
-            //SHIFT VALUE
-            float shiftFactor = 1f - Mathf.Abs(Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward));
-            float shiftDistance = Mathf.Max(x, ad.nearRadius/.9f) * Mathf.Tan((Mathf.Deg2Rad * 90f) - Mathf.Acos(Mathf.Min(ad.nearRadius / x, .9f))) * ad.PlanetAtmosphereShiftMultiplier;
-
-
-
-            ad.PlanetAtmosphereTexture.localScale = /*ad.PlanetAtmosphereTexture.localScale **/Vector3.one * (
-                ad.PlanetAtmosphereShiftScaler - (shiftDistance / ad.farRadius)
-            );
-
-            ad.PlanetAtmosphereTexture.position = ad.PlanetTransform.position + (
-                -SunLight.forward * shiftDistance
-            );
         }
-    }
-    private void FacadesPreRender()
-    {
-        foreach (var f in Facades)
-        {
-            if (f.Facade == null)
-                continue;
-
-            float sqrDist = (transform.position - f.Facade.position).sqrMagnitude;
-
-
-            if ((f.opaqueDistance > f.transparentDistance && sqrDist < Mathf.Pow(f.transparentDistance, 2))
-                ||
-                (f.opaqueDistance < f.transparentDistance && sqrDist > Mathf.Pow(f.transparentDistance, 2))
-            )
-            {
-                foreach (var r in f.GetRenderers())
-                    r.enabled = false;
-                foreach (var m in f.GetMaterials())
-                    m.color = new Color(m.color.r, m.color.g, m.color.b, 0f);
-            }
-            else
-            {
-                foreach (var r in f.GetRenderers())
-                    r.enabled = true;
-                foreach (var m in f.GetMaterials())
-                    m.color = new Color(m.color.r, m.color.g, m.color.b,
-
-                            Mathf.Clamp01(Map(sqrDist, Mathf.Pow(f.transparentDistance, 2), 0f, Mathf.Pow(f.opaqueDistance, 2), 1f))
-                    );
-                /*if (sqrDist > Mathf.Pow(f.opaqueDistance, 2))
-                {
-
-                    foreach (var m in f.GetMaterials())
-                        m.color = new Color(m.color.r, m.color.g, m.color.b, 1f);
-                }
-                else
-                {
-                    float linear = (sqrDist - Mathf.Pow(f.transparentDistance, 2)) / (Mathf.Pow(f.opaqueDistance, 2) - Mathf.Pow(f.transparentDistance, 2));
-                    foreach (var m in f.GetMaterials())
-                        m.color = new Color(m.color.r, m.color.g, m.color.b, linear);
-                }*/
-            }
-        }
-
     }
 
     private void DustInit(DustData data)
@@ -524,24 +421,6 @@ public class PlanetFX : MonoBehaviour
             Gizmos.color = Color.white;
             Gizmos.DrawWireSphere(ad.PlanetTransform.position, ad.nearRadius);
             Gizmos.DrawWireSphere(ad.PlanetTransform.position, ad.farRadius);
-        }
-    }
-
-    private Color[] colors = new Color[4] { Color.red, Color.yellow, Color.green, Color.blue };
-    int colorIndex = 0;
-    private void FacadesDrawGizmos()
-    {
-        colorIndex = 0;
-        foreach (var f in Facades)
-        {
-            Gizmos.color = colors[colorIndex];
-            Gizmos.DrawWireSphere(f.Facade.position, f.transparentDistance);
-            colorIndex++;
-            colorIndex = colorIndex % colors.Length;
-            Gizmos.color = colors[colorIndex];
-            Gizmos.DrawWireSphere(f.Facade.position, f.opaqueDistance);
-            colorIndex++;
-            colorIndex = colorIndex % colors.Length;
         }
     }
 

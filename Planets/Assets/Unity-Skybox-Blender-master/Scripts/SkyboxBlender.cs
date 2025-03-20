@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 [ExecuteInEditMode]
@@ -52,6 +53,14 @@ public class SkyboxBlender : MonoBehaviour
 
         if (updateReflectionsOnStart)
             UpdateReflections();
+
+        StartCoroutine(TurnOffReflectionUpdates());
+    }
+
+    IEnumerator TurnOffReflectionUpdates()
+    {
+        yield return new WaitForSeconds(2f);
+        updateReflectionsEveryFrame = false;
     }
 
     // Update is called once per frame
@@ -115,6 +124,7 @@ public class SkyboxBlender : MonoBehaviour
     /// </summary>
     void CreateReflectionProbe()
     {
+        return;
         //Search for the reflection probe object
         probeGameObject = GameObject.Find("Skybox Blender Reflection Probe");
 
@@ -144,6 +154,7 @@ public class SkyboxBlender : MonoBehaviour
     /// </summary>
     public void UpdateReflectionProbe()
     {
+        return;
         if (!probeGameObject || !probeComponent)
             CreateReflectionProbe();
 
@@ -180,6 +191,7 @@ public class SkyboxBlender : MonoBehaviour
     /// </summary>
     public void UpdateReflections()
     {
+        return;
         if (!probeGameObject || !probeComponent)
             UpdateReflectionProbe();
 

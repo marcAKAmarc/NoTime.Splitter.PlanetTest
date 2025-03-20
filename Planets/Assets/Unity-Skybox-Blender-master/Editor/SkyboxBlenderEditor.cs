@@ -49,7 +49,7 @@ public class SkyboxBlenderEditor : Editor
     {
         SkyboxBlender skyboxBlender = (SkyboxBlender)target;
 
-        serializedObject.Update();
+        //serializedObject.Update();
 
         //Input skyboxes
         EditorGUILayout.BeginVertical("HelpBox");

@@ -12,9 +12,9 @@ public class DrainerBehaviour : MonoBehaviour
     private int colliderCount = 0;
     public SplitterSubscriber MyPhysics;
     public Transform Target;
-    private float maxSpeedChange = 1f;
-    private float smoothSpeed = 3f;
-    private float dampSpeed = .2f;
+    public float maxSpeedChange = 1f;
+    public float smoothSpeed = 3f;
+    public float dampSpeed = .5f;
 
     public PowerEvent PowerEvents;
 
@@ -55,22 +55,23 @@ public class DrainerBehaviour : MonoBehaviour
         }
     }
 
+    private Vector3 _target;
     private void FixedUpdate()
     {
-        
         if (Held != null)
         {
+            _target = (Target.position - MyPhysics.transform.position) + MyPhysics.AppliedPhysics.position;
             Held.AppliedPhysics.AddForce(
                 Vector3Min(
-                    (Target.position - Held.AppliedPhysics.position).normalized * maxSpeedChange, 
-                    (Target.position - Held.AppliedPhysics.position) * smoothSpeed
+                    (_target - Held.AppliedPhysics.position).normalized * maxSpeedChange, 
+                    (_target - Held.AppliedPhysics.position) * smoothSpeed
                 )
                 , ForceMode.VelocityChange
             );
             Held.AppliedPhysics.AddForce(
                 Vector3Min(
                     (MyPhysics.AppliedPhysics.velocity - Held.AppliedPhysics.velocity).normalized * maxSpeedChange, 
-                    (MyPhysics.AppliedPhysics.velocity - Held.AppliedPhysics.velocity) * dampSpeed
+                    (MyPhysics.AppliedPhysics.velocity - Held.AppliedPhysics.velocity) * dampSpeed //* Time.fixedDeltaTime
                  )
                  , ForceMode.VelocityChange
             );
@@ -92,5 +93,29 @@ public class DrainerBehaviour : MonoBehaviour
     public bool IsDraining()
     {
         return Held != null;
+    }
+}
+public static class SubscriberExtensions
+{
+    public static Vector3? GetSimulatedTransformPosition(this SplitterSubscriber sub, Transform splitterTransform)
+    {
+        if (sub.Anchor != null)
+        {
+            Transform _simTransform = null;
+            _simTransform = sub.Anchor.GetMatchedTransform(sub, splitterTransform);
+            if (_simTransform != null)
+            {
+                return sub.Anchor.AnchorPointToWorldPoint(_simTransform.position);
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+        else
+        {
+            return splitterTransform.position;
+        }
     }
 }

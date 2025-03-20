@@ -7,15 +7,11 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ground14
-  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
-  m_ValidKeywords:
-  - _EMISSION
-  - _METALLICGLOSSMAP
-  - _NORMALMAP
-  - _PARALLAXMAP
+  m_Name: FogScreen_Dusty
+  m_Shader: {fileID: 4800000, guid: 294ee57d6f716b042b55021773d80c14, type: 3}
+  m_ValidKeywords: []
   m_InvalidKeywords: []
-  m_LightmapFlags: 1
+  m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
@@ -25,10 +21,6 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: bb9441ad1e914614c84125c92ac95253, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Cube:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -46,39 +38,53 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
         m_Texture: {fileID: 0}
-        m_Scale: {x: 0.5, y: 0.5}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: b0701a45fb6c40346a84f5fd65653318, type: 3}
-        m_Scale: {x: 0.5, y: 0.5}
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
-        m_Texture: {fileID: 2800000, guid: 65f04b330297cc244aaa78ae4015f466, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
-        m_Texture: {fileID: 2800000, guid: 573c7bc99dcbc0f4ea88b3ac63b42402, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
-        m_Texture: {fileID: 2800000, guid: 019c9c14a59c63f40aa359f74a836a1f, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AtmoDensitySpace: 0
+    - _AtmoDensitySurface: 1
+    - _AtmosphereMaxRadius: 256.4
+    - _BlendOp: 4
     - _BumpScale: 1
     - _Cutoff: 0.5
+    - _DayPow: 1
+    - _DepthFactorSpace: 1
+    - _DepthFactorSurface: 1
+    - _DepthPowSpace: 1
+    - _DepthPowSurface: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _EmissionScaleUI: 0
-    - _GlossMapScale: 0.793
-    - _Glossiness: 0
+    - _FarFade: 99999
+    - _FogMaxDist: 250
+    - _FogMinDist: 5
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
+    - _MinimumLight: 0.1
     - _Mode: 0
-    - _OcclusionStrength: 0.058
-    - _Parallax: 0.0152
-    - _Shininess: 0.52452165
+    - _NearFade: 9999
+    - _NightPow: 1
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _PlanetSurfaceRadius: 214
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -86,11 +92,11 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
-    - _EmissionColorUI: {r: 1, g: 1, b: 1, a: 1}
-    - _ReflectColor: {r: 1, g: 1, b: 1, a: 0.5}
-    - _SpecColor: {r: 0.23880595, g: 0.23880595, b: 0.23880595, a: 1}
+    - _DayColor: {r: 0.031372547, g: 0.634478, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _NightColor: {r: 0, g: 0, b: 0, a: 1}
+    - _PlanetWorldOrigin: {r: 402, g: 0, b: 2742, a: 0}
+    - _RimColorDay: {r: 0.47487617, g: 1, b: 0, a: 1}
+    - _RimColorNight: {r: 0.754717, g: 0.24050213, b: 0.0035599943, a: 1}
+    - _SunlightDir: {r: -0.321, g: -0.766, b: 0.566, a: 0}
   m_BuildTextureStacks: []
---- !u!1002 &2100001
-EditorExtensionImpl:
-  serializedVersion: 6

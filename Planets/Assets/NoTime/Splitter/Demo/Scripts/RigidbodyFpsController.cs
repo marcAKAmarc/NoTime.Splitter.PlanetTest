@@ -1,4 +1,5 @@
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 namespace NoTime.Splitter.Demo
 {
@@ -33,6 +34,7 @@ namespace NoTime.Splitter.Demo
 
         private void Awake()
         {
+            _spearRotationTarget = transform.rotation;
             body = transform.GetComponent<SplitterSubscriber>();
         }
         private void Start()
@@ -56,21 +58,24 @@ namespace NoTime.Splitter.Demo
         bool ShouldJump = false;
 
         Vector3 GravityForce = Vector3.zero;
+        bool InSpace = false;
         private void FixedUpdate()
         {
+            if (body.Anchor == null)
+                InSpace = true;
+            if (InSpace)
+                body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
 
             GroundCheck();
 
             
-            Look();
+            GravityLook();
 
             if (_rotateToGravity)
                 AlignRotationWithGravity();
 
             Move();
 
-            if(!freezeLook)
-                SpaceRotate();
 
             Jump();
 
@@ -83,15 +88,16 @@ namespace NoTime.Splitter.Demo
             FrictionAndSlowdown();
 
         }
-
-
+        
+        private Quaternion _spearRotationTarget;
         private void Move()
         {
             if (
                 !inControllerPosition &&
                 (
-                    (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
+                    Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E)
                 )
+
             )
             {
                 Vector3 direction = Vector3.zero;
@@ -114,6 +120,15 @@ namespace NoTime.Splitter.Demo
 
                 body.AppliedPhysics.AddForce(direction * MoveForce, ForceMode.Acceleration);
                 Moved = true;
+
+                
+                Vector3 torque = Vector3.zero;
+                if (Input.GetKey(KeyCode.Q))
+                    torque += body.AppliedPhysics.transform.forward * 1f * RollSensitivity;
+                if (Input.GetKey(KeyCode.E))
+                    torque += body.AppliedPhysics.transform.forward * -1f * RollSensitivity;
+                
+                body.AppliedPhysics.AddTorque(torque, ForceMode.Force);
             }
             else
             {
@@ -238,30 +253,24 @@ namespace NoTime.Splitter.Demo
 
         private float rotationX = 0F;
         private float _rotationY = 0F;
-        void Look()
+        public float RollSensitivity;
+        public float rotateFactor;
+        public float maxRotateSpeed;
+        public float dampenFactor;
+
+        void GravityLook()
         {
+
             Quaternion xQuaternion =
                 Quaternion.AngleAxis(rotationX, Vector3.up);
             body.AppliedPhysics.MoveRotation(body.AppliedPhysics.rotation * xQuaternion);
-            rotationX = 0;
+            rotationX = 0;   
 
             Quaternion yQuaternionAddition = Quaternion.AngleAxis(-_rotationY, Vector3.right);
             Quaternion potentialNewLocal = (yQuaternionAddition * _verticalLook.localRotation);
             if (Mathf.Abs(Quaternion.Angle(VerticalLookStart, potentialNewLocal)) < this.VerticalLookMaxAngle)
                 _verticalLook.localRotation = potentialNewLocal;
             _rotationY = 0;
-        }
-
-        private void SpaceRotate()
-        {
-            if (transform.GetComponent<GravityObject>().GravityAcceleration == 0f)
-                body.SmoothRotate(VerticalLook.rotation, 5f, .5f, .2f, 1f);
-
-            /*if (Input.GetKey(KeyCode.Q))
-                body.AppliedPhysics.AddRelativeTorque(Vector3.forward * RollSensitivity, ForceMode.Acceleration);
-            if (Input.GetKey(KeyCode.E))
-                body.AppliedPhysics.AddRelativeTorque(-Vector3.forward * RollSensitivity, ForceMode.Acceleration);*/
-
         }
 
         private void OnDrawGizmosSelected()
@@ -287,15 +296,13 @@ namespace NoTime.Splitter.Demo
 
 
 
-        /*public override void OnEnterAnchor(SplitterEvent evt)
+        public override void OnEnterAnchor(SplitterEvent evt)
         {
-            this._verticalLook = evt.SimulatedSubscriber.GetComponent<RigidbodyFpsController>().VerticalLook;
+            InSpace = false;
+            body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotation;
         }
 
-        public override void OnExitAnchor(SplitterEvent evt)
-        {
-            this._verticalLook = VerticalLook;
-        }*/
+        
     }
 }
 

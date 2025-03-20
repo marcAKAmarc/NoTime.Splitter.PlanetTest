@@ -64,6 +64,8 @@ public class FlightController : SplitterEventListener
     }
     private void Start()
     {
+        SetHintText(ControlsHint);
+
         if (Drainer != null)
             Drainer.PowerEvents += OnPowerChange;
 

@@ -513,7 +513,18 @@ namespace NoTime.Splitter
             Destroy(physicsGo);
         }
 
-        
+        List<MatchedTransform> _matched = null;
+        public Transform GetMatchedTransform(SplitterSubscriber subscriber, Transform splitterTransform)
+        {
+            _matched = null;
+            _matched = PhysicsGoIdToLocalSyncs[subscriber.GetInstanceID()];
+            for(int i = 0; i < _matched.Count; i++)
+            {
+                if (_matched[i].mainTransform == splitterTransform)
+                    return _matched[i].physicsTransform;
+            }
+            return null;
+        }
 
         public Rigidbody GetSimulationBody(SplitterSubscriber subscriber)
         {

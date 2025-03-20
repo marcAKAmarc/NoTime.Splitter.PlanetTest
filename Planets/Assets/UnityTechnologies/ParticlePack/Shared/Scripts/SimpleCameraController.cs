@@ -109,7 +109,7 @@ namespace UnityTemplateProjects
         void Update()
         {
             // Hide and lock cursor when right mouse button pressed
-            if (Input.GetMouseButtonDown(1))
+            /*if (Input.GetMouseButtonDown(1))
             {
                 Cursor.lockState = CursorLockMode.Locked;
             }
@@ -119,7 +119,7 @@ namespace UnityTemplateProjects
             {
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
-            }
+            }*/
 
             // Rotation
             if (Input.GetMouseButton(1))

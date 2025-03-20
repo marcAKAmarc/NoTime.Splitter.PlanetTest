@@ -10,6 +10,7 @@ public class PickUpBehaviour : MonoBehaviour
     private SplitterSubscriber holderSubscriber;
     public float pickupDistance = 3f; // Distance within which the rigidbody can be picked up
     public float hoverDistance = 2f; // Distance at which the picked up rigidbody hovers from the camera
+    public float hoverVOffset = 1f; //vertical up hover offset
     public float smoothSpeed = 5f; // Speed of smoothing the movement
     public float dampSpeed = 4f;
     public float maxSpeedChange = .1f;
@@ -77,14 +78,27 @@ public class PickUpBehaviour : MonoBehaviour
         press = false;
         if (pickedRigidbody != null)
         {
-            Vector3 targetPosition = transform.position + transform.forward * hoverDistance;
+            Vector3 targetPosition = 
+                holderSubscriber.AppliedPhysics.position  
+                + (holderSubscriber.AppliedPhysics.transform.up * hoverVOffset)
+                + transform.forward * hoverDistance
+                //+ (holderSubscriber.AppliedPhysics.velocity * Time.fixedDeltaTime)
+                ;
             if (subscriber != null)
             {
-                subscriber.AppliedPhysics.AddForce(Vector3Min((targetPosition - subscriber.AppliedPhysics.position).normalized * maxSpeedChange, (targetPosition - subscriber.AppliedPhysics.position) * smoothSpeed), ForceMode.VelocityChange);
-                subscriber.AppliedPhysics.AddForce(Vector3Min((holderSubscriber.AppliedPhysics.velocity - subscriber.AppliedPhysics.velocity).normalized * maxSpeedChange,(holderSubscriber.AppliedPhysics.velocity-subscriber.AppliedPhysics.velocity) * dampSpeed), ForceMode.VelocityChange);
+                subscriber.AppliedPhysics.AddForce(
+                    Vector3Min(
+                        (targetPosition - subscriber.AppliedPhysics.position).normalized * maxSpeedChange, 
+                        (targetPosition - subscriber.AppliedPhysics.position) * smoothSpeed
+                    ), ForceMode.VelocityChange
+                );
+                subscriber.AppliedPhysics.AddForce(
+                    Vector3Min(
+                        (holderSubscriber.AppliedPhysics.velocity - subscriber.AppliedPhysics.velocity).normalized * maxSpeedChange,
+                        (holderSubscriber.AppliedPhysics.velocity - subscriber.AppliedPhysics.velocity) * dampSpeed * Time.fixedDeltaTime
+                    ), ForceMode.VelocityChange
+                );
             }
-            //else
-//pickedRigidbody.MovePosition(Vector3.Lerp(pickedRigidbody.position, targetPosition, smoothSpeed * Time.fixedDeltaTime));
         }
     }
 
