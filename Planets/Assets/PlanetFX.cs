@@ -7,6 +7,7 @@ using UnityEngine;
 public class AtmosphereData
 {
     public Transform PlanetTransform;
+    public Renderer AtmosphereMaterial;
     public float farRadius;
     public float nearRadius;
     public float farBlendValue;
@@ -160,6 +161,8 @@ public class PlanetFX : MonoBehaviour
 
             float x = ad.farRadius;
 
+            if(ad.AtmosphereMaterial != null)
+                ad.AtmosphereMaterial.material.SetVector("_PlanetWorldOrigin", ad.PlanetTransform.position);
 
             if ((transform.position - ad.PlanetTransform.position).sqrMagnitude < ad.farRadius * ad.farRadius)
             {

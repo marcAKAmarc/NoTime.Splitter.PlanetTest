@@ -1,5 +1,6 @@
 
 using NoTime.Splitter;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,11 +9,13 @@ public class PickUpBehaviour : MonoBehaviour
 {
     public Rigidbody HolderBody;
     private SplitterSubscriber holderSubscriber;
+    private GravityObject myGravity;
     public float pickupDistance = 3f; // Distance within which the rigidbody can be picked up
     public float hoverDistance = 2f; // Distance at which the picked up rigidbody hovers from the camera
     public float hoverVOffset = 1f; //vertical up hover offset
     public float smoothSpeed = 5f; // Speed of smoothing the movement
     public float dampSpeed = 4f;
+    public float maxVelocityChange = .1f;
     public float maxSpeedChange = .1f;
     private Camera mainCamera;
     private Rigidbody pickedRigidbody;
@@ -29,7 +32,7 @@ public class PickUpBehaviour : MonoBehaviour
         ray.origin = transform.position;
         ray.direction = transform.forward;
         mask = LayerMask.GetMask("Default");
-
+        myGravity = HolderBody.GetComponent<GravityObject>();
         holderSubscriber = HolderBody.GetComponent<SplitterSubscriber>();
     }
 
@@ -49,6 +52,7 @@ public class PickUpBehaviour : MonoBehaviour
     }
 
     private int mask;
+    public float gravFudge;
     void FixedUpdate()
     {
         if (!doIt)
@@ -78,28 +82,67 @@ public class PickUpBehaviour : MonoBehaviour
         press = false;
         if (pickedRigidbody != null)
         {
+            Vector3 gravCancel = Vector3.zero;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S))
+                gravCancel = Vector3.zero;//(myGravity.GravityAcceleration * myGravity.GravityDirection) * Time.fixedDeltaTime * Time.fixedDeltaTime;
             Vector3 targetPosition = 
                 holderSubscriber.AppliedPhysics.position  
                 + (holderSubscriber.AppliedPhysics.transform.up * hoverVOffset)
-                + transform.forward * hoverDistance
-                //+ (holderSubscriber.AppliedPhysics.velocity * Time.fixedDeltaTime)
-                ;
-            if (subscriber != null)
-            {
-                subscriber.AppliedPhysics.AddForce(
-                    Vector3Min(
-                        (targetPosition - subscriber.AppliedPhysics.position).normalized * maxSpeedChange, 
-                        (targetPosition - subscriber.AppliedPhysics.position) * smoothSpeed
-                    ), ForceMode.VelocityChange
-                );
-                subscriber.AppliedPhysics.AddForce(
-                    Vector3Min(
-                        (holderSubscriber.AppliedPhysics.velocity - subscriber.AppliedPhysics.velocity).normalized * maxSpeedChange,
-                        (holderSubscriber.AppliedPhysics.velocity - subscriber.AppliedPhysics.velocity) * dampSpeed * Time.fixedDeltaTime
-                    ), ForceMode.VelocityChange
-                );
-            }
+                + transform.forward * hoverDistance;
+            subscriber.AppliedPhysics.AddForce(
+                PIDToPosition(
+                    targetPosition - subscriber.AppliedPhysics.position,
+                    subscriber.AppliedPhysics.velocity - holderSubscriber.AppliedPhysics.velocity, p, d, i, iMax
+                ),
+                ForceMode.VelocityChange
+            );
         }
+    }
+    public float p;
+    public float i;
+    public float d;
+    public float iMax;
+    //public float iMin;
+    private List<Vector3> errors = new List<Vector3>();
+    //private List<Vector3> velocities = new List<Vector3>();
+    private List<Vector3> errorInts = new List<Vector3>();
+    public int History;
+    private Vector3 PIDToPosition(Vector3 error, Vector3 velocity, float pGain, float dGain, float iGain, float iMaximum)
+    {
+        errors.Insert(0, error);
+        //velocities.Insert(0, velocity);
+        errorInts.Insert(0, errors[0] * Time.fixedDeltaTime);
+        //create static history
+        while(errors.Count < History)
+        {
+            errors.Insert(0, errors[0]);
+            //velocities.Insert(0,velocities[0]);
+            errorInts.Insert(0,errors[0] * Time.fixedDeltaTime);
+        }
+
+        if (errors.Count > History) {
+            errors.RemoveAt(errors.Count - 1);
+            //velocities.RemoveAt(velocities.Count - 1);
+            errorInts.RemoveAt(errorInts.Count - 1);
+        }
+
+        Vector3 errorSum = Vector3.zero;
+        for(int i = 0; i < errorInts.Count; i++)
+        {
+            errorSum += errorInts[i];
+        }
+
+        return
+            (errors[0] * pGain)
+            + (
+                ((errors[0] - errors[1]) / Time.fixedDeltaTime)
+                *
+                dGain
+            )
+            +
+            //do we need this?
+            Vector3.ClampMagnitude(errorSum, iMaximum) * iGain;
+
     }
 
     private static Vector3 Vector3Min(Vector3 v1, Vector3 v2)

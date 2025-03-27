@@ -64,7 +64,7 @@ public class FlightController : SplitterEventListener
     }
     private void Start()
     {
-        SetHintText(ControlsHint);
+        //SetHintText(ControlsHint);
 
         if (Drainer != null)
             Drainer.PowerEvents += OnPowerChange;
@@ -96,13 +96,14 @@ public class FlightController : SplitterEventListener
     {
         PoweredByDrainer = power;
     }
+    private int colCount = 0;
     private void OnTriggerEnter(Collider other)
     {
         if (other.GetComponent<RigidbodyFpsController>())
         {
             passengerPresent = true;
             potentialController = other.transform;
-
+            colCount += 1;
             SetHintText(PilotHint);
         }
     }
@@ -110,10 +111,14 @@ public class FlightController : SplitterEventListener
     {
         if (other.GetComponent<RigidbodyFpsController>())
         {
-            potentialController = null;
-            passengerPresent = false;
-            
-            SetHintText("");
+            colCount -= 1;
+            if (colCount == 0)
+            {
+                potentialController = null;
+                passengerPresent = false;
+
+                SetHintText("");
+            }
         }
     }
 
@@ -136,6 +141,7 @@ public class FlightController : SplitterEventListener
     }
 
     SplitterSubscriber _otherSubscriber;
+    private CameraShaker camShake;
     private void MaybeTakeHitToStabilization(Collision other)
     {
         
@@ -163,15 +169,19 @@ public class FlightController : SplitterEventListener
             if (relVel.sqrMagnitude <= 25f)
                 return;
 
-            potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>().AddInput(new CameraShakeInput
+            camShake = potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>();
+            if (camShake != null)
             {
-                Attack = .2f,
-                Amplitude = relVel.sqrMagnitude / 5000f,
-                Frequency = 10f,
-                Decay = .8f,
-                Asymmetry = new Vector2(.8f, .64f),
-                startTime = Time.time
-            });
+                camShake.AddInput(new CameraShakeInput
+                {
+                    Attack = .2f,
+                    Amplitude = relVel.sqrMagnitude / 5000f,
+                    Frequency = 10f,
+                    Decay = .8f,
+                    Asymmetry = new Vector2(.8f, .64f),
+                    startTime = Time.time
+                });
+            }
         }
     }
     void Update()

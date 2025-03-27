@@ -1,3 +1,4 @@
+using NoTime.Splitter;
 using NoTime.Splitter.Demo;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ public class SimpleTitleBehaviour : MonoBehaviour
     public List<Text> titleTexts;
     public Image titleImage;
     public RigidbodyFpsController rigidbodyFpsController;
+    public SplitterSubscriber subscriber;
     private enum states { fadeIn, initial, fadeOut, gameFadeIn, game}
     private states state = states.fadeIn;
     // Start is called before the first frame update
@@ -29,7 +31,10 @@ public class SimpleTitleBehaviour : MonoBehaviour
         titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, 0);
         
     }
-
+    private void Start()
+    {
+        subscriber.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+    }
     // Update is called once per frame
     float fade = 0;
     void Update()
@@ -83,7 +88,8 @@ public class SimpleTitleBehaviour : MonoBehaviour
         else if (state == states.gameFadeIn)
         {
             rigidbodyFpsController.enabled = true;
-
+            subscriber.AppliedPhysics.constraints = RigidbodyConstraints.None;
+            subscriber.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
             if (Input.anyKeyDown)
                 fade = 1;
             else

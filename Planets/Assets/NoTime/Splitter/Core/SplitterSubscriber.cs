@@ -1,9 +1,19 @@
+using NoTime.Splitter;
 using NoTime.Splitter.Core;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+[Serializable]
+public struct AnchorTrigger
+{
+    public Collider Collider;
+    public SplitterAnchor Anchor;
+    public bool isStayTrigger;
+    public bool isEntranceTrigger;
+}
 
 namespace NoTime.Splitter
 {
@@ -22,7 +32,7 @@ namespace NoTime.Splitter
         [Tooltip("Scripts that need to execute physics operations relative to the anchor, i.e. character controllers")]
         public List<MonoBehaviour> RunInSimulatedSpace;
 
-        [HideInInspector]
+        //[HideInInspector]
         public SplitterAnchor Anchor;
 
         [HideInInspector]
@@ -30,9 +40,9 @@ namespace NoTime.Splitter
         [HideInInspector]
         public PostSimulationInstantiation PostSimulationInstantiation;
 
-        private List<SplitterAnchor> AnchorStack;
+        public List<SplitterAnchor> AnchorStack;
         private SplitterAnchor ManuallyEnteredAnchor;
-        private List<AnchorTrigger> CurrentAnchorTriggers;
+        public List<AnchorTrigger> CurrentAnchorTriggers;
 
         public AppliedPhysics AppliedPhysics;
 
@@ -50,13 +60,6 @@ namespace NoTime.Splitter
 
         private SplitterAnchor _awakeAnchor;
 
-        private struct AnchorTrigger
-        {
-            public Collider Collider;
-            public SplitterAnchor Anchor;
-            public bool isStayTrigger;
-            public bool isEntranceTrigger;
-        }
 
         private void Awake()
         {

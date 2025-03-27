@@ -5,13 +5,17 @@ using UnityEngine;
 public class ClientConfiguration : MonoBehaviour
 {
 
+    public void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+    }
     // Update is called once per frame
     void Update()
     {
         if(Input.GetKeyDown(KeyCode.KeypadEnter)){
-            if (Cursor.lockState != CursorLockMode.Confined)
+            if (Cursor.lockState != CursorLockMode.Locked)
             {
-                Cursor.lockState = CursorLockMode.Confined;
+                Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
             else

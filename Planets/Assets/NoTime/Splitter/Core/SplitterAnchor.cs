@@ -546,6 +546,21 @@ namespace NoTime.Splitter
         {
             return PhysicsAnchorGO.transform.TransformPoint(transform.InverseTransformPoint(Point));
         }
+        private SplitterSubscriber avtwvSubscriber;
+        public Vector3 AnchorVelocityToWorldVelocity(Vector3 AnchorVelocity, Vector3 WorldPoint)
+        {
+            avtwvSubscriber = this.GetMySubscriber();
+            if (avtwvSubscriber != null)
+            {
+                return transform.TransformDirection(PhysicsAnchorGO.transform.InverseTransformDirection(AnchorVelocity))
+                    + avtwvSubscriber.AppliedPhysics.GetPointVelocity(WorldPoint);
+            }
+            else
+            {
+                return transform.TransformDirection(PhysicsAnchorGO.transform.InverseTransformDirection(AnchorVelocity))
+                    + Body.GetPointVelocity(WorldPoint);
+            }
+        }
 
         public void OnCollisionEnter(Collision collision)
         {
