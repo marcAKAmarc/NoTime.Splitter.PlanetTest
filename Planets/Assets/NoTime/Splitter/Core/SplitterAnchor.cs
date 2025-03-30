@@ -562,23 +562,26 @@ namespace NoTime.Splitter
             }
         }
 
+        private SplitterSubscriber ocentSub;
         public void OnCollisionEnter(Collision collision)
         {
             if (
                 collision.body != null 
-                && collision.body.GetComponent<SplitterSubscriber>() != null
-                && ids.ContainsKey(collision.body.GetComponent<SplitterSubscriber>().gameObject.GetInstanceID()))
+                && collision.body.TryGetComponent(out ocentSub)
+                && ids.ContainsKey(ocentSub.gameObject.GetInstanceID()))
             {
                 NegateMyCollision(collision);
             }
         }
+        private SplitterSubscriber ocsSubscriber;
         public void OnCollisionStay(Collision collision)
         {
-
+            if (collision.body == null)
+                return;
+            
             if (
-                collision.body != null
-                && collision.body.GetComponent<SplitterSubscriber>() != null
-                && ids.ContainsKey(collision.body.GetComponent<SplitterSubscriber>().gameObject.GetInstanceID()))
+                collision.body.TryGetComponent(out ocsSubscriber)
+                && ids.ContainsKey(ocsSubscriber.gameObject.GetInstanceID()))
             {
                 NegateMyCollision(collision);
             }
@@ -1422,11 +1425,16 @@ namespace NoTime.Splitter
                 return transform;
         }
 
+
         private SplitterSubscriber _gupvSubscriber;
         public Vector3 GetUltimatePointVelocity(Vector3 WorldPos)
         {
-            _gupvSubscriber = transform.GetComponent<SplitterSubscriber>();
-            if (_gupvSubscriber == null || !_gupvSubscriber.isActiveAndEnabled)
+            //_gupvSubscriber = transform.GetComponent<SplitterSubscriber>();
+            if (
+                !transform.TryGetComponent(out _gupvSubscriber)
+                //_gupvSubscriber == null 
+                || 
+                !_gupvSubscriber.isActiveAndEnabled)
             {
                 if (Body != null)
                     return Body.GetPointVelocity(WorldPos);

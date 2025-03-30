@@ -111,7 +111,7 @@ namespace NoTime.Splitter
         SplitterAnchor _attachedAnchor;
         private void ProcessPotentialAnchorEntrance(Collider other)
         {
-            
+
             _otherAnchor = other.gameObject.GetComponentInParent<SplitterAnchor>();
             if (_otherAnchor == null)
                 return;
@@ -135,17 +135,17 @@ namespace NoTime.Splitter
 
                 if (isStayTrigger || isEntranceTrigger) {
                     AddToTriggerStack(
-                        new AnchorTrigger { 
-                            Anchor = _otherAnchor, 
-                            Collider = other, 
-                            isEntranceTrigger = isEntranceTrigger, 
-                            isStayTrigger = isStayTrigger 
+                        new AnchorTrigger {
+                            Anchor = _otherAnchor,
+                            Collider = other,
+                            isEntranceTrigger = isEntranceTrigger,
+                            isStayTrigger = isStayTrigger
                         }
                     );
 
                     //if entrance and stay in triggerstack,
                     //add to anchor stack
-                    if ( 
+                    if (
                         TriggerStackHasStayAndEntrance(_otherAnchor)
                     )
                     {
@@ -170,7 +170,7 @@ namespace NoTime.Splitter
             _triggerScanEntrance = false;
             _triggerScanStay = false;
             _triggerScanIndex = 0;
-            for(; _triggerScanIndex < CurrentAnchorTriggers.Count; _triggerScanIndex++)
+            for (; _triggerScanIndex < CurrentAnchorTriggers.Count; _triggerScanIndex++)
             {
                 if (
                     CurrentAnchorTriggers[_triggerScanIndex].Anchor.gameObject == anchor.gameObject
@@ -236,9 +236,9 @@ namespace NoTime.Splitter
 
             for (_i = 0; _i < AnchorStack.Count; _i++)
             {
-                if(
+                if (
                     !(
-                        //keep current anchor
+                       //keep current anchor
                        (Anchor != null && AnchorStack[_i].gameObject == Anchor.gameObject)
                        ||
                        //keep if we have triggers for this anchor
@@ -263,7 +263,7 @@ namespace NoTime.Splitter
         private int _aicatI;
         private bool AnchorInCurrentAnchorTriggers(SplitterAnchor anchor)
         {
-            for(_aicatI = 0; _aicatI < CurrentAnchorTriggers.Count; _aicatI++)
+            for (_aicatI = 0; _aicatI < CurrentAnchorTriggers.Count; _aicatI++)
             {
                 if (CurrentAnchorTriggers[_aicatI].Anchor == anchor)
                     return true;
@@ -292,10 +292,10 @@ namespace NoTime.Splitter
         }
 
         private void AddToAnchorStack(SplitterAnchor anchor)
-        {  
+        {
             if (AnchorStackHasAnchor(anchor))
                 return;
-            
+
             AnchorStack.Add(anchor);
             AnchorStack = AnchorStack.OrderByDescending(x => x.EntrancePriority).ToList();
         }
@@ -331,7 +331,7 @@ namespace NoTime.Splitter
         int _i;
         private void RemoveFromTriggerStack(Collider collider)
         {
-            for(_i = 0; _i < CurrentAnchorTriggers.Count; _i++)
+            for (_i = 0; _i < CurrentAnchorTriggers.Count; _i++)
             {
                 if (CurrentAnchorTriggers[_i].Collider == collider)
                 {
@@ -341,7 +341,7 @@ namespace NoTime.Splitter
             }
             //CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x.Collider.GetInstanceID() != collider.GetInstanceID()).ToList();
         }
-        
+
 
         private bool NeedToUpdateContext()
         {
@@ -391,7 +391,7 @@ namespace NoTime.Splitter
             //check if we would just re enter this context.  bail if so.
             if (!NeedToUpdateContext())
                 return;
-            
+
             if (Anchor != null)
             {
                 HandleExitSplitterContext();
@@ -403,13 +403,13 @@ namespace NoTime.Splitter
         }
 
         public void HandleAnchorDestruction(SplitterAnchor anchor)
-        {   
+        {
             foreach (Collider col in anchor.StayTriggers.Union(anchor.EntranceTriggers))
                 RemoveFromTriggerStack(col);
 
             RemoveFromAnchorStack(anchor);
 
-            if(Anchor == anchor)
+            if (Anchor == anchor)
                 Anchor = null;
             CleanStacks();
 
@@ -422,9 +422,9 @@ namespace NoTime.Splitter
         }
         private void CleanStacks()
         {
-            for(_i = 0; _i < CurrentAnchorTriggers.Count; _i++)
+            for (_i = 0; _i < CurrentAnchorTriggers.Count; _i++)
             {
-                if(
+                if (
                     CurrentAnchorTriggers[_i].Collider == null
                     || CurrentAnchorTriggers[_i].Collider.gameObject == null
                     || CurrentAnchorTriggers[_i].Anchor == null
@@ -435,11 +435,11 @@ namespace NoTime.Splitter
                 }
             }
             //CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x.Collider != null && x.Collider.gameObject != null && x.Anchor != null).ToList();
-            
-            for(_i = 0; _i < AnchorStack.Count; _i++)
+
+            for (_i = 0; _i < AnchorStack.Count; _i++)
             {
-                if(
-                    AnchorStack[_i] == null 
+                if (
+                    AnchorStack[_i] == null
                     || AnchorStack[_i].gameObject == null
                 )
                 {
@@ -560,10 +560,12 @@ namespace NoTime.Splitter
             _invInSim_FoundSub = null;
             //as long as we know that subscribers MUST have a rigidbody,
             //we can assume that this transform has the subscriber and not reach to parents
-            if(t.rigidbody != null)
-                _invInSim_FoundSub = t.rigidbody.GetComponent<SplitterSubscriber>();
+            /*if (t.rigidbody != null)
+                _invInSim_FoundSub = t.rigidbody.GetComponent<SplitterSubscriber>();*/
 
-            if (_invInSim_FoundSub != null
+            if (t.rigidbody != null
+                && t.rigidbody.TryGetComponent(out _invInSim_FoundSub)
+                //at this point _invInSim_FoundSub != null
                 && _invInSim_FoundSub.Anchor != null
                 && _invInSim_FoundSub.Anchor == Anchor
             )
@@ -574,10 +576,12 @@ namespace NoTime.Splitter
             //are children, so we need to do getcomponent in parent
             //we also can not start this check from SplitterAnchor.Stay(Entrance)Colliders (which would be
             //faster) because not every collider is listed there.
-            _invInSim_FoundAnchor = t.transform.GetComponentInParent<SplitterAnchor>();
-
-            if (_invInSim_FoundAnchor != null
-                && _invInSim_FoundAnchor == Anchor)
+            
+            if (
+                t.transform.TryGetComponentInParent(out _invInSim_FoundAnchor)
+                // at this point _invInSim_FoundAnchor != null
+                && _invInSim_FoundAnchor == Anchor
+            )
                 return true;
 
             return false;
@@ -606,6 +610,23 @@ namespace NoTime.Splitter
                 _naaAnchor.setMySubscriber(this);
             else
                 _naaAnchor.setMySubscriber(null);
+        }
+    }
+
+    public static class ComponentExtensions {
+        public static bool TryGetComponentInParent<T>(this Component component, out T Out)
+        {
+            do
+            {
+                if(component.TryGetComponent(out Out))
+                {
+                    return true;
+                }
+                component = component.transform.parent;
+            }
+            while(component != null);
+            
+            return false;
         }
     }
 }
