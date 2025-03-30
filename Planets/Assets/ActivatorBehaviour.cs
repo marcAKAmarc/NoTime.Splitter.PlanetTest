@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 public class ActivatorBehaviour : MonoBehaviour
 {
+    public Transform PassThroughTransform;
     public float reachDistance;
     public int iconGrow = 2;
     private Ray ray;

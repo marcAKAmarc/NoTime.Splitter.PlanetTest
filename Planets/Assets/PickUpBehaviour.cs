@@ -1,25 +1,24 @@
 
 using NoTime.Splitter;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-
+[Serializable]
+public enum HoldType { OnClick, OnTrigger}
 public class PickUpBehaviour : MonoBehaviour
 {
-    public Rigidbody HolderBody;
+    public HoldType HoldOn = HoldType.OnClick;
+    public float MaxMass = 10f;
+    public float MinMass = .5f;
+    public Transform HolderTransform;
     private SplitterSubscriber holderSubscriber;
-    private GravityObject myGravity;
-    public float pickupDistance = 3f; // Distance within which the rigidbody can be picked up
-    public float hoverDistance = 2f; // Distance at which the picked up rigidbody hovers from the camera
-    public float hoverVOffset = 1f; //vertical up hover offset
-    public float smoothSpeed = 5f; // Speed of smoothing the movement
-    public float dampSpeed = 4f;
-    public float maxVelocityChange = .1f;
-    public float maxSpeedChange = .1f;
-    private Camera mainCamera;
+    private Rigidbody holderBody;
+    public float pickupRange = 3f; // Distance within which the rigidbody can be picked up
+    public Transform hoverTarget;
+    
     private Rigidbody pickedRigidbody;
-    private Vector3 pickupOffset;
     private Ray ray;
     private RaycastHit hit;
     private SplitterSubscriber subscriber;
@@ -28,31 +27,68 @@ public class PickUpBehaviour : MonoBehaviour
 
     void Start()
     {
-        mainCamera = Camera.main;
         ray.origin = transform.position;
         ray.direction = transform.forward;
         mask = LayerMask.GetMask("Default");
-        myGravity = HolderBody.GetComponent<GravityObject>();
-        holderSubscriber = HolderBody.GetComponent<SplitterSubscriber>();
+        holderSubscriber = HolderTransform.GetComponent<SplitterSubscriber>();
+        holderBody = HolderTransform.GetComponent<Rigidbody>();
+        
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0)) // Check for left mouse button click
+        if (HoldOn == HoldType.OnClick)
         {
-            doIt = true;
-            press = true;
-        }
+            if (Input.GetMouseButtonDown(0)) // Check for left mouse button click
+            {
+                doIt = true;
+                press = true;
+            }
 
-        if (Input.GetMouseButtonUp(0) && pickedRigidbody != null)
+            if (Input.GetMouseButtonUp(0) && pickedRigidbody != null)
+            {
+                pickedRigidbody = null;
+                doIt = false;
+            }
+        }
+    }
+    private SplitterSubscriber _colCheckSub;
+    private void OnTriggerEnter(Collider other)
+    {
+        if (pickedRigidbody != null)
+            return;
+        if (HoldOn != HoldType.OnTrigger)
+            return;
+        if (other.attachedRigidbody == null)
+            return;
+        _colCheckSub = other.attachedRigidbody.GetComponent<SplitterSubscriber>();
+        if (_colCheckSub != null)
         {
-            pickedRigidbody = null;
+            pickedRigidbody = other.attachedRigidbody;
+            subscriber = _colCheckSub;
+            doIt = true;
+            Debug.Log("trigger enter - picked up rigid: " + pickedRigidbody.gameObject.name + "; sub: " + subscriber.gameObject.name);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (pickedRigidbody == null)
+            return;
+        if (HoldOn != HoldType.OnTrigger)
+            return;
+        if (other.attachedRigidbody == null)
+            return;
+        if (other.attachedRigidbody == pickedRigidbody)
+        {
             doIt = false;
+            pickedRigidbody = null;
         }
     }
 
     private int mask;
     public float gravFudge;
+    private Vector3 localHitPoint = Vector3.zero;
     void FixedUpdate()
     {
         if (!doIt)
@@ -63,18 +99,21 @@ public class PickUpBehaviour : MonoBehaviour
 
         if (press)
         {
-            if (Physics.Raycast(ray, out hit, pickupDistance, mask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Ignore))
             {
                 Rigidbody rb = hit.collider.GetComponentInParent<Rigidbody>();
 
-                if (rb != null && rb.mass <= 10)
+                if (rb != null && rb.mass <= MaxMass && rb.mass >= MinMass)
                 {
+                    
                     pickedRigidbody = rb;
-                    pickupOffset = pickedRigidbody.position - transform.position;
                     subscriber = pickedRigidbody.transform.GetComponent<SplitterSubscriber>();
+                    localHitPoint = Quaternion.Inverse(subscriber.AppliedPhysics.rotation) 
+                        * (hit.point - subscriber.AppliedPhysics.position);
                 }
                 else
                 {
+                    localHitPoint = Vector3.zero;
                     pickedRigidbody = null;
                 }
             }
@@ -82,47 +121,64 @@ public class PickUpBehaviour : MonoBehaviour
         press = false;
         if (pickedRigidbody != null)
         {
-            Vector3 gravCancel = Vector3.zero;
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S))
-                gravCancel = Vector3.zero;//(myGravity.GravityAcceleration * myGravity.GravityDirection) * Time.fixedDeltaTime * Time.fixedDeltaTime;
-            Vector3 targetPosition = 
-                holderSubscriber.AppliedPhysics.position  
-                + (holderSubscriber.AppliedPhysics.transform.up * hoverVOffset)
-                + transform.forward * hoverDistance;
-            subscriber.AppliedPhysics.AddForce(
+            Vector3 targetPosition = hoverTarget.position;
+            Vector3 forcePos = 
+                (subscriber.AppliedPhysics.rotation * localHitPoint) 
+                + subscriber.AppliedPhysics.position;
+            Vector3 pidResult =
                 PIDToPosition(
-                    targetPosition - subscriber.AppliedPhysics.position,
-                    subscriber.AppliedPhysics.velocity - holderSubscriber.AppliedPhysics.velocity, p, d, i, iMax
-                ),
-                ForceMode.VelocityChange
+                    targetPosition - forcePos,
+                    subscriber.AppliedPhysics.velocity - HolderVelocity()
+                    , p, d, i, iMax
+                );
+            subscriber.AppliedPhysics.AddForceAtPosition(
+                pidResult,
+                forcePos,
+                ForceMode.Impulse
             );
+            //the reciprocal version needs to be done in rigidbodyfps in the 
+            //grounded section.  when moving up from the ground, add force
+            //to other if it is not your anchor
         }
     }
+
+    private Vector3 HolderVelocity()
+    {
+        if (holderSubscriber == null && holderBody == null)
+            return Vector3.zero;
+        else if (holderSubscriber == null && holderBody != null)
+            return holderBody.velocity;
+        else
+            return holderSubscriber.AppliedPhysics.velocity;
+    }
+
     public float p;
     public float i;
     public float d;
     public float iMax;
-    //public float iMin;
     private List<Vector3> errors = new List<Vector3>();
-    //private List<Vector3> velocities = new List<Vector3>();
+    private List<Vector3> velocities = new List<Vector3>();
     private List<Vector3> errorInts = new List<Vector3>();
     public int History;
     private Vector3 PIDToPosition(Vector3 error, Vector3 velocity, float pGain, float dGain, float iGain, float iMaximum)
     {
         errors.Insert(0, error);
-        //velocities.Insert(0, velocity);
+        if (errors.Count == 1)
+            velocities.Insert(0, Vector3.zero);
+        else
+            velocities.Insert(0, velocity/*Vector3.Project(velocity, errors[0])*/);
         errorInts.Insert(0, errors[0] * Time.fixedDeltaTime);
         //create static history
         while(errors.Count < History)
         {
             errors.Insert(0, errors[0]);
-            //velocities.Insert(0,velocities[0]);
+            velocities.Insert(0,velocities[0]);
             errorInts.Insert(0,errors[0] * Time.fixedDeltaTime);
         }
 
         if (errors.Count > History) {
             errors.RemoveAt(errors.Count - 1);
-            //velocities.RemoveAt(velocities.Count - 1);
+            velocities.RemoveAt(velocities.Count - 1);
             errorInts.RemoveAt(errorInts.Count - 1);
         }
 
@@ -135,7 +191,7 @@ public class PickUpBehaviour : MonoBehaviour
         return
             (errors[0] * pGain)
             + (
-                ((errors[0] - errors[1]) / Time.fixedDeltaTime)
+                velocities[0]
                 *
                 dGain
             )
@@ -157,77 +213,4 @@ public class PickUpBehaviour : MonoBehaviour
         }
     }
 }
-/*public class PickUpBehaviour : MonoBehaviour
-{
-    public float Acceleration;
-    public float Drag;
-    public float MassLimit;
-    public List<Transform> Ignore;
-    private Transform[] pickables = new Transform[4];
-    
-    private int insertIndex = 0;
-    // Start is called before the first frame update
 
-    private void OnTriggerEnter(Collider other)
-    {
-        Debug.Log("Raw enter: " + other.transform.name);
-        if(other.GetComponentInParent<Rigidbody>() != null
-            && other.GetComponentInParent<Rigidbody>().mass <= MassLimit
-            && !Ignore.Any(x=>x==other.GetComponentInParent<Rigidbody>().transform)
-        )
-        {
-            Debug.Log("Success enter: " + other.transform.name); 
-            insertIndex = 0;
-            while(insertIndex < pickables.Length)
-            {
-                if (pickables[insertIndex] == null)
-                    break;
-                insertIndex += 1;
-            }
-            if(insertIndex < pickables.Length)
-            {
-                pickables[insertIndex] = other.transform;
-            }
-        }
-            
-    }
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.GetComponentInParent<Rigidbody>() != null
-            && other.GetComponentInParent<Rigidbody>().mass <= MassLimit
-            && !Ignore.Any(x => x == other.GetComponentInParent<Rigidbody>().transform)
-        ) {
-            insertIndex = 0;
-            while (insertIndex < pickables.Length)
-            {
-                if (pickables[insertIndex]!= null && pickables[insertIndex].transform == other.GetComponentInParent<Rigidbody>().transform)
-                {
-                    pickables[insertIndex] = null;
-                }
-                insertIndex += 1;
-            }
-        }
-    }
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        var trans = pickables.Where(x => x != null).ToList();
-        if (trans.Count == 0)
-            return;
-
-        var t = trans.OrderBy(x => (x.position - transform.position).sqrMagnitude).First();
-
-        if (t.GetComponent<SplitterSubscriber>()!=null)
-        {
-            t.GetComponent<SplitterSubscriber>().AppliedPhysics.MovePosition(t.position + ((transform.position - t.position) * .1f));
-        }
-        else
-            t.GetComponent<Rigidbody>().MovePosition(t.position + ((transform.position - t.position) * Acceleration * Time.deltaTime));
-        Debug.Log("t = " + t.name);
-    }
-}*/

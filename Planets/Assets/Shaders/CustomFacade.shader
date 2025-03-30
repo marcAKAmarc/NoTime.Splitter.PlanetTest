@@ -15,10 +15,10 @@ Shader "Custom/Facade" {
       _BumpLevel("Bump Level", Range(0,10)) = 1.0
       _RimColor("Rim Color", Color) = (0.26,0.19,0.16,0.0)
       _RimPower("Rim Power", Range(0.5,8.0)) = 3.0
-      _TilingTiny("Tiling Tiny (t,d)", vector) = (1,1,0)
-      _TilingSmall("Tiling Small (t,d)", vector) = (1,1,0)
-      _TilingMedium("Tiling Medium (t,d)", vector) = (1,1,0)
-      _TilingLarge("Tiling Large (t,d)", vector) = (1,1,0)
+      _TilingTiny("Tiling Tiny (tile,dist,bump,hght)", vector) = (1,1,0)
+      _TilingSmall("Tiling Small (tile,dist,bump,hght)", vector) = (1,1,0)
+      _TilingMedium("Tiling Medium (tile,dist,bump,hght)", vector) = (1,1,0)
+      _TilingLarge("Tiling Large (tile,dist,bump,hght)", vector) = (1,1,0)
     }
     SubShader{
         Tags { "RenderType" = "Opaque" }
@@ -42,10 +42,10 @@ Shader "Custom/Facade" {
         float _BumpLevel;
         float4 _RimColor;
         float _RimPower;
-        float2 _TilingTiny;
-        float2 _TilingSmall;
-        float2 _TilingMedium;
-        float2 _TilingLarge;
+        float4 _TilingTiny;
+        float4 _TilingSmall;
+        float4 _TilingMedium;
+        float4 _TilingLarge;
         float _alphaTiny;
         float _alphaSmall;
         float _alphaMedium;
@@ -74,19 +74,19 @@ Shader "Custom/Facade" {
                 1,
 
                 -(IN.camD - _TilingTiny.y) / (_TilingSmall.y - _TilingTiny.y) + 1
-            ),0,1);
+            ), 0, 1);
             _alphaSmall = clamp(min(
                 (IN.camD - _TilingSmall.y) / (_TilingSmall.y - _TilingTiny.y) + 1,
                 -(IN.camD - _TilingSmall.y) / (_TilingMedium.y - _TilingSmall.y) + 1
-            ),0,1);
+            ), 0, 1);
             _alphaMedium = clamp(min(
                 (IN.camD - _TilingMedium.y) / (_TilingMedium.y - _TilingSmall.y) + 1,
                 -(IN.camD - _TilingMedium.y) / (_TilingLarge.y - _TilingMedium.y) + 1
-            ),0,1);
+            ), 0, 1);
             _alphaLarge = clamp(min(
                 (IN.camD - _TilingLarge.y) / (_TilingLarge.y - _TilingMedium.y) + 1,
                 1
-            ),0,1);
+            ), 0, 1);
 
             /*_alphaTiny = .5;
             _alphaSmall = 0;
@@ -103,7 +103,18 @@ Shader "Custom/Facade" {
                     +
                     tex2D(_HeightMap, IN.uv_HeightMap * _TilingLarge.x).r * _alphaLarge
                     )
-                , _HeightPower / (
+                ,
+                //height power
+                (
+                    _TilingTiny.w * _alphaTiny
+                    +
+                    _TilingSmall.w * _alphaSmall
+                    +
+                    _TilingLarge.w * _alphaLarge
+                    +
+                    _TilingMedium.w * _alphaMedium
+                )
+                / (
                     _TilingTiny.x * _alphaTiny
                     +
                     _TilingSmall.x * _alphaSmall
@@ -145,7 +156,15 @@ Shader "Custom/Facade" {
                 tex2D(_MainTex, IN.uv_MainTex * _TilingLarge.x).g * _alphaLarge
                 ;*/
             o.Albedo = o.Albedo * (1 - _MainBlend) + _MainColor * _MainBlend;
-
+            float bumpLevel = (
+                _TilingTiny.z * _alphaTiny
+                +
+                _TilingSmall.z * _alphaSmall
+                +
+                _TilingMedium.z * _alphaMedium
+                +
+                _TilingLarge.z * _alphaLarge
+            );
             o.Normal = UnpackScaleNormal(
                  (
                     tex2D(_BumpMap,(IN.uv_BumpMap + texOffset) * _TilingTiny.x) * _alphaTiny + 
@@ -153,10 +172,11 @@ Shader "Custom/Facade" {
                     tex2D(_BumpMap,(IN.uv_BumpMap + texOffset) * _TilingMedium.x) * _alphaMedium +
                     tex2D(_BumpMap,(IN.uv_BumpMap + texOffset) * _TilingLarge.x) * _alphaLarge
                 )
-                ,_BumpLevel
+                ,
+                bumpLevel
             );
 
-            o.Normal = lerp(o.Normal,float3(0,0,1),1-_BumpLevel);
+            o.Normal = lerp(o.Normal,float3(0,0,1),1-bumpLevel);
 
             /*o.Normal = UnpackScaleNormal(
                 (

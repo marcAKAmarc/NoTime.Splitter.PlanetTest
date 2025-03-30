@@ -60,7 +60,8 @@ public class EngineParticleBehavior : MonoBehaviour
 
         Physics.Raycast(ray, out hit, FarFlameCollisionDistance, defaultLayer, QueryTriggerInteraction.Ignore);
 
-
+        /*if (hit.collider != null)
+            Plane.position = hit.point;*/
         if (hit.collider != null)
             EmitHitParticles(true, hit.distance, hit.normal);
         else
@@ -73,8 +74,8 @@ public class EngineParticleBehavior : MonoBehaviour
     {
         if (on)
         {
-            Plane.position = transform.position + (transform.forward * distance);
-            Plane.rotation = Plane.rotation * Quaternion.FromToRotation(Plane.up, normal);
+            //Plane.position = transform.position + (transform.forward * distance);
+            //Plane.rotation = Plane.rotation * Quaternion.FromToRotation(Plane.up, normal);
             MainModule = FlameHitSystem.main;
             MainModule.startSize = HitParticleSizeOriginal + (1f - distance / FarFlameCollisionDistance) * 3f;
             MainModule.startSpeed = HitParticleSpeedOriginal + (1f - distance / FarFlameCollisionDistance) * 2f;
@@ -107,8 +108,8 @@ public class EngineParticleBehavior : MonoBehaviour
         }
         else
         {
-            Plane.position = transform.position + (transform.forward * FarFlameCollisionDistance * 2f);
-            Plane.rotation = Plane.rotation * Quaternion.FromToRotation(-transform.forward, normal);
+            //Plane.position = transform.position + (transform.forward * FarFlameCollisionDistance * 2f);
+            //Plane.rotation = Plane.rotation * Quaternion.FromToRotation(-transform.forward, normal);
             HitEmissionModule = FlameHitSystem.emission;
             HitEmissionModule.enabled = false;
         }

@@ -7,6 +7,11 @@ TagManager:
   - GravitySource
   - Planet
   - Drainable
+  - Gem
+  - StarGem
+  - PositronGem
+  - NegatronGem
+  - NeutronGem
   layers:
   - Default
   - TransparentFX
@@ -18,8 +23,8 @@ TagManager:
   - Landscape
   - Building
   - tempBakeLighting
-  - 
-  - 
+  - Gem
+  - GemInteraction
   - 
   - 
   - 

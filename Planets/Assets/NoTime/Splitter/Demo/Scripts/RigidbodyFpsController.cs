@@ -188,12 +188,12 @@ namespace NoTime.Splitter.Demo
         {
             if (InSpace || !Grounded || TempDisableFriction || _hit.rigidbody == null)
             {
-                if (_hit.rigidbody == null)
+                /*if (_hit.rigidbody == null)
                     Debug.Log("No rigidbody on _hit.");
                 if (InSpace)
                     Debug.Log("In Space");
                 if (!Grounded)
-                    Debug.Log("Not Grounded");
+                    Debug.Log("Not Grounded");*/
                 
                 return;
 
@@ -209,12 +209,12 @@ namespace NoTime.Splitter.Demo
             
             if(body.Anchor != null && _hitAnchor != null && body.Anchor.gameObject == _hitAnchor.gameObject)
             {
-                Debug.Log("working from same anchor");
+                //Debug.Log("working from same anchor");
                 fricVel -= body.Anchor.AnchorVelocityToWorldVelocity(Vector3.zero, body.AppliedPhysics.position);
             }
             else if (_hitSub != null)
             {
-                Debug.Log(" working from hitsub");
+                //Debug.Log(" working from hitsub");
                 fricVel -= _hitSub.AppliedPhysics.GetPointVelocity(body.AppliedPhysics.position);
             }
             //what about just rigids?

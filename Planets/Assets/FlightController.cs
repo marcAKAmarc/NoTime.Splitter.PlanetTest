@@ -140,18 +140,19 @@ public class FlightController : SplitterEventListener
         MaybeTakeHitToStabilization(other);
     }
 
-    SplitterSubscriber _otherSubscriber;
+    private SplitterAnchor _takeHitMyAnchor;
+    private SplitterSubscriber _takeHitOtherSubscriber;
     private CameraShaker camShake;
     private void MaybeTakeHitToStabilization(Collision other)
     {
         
         //bail if this collision is from an object occurring within your simulation
         if (
-            transform.GetComponent<SplitterAnchor>() != null
+            transform.TryGetComponent(out _takeHitMyAnchor)
             &&
-            other.body.GetComponent<SplitterSubscriber>() != null
+            other.body.TryGetComponent(out _takeHitOtherSubscriber)
             &&
-            transform.GetComponent<SplitterAnchor>().IsInMySimulation(other.body.GetComponent<SplitterSubscriber>())
+            _takeHitMyAnchor.IsInMySimulation(_takeHitOtherSubscriber)
 
         )
             return;
