@@ -97,11 +97,20 @@ public class GravityObject : SplitterEventListener
         UpdateFieldFromFields();
     }
 
+    int ufffI;
     private void UpdateFieldFromFields()
     {
         //quick clean
-        if (fieldColliders.Any(x => x.Field == null))
-            fieldColliders = fieldColliders.Where(x => x.Field != null).ToList();
+        for(ufffI = 0; ufffI < fieldColliders.Count; ufffI++)
+        {
+            if (fieldColliders[ufffI].Field == null)
+            {
+                fieldColliders.RemoveAt(ufffI);
+                ufffI--;
+            }
+        }
+        /*if (fieldColliders.Any(x => x.Field == null))
+            fieldColliders = fieldColliders.Where(x => x.Field != null).ToList();*/
 
         if (fieldColliders.Count == 0)
         {

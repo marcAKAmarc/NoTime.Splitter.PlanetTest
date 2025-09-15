@@ -11,14 +11,15 @@ public class AutoDoorBehaviour : MonoBehaviour
     public Transform Door1Closed, Door1Open, Door2Closed, Door2Open;
     public int colCount = 0;
 
+    private RigidbodyFpsController otherRigidFPS;
     private void OnTriggerEnter(Collider other)
     {
-        if(other.GetComponent<RigidbodyFpsController>()!=null)
+        if(other.TryGetComponent(out otherRigidFPS))
             colCount += 1;
     }
     private void OnTriggerExit(Collider other)
     {
-        if (other.GetComponent<RigidbodyFpsController>() != null)
+        if (other.TryGetComponent(out otherRigidFPS))
             colCount -= 1;
     }
 

@@ -29,7 +29,7 @@ public class DebugDisplay : MonoBehaviour
             timeSinceUiUpdate = 0f;
 
             Text1.text = nums[Mathf.Min(Mathf.FloorToInt(fps),99)];
-            Text2.text = nums[Mathf.Min(Mathf.FloorToInt(fps),99)];
+            Text2.text = Text1.text;
 
         }
 

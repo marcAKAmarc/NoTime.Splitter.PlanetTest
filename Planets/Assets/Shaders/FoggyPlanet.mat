@@ -62,7 +62,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BumpLevel: 0.64
+    - _BumpLevel: 0
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
@@ -71,7 +71,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _HeightPower: 0.0222
-    - _MainBlend: 0.445
+    - _MainBlend: 0
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -86,13 +86,13 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LargeColor: {r: 1, g: 0.99501103, b: 0, a: 1}
-    - _MainColor: {r: 0.40801182, g: 0.42452827, b: 0.36245102, a: 1}
+    - _MainColor: {r: 0.4716981, g: 0.4312823, b: 0.4160733, a: 1}
     - _MediumColor: {r: 1, g: 0.021577863, b: 0, a: 1}
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
-    - _SmallColor: {r: 0, g: 0.08628174, b: 1, a: 1}
-    - _TilingLarge: {r: 4, g: 530, b: 1, a: 1}
-    - _TilingMedium: {r: 8, g: 364, b: 1, a: 1}
-    - _TilingSmall: {r: 16, g: 272.8, b: 1, a: 1}
-    - _TilingTiny: {r: 128, g: 220, b: 1, a: 1}
-    - _TinyColor: {r: 0.5098038, g: 0.32156855, b: 0.28627446, a: 1}
+    - _SmallColor: {r: 0, g: 0.08628171, b: 1, a: 1}
+    - _TilingLarge: {r: 3, g: 530, b: 0.3, a: 0}
+    - _TilingMedium: {r: 8, g: 364, b: 0.5, a: 0.06}
+    - _TilingSmall: {r: 32, g: 272.8, b: 0.5, a: 0.06}
+    - _TilingTiny: {r: 128, g: 220, b: 0.5, a: 0.04}
+    - _TinyColor: {r: 0.5098037, g: 0.32156852, b: 0.28627443, a: 1}
   m_BuildTextureStacks: []

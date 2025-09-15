@@ -17,19 +17,18 @@ public class ActivatorBehaviour : MonoBehaviour
 
     private void Awake()
     {
-        UnityEngine.Rendering.DebugManager.instance.enableRuntimeUI = false;
+        //UnityEngine.Rendering.DebugManager.instance.enableRuntimeUI = false;
     }
     // Start is called before the first frame update
     void Start()
     {
-        mask = LayerMask.GetMask("Default");
+        mask = LayerMask.GetMask("Activator");
         ray = new Ray();
         originalSize = texts[0].fontSize;
     }
 
     private bool press;
     private RaycastHit hit;
-    private RaycastHit[] hits = new RaycastHit[1];
     private ActivateBehaviour ab;
     // Update is called once per frame
     void Update()
@@ -38,7 +37,7 @@ public class ActivatorBehaviour : MonoBehaviour
         {
             press = true;
         }
-        ab = RaycastToActivateBehaviour();
+        
 
         if (press && ab != null)
         {
@@ -65,13 +64,16 @@ public class ActivatorBehaviour : MonoBehaviour
 
         
     }
+    private void FixedUpdate()
+    {
+        ab = RaycastToActivateBehaviour();
+    }
 
     int mask;
     private ActivateBehaviour RaycastToActivateBehaviour()
     {
         ray.origin = transform.position;
         ray.direction = transform.forward;
-        ray.origin += -transform.forward;
         
         Physics.Raycast(ray, out hit, reachDistance, mask, QueryTriggerInteraction.Collide);
         if(hit.collider != null)
@@ -81,5 +83,13 @@ public class ActivatorBehaviour : MonoBehaviour
         }
         return null;
         
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.DrawLine(ray.origin, ray.origin + (ray.direction * reachDistance));
+        Gizmos.DrawSphere(ray.origin + (ray.direction * reachDistance), .25f);
+        if (hit.collider != null)
+            Gizmos.DrawSphere(hit.point, .25f);
     }
 }

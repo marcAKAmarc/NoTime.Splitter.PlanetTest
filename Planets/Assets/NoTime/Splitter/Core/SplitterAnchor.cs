@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using NoTime.Splitter.Core;
 using NoTime.Splitter.Core.Internal;
+using Unity.VisualScripting;
 
 namespace NoTime.Splitter
 {
@@ -34,8 +35,9 @@ namespace NoTime.Splitter
         [HideInInspector]
         private bool CallPhysicsSync = false;
 
-
-        private Scene? Scene;
+        [HideInInspector]
+        [DoNotSerialize]
+        public Scene? Scene;
         private PhysicsScene PhysicsScene;
         private Scene MainScene;
         private string SceneName;
@@ -83,7 +85,7 @@ namespace NoTime.Splitter
                 PhysicsGoIdToLocalSyncs = new Dictionary<int, List<MatchedTransform>>();
 
             Body = transform.GetComponent<Rigidbody>();
-            mySubscriber = transform.GetComponents<SplitterSubscriber>().Where(x=>x.enabled).FirstOrDefault();
+            mySubscriber = transform.GetComponent<SplitterSubscriber>();
         }
 
         
@@ -140,60 +142,18 @@ namespace NoTime.Splitter
             }
 
             PhysicsAnchorGO.name = PhysicsAnchorGO.name + "-Physics";
-
-            //disable and delete all monobehaviors not in RunInSimulatedSpace
-            foreach (var behaviour in PhysicsAnchorGO.GetComponentsInChildren<Behaviour>().Where(x =>
-                !(x.GetType() == typeof(SplitterAnchor))
-                &&
-                !PhysicsAnchorGO.GetComponent<SplitterAnchor>().RunInSimulationSpace.Any(
-                    y =>
-                    y.GetInstanceID() == x.GetInstanceID()
-                )
-            ))
-            {
-                behaviour.enabled = false;
-                Destroy(behaviour);
-            }
-            //disable all behaviours in RunInSimulatedSpace
-            foreach (var behaviour in this.RunInSimulationSpace)
-            {
-                behaviour.enabled = false;
-            }
-
+            
+            StripGameObjectAsAnchor(PhysicsAnchorGO);
+            
+            //add anchor simulation
             PhysicsAnchorGO.AddComponent<SplitterAnchorSimulation>();
             PhysicsAnchor = PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>();
             PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>().Anchor = this;
             PhysicsAnchorGO.GetComponent<SplitterAnchorSimulation>().DeactivateTriggerColliders =
                 PhysicsAnchorGO.GetComponent<SplitterAnchor>().StayTriggers;
 
-            //visibility
-            if (!this.SimulationVisible)
-            {
-                foreach (var renderer in PhysicsAnchorGO.GetComponentsInChildren<Renderer>().ToList())
-                {
-                    renderer.enabled = false;
-                }
-            }
-
-            //do not have subscription or anchors in simulation
-            if (PhysicsAnchorGO.GetComponent<SplitterAnchor>().Scene != null)
-            {
-                Debug.LogError("PhysicsAnchorGo Scene value on Destroy: " + PhysicsAnchorGO.GetComponent<SplitterAnchor>().Scene.ToString());
-                throw new UnityException("Simulated Anchor has a Scene.  Scene: " + Scene.Value.name);
-            }
-
-            foreach (SplitterAnchor anchor in PhysicsAnchorGO.GetComponents<SplitterAnchor>())
-            {
-                Destroy(anchor);
-                anchor.deleted = true;
-            }
-
-            foreach (SplitterSubscriber subsription in PhysicsAnchorGO.GetComponentsInChildren<SplitterSubscriber>().ToList())
-            {
-                subsription.enabled = false;
-                Destroy(subsription);
-            }
-
+            SetupLocalTransformSyncCache(transform, PhysicsAnchorGO, PhysicsAnchorGO);
+            
             //unity messages
             foreach (var gobj in this.transform.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
             {
@@ -340,8 +300,33 @@ namespace NoTime.Splitter
             }
 
             
-            SetupLocalTransformSyncCache(subscriber, newGo);
+            SetupLocalTransformSyncCache(subscriber.transform, newGo, newGo);
 
+            StripGameObjectAsSubscriber(newGo, subscriber);
+
+            newGo.AddComponent<SplitterSubscriberSimulated>();
+            newGo.GetComponent<SplitterSubscriberSimulated>().Authentic = subscriber;
+            newGo.GetComponent<SplitterSubscriberSimulated>().Anchor = this;
+
+            newGo.GetComponent<SplitterSubscriber>().enabled = false;
+            Destroy(newGo.GetComponent<SplitterSubscriber>());
+
+
+
+
+            //send UnityMessagesHere
+            foreach (var gobj in subscriber.transform.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
+            {
+                gobj.SendMessage("OnEnterAnchor", new SplitterEvent { Anchor = this, SimulatedSubscriber = newGo.transform, Subscriber = subscriber, SimulatedAnchor = PhysicsAnchorGO.transform }, SendMessageOptions.DontRequireReceiver);
+            }
+
+            
+
+            return newGo;
+        }
+
+        private void StripGameObjectAsSubscriber(GameObject newGo, SplitterSubscriber settings)
+        {
             //disable and delete all behaviour not in RunInSimulatedSpace
             foreach (var behaviour in newGo.GetComponentsInChildren<Behaviour>().Where(x =>
                 !newGo.GetComponent<SplitterSubscriber>().RunInSimulatedSpace.Any(y =>
@@ -353,20 +338,17 @@ namespace NoTime.Splitter
                 behaviour.enabled = false;
                 Destroy(behaviour);
             }
-
+            if (settings == null)
+                Debug.Log("Anchor has null settings.  Name: " + gameObject.name);
+            else if(settings.RunInSimulatedSpace == null)
+            {
+                Debug.Log("Anchor has null runInSimulatedSpace. Anchor name:" + gameObject.name + "; settings " + settings.gameObject.name);
+            }
             //disable all behaviours in RunInSimulatedSpace
-            foreach (var behaviour in subscriber.RunInSimulatedSpace)
+            foreach (var behaviour in settings.RunInSimulatedSpace)
             {
                 behaviour.enabled = false;
             }
-
-            newGo.AddComponent<SplitterSubscriberSimulated>();
-            newGo.GetComponent<SplitterSubscriberSimulated>().Authentic = subscriber;
-            newGo.GetComponent<SplitterSubscriberSimulated>().Anchor = this;
-
-            newGo.GetComponent<SplitterSubscriber>().enabled = false;
-            Destroy(newGo.GetComponent<SplitterSubscriber>());
-
 
             //visibility
             if (!SimulationVisible)
@@ -389,17 +371,58 @@ namespace NoTime.Splitter
             {
                 Destroy(joint);
             }
+        }
 
-            //send UnityMessagesHere
-            foreach (var gobj in subscriber.transform.GetComponentsInChildren<Transform>().Select(x => x.gameObject))
+        private void StripGameObjectAsAnchor(GameObject newGo)
+        {
+            //disable and delete all monobehaviors not in RunInSimulatedSpace
+            foreach (var behaviour in newGo.GetComponentsInChildren<Behaviour>().Where(x =>
+                !(x.GetType() == typeof(SplitterAnchor))
+                &&
+                !this.RunInSimulationSpace.Any(
+                    y =>
+                    y.GetInstanceID() == x.GetInstanceID()
+                )
+            ))
             {
-                gobj.SendMessage("OnEnterAnchor", new SplitterEvent { Anchor = this, SimulatedSubscriber = newGo.transform, Subscriber = subscriber, SimulatedAnchor = PhysicsAnchorGO.transform }, SendMessageOptions.DontRequireReceiver);
+                //behaviour.enabled = false;
+                Destroy(behaviour);
+            }
+            //disable all behaviours in RunInSimulatedSpace
+            foreach (var behaviour in this.RunInSimulationSpace)
+            {
+                behaviour.enabled = false;
             }
 
-            
+            //visibility
+            if (!this.SimulationVisible)
+            {
+                foreach (var renderer in newGo.GetComponentsInChildren<Renderer>().ToList())
+                {
+                    renderer.enabled = false;
+                }
+            }
 
-            return newGo;
+            //do not have subscription or anchors in simulation
+            if (newGo.GetComponent<SplitterAnchor>()!= null && newGo.GetComponent<SplitterAnchor>().Scene != null)
+            {
+                Debug.LogError("newGo Scene value on Destroy: " + newGo.GetComponent<SplitterAnchor>().Scene.ToString());
+                throw new UnityException("Simulated Anchor has a Scene.  Scene: " + Scene.Value.name);
+            }
+
+            foreach (SplitterAnchor anchor in newGo.GetComponents<SplitterAnchor>())
+            {
+                Destroy(anchor);
+                anchor.deleted = true;
+            }
+
+            foreach (SplitterSubscriber subsription in newGo.GetComponentsInChildren<SplitterSubscriber>().ToList())
+            {
+                subsription.enabled = false;
+                Destroy(subsription);
+            }
         }
+
         private void ReRegisterAllLocalTransformationsForAllPairs()
         {
             PhysicsGoIdToLocalSyncs.Clear();
@@ -407,25 +430,48 @@ namespace NoTime.Splitter
             {
                 SplitterSubscriber subscriber = idToMainGo[ids[key]].gameObject.transform.GetComponent<SplitterSubscriber>();
                 GameObject go = idToPhysicsGo[subscriber.gameObject.GetInstanceID()].gameObject;
-                SetupLocalTransformSyncCache(subscriber, go);
+                SetupLocalTransformSyncCache(subscriber.transform, go, go);
             }
         }
-        private void SetupLocalTransformSyncCache(SplitterSubscriber subscriber, GameObject newGo)
+
+        
+        private void SetupLocalTransformSyncCache(Transform authentic, GameObject simulated, GameObject simulatedTopParent)
         {
+            List<Transform> AuthenticChildren = authentic.GetComponentsInChildren<Transform>(true).Where(x => x.GetInstanceID() != authentic.transform.GetInstanceID()).ToList();
+            List<Transform> NewGoChildren = simulated.GetComponentsInChildren<Transform>(true).Where(x => x.GetInstanceID() != simulated.transform.GetInstanceID()).ToList();
             List<MatchedTransform> Matches = new List<MatchedTransform>();
 
-            for (var i = 0; i < subscriber.GetComponentsInChildren<Transform>().Where(x => x.GetInstanceID() != subscriber.transform.GetInstanceID()).Count(); i++)
+            for (var i = 0; i < AuthenticChildren.Count; i++)
             {
 
                 Matches.Add(
                     new MatchedTransform
                     {
-                        mainTransform = subscriber.GetComponentsInChildren<Transform>().Where(x => x.GetInstanceID() != subscriber.transform.GetInstanceID()).ToList()[i],
-                        physicsTransform = newGo.GetComponentsInChildren<Transform>().Where(x => x.GetInstanceID() != newGo.transform.GetInstanceID()).ToList()[i]
+                        mainTransform = AuthenticChildren[i],
+                        physicsTransform = NewGoChildren[i]
                     }
                 );
             }
-            PhysicsGoIdToLocalSyncs.Add(newGo.GetInstanceID(), Matches);
+            PhysicsGoIdToLocalSyncs.Add(simulatedTopParent.GetInstanceID(), Matches);
+        }
+
+        private void RemoveFromLocalTransformSyncCache(Transform simulated, GameObject simulatedTopParent)
+        {   
+            List<Transform> simulatedChildren = simulated.GetComponentsInChildren<Transform>(true).ToList();
+            List<MatchedTransform> matcheds = PhysicsGoIdToLocalSyncs[simulatedTopParent.GetInstanceID()];
+            for (int i = 0; i < matcheds.Count; i++)
+            {
+                for(int j = 0; j < simulatedChildren.Count; j++)
+                {
+                    if (matcheds[i].physicsTransform == simulatedChildren[j])
+                    {
+                        matcheds.RemoveAt(i);
+                        simulatedChildren.RemoveAt(j);
+                        i--;
+                        break;
+                    }
+                }
+            }
         }
         public void UnregisterInScene(SplitterSubscriber subscriber)
         {
@@ -514,13 +560,26 @@ namespace NoTime.Splitter
         }
 
         List<MatchedTransform> _matched = null;
-        public Transform GetMatchedTransform(SplitterSubscriber subscriber, Transform splitterTransform)
+        private GoRigid simGO;
+        public Transform GetMatchedSubscriberTransform(SplitterSubscriber subscriber, Transform splitterTransform)
         {
+            simGO = idToPhysicsGo[subscriber.gameObject.GetInstanceID()];
             _matched = null;
-            _matched = PhysicsGoIdToLocalSyncs[subscriber.GetInstanceID()];
+            _matched = PhysicsGoIdToLocalSyncs[simGO.gameObject.GetInstanceID()];
             for(int i = 0; i < _matched.Count; i++)
             {
                 if (_matched[i].mainTransform == splitterTransform)
+                    return _matched[i].physicsTransform;
+            }
+            return null;
+        }
+        public Transform GetMatchedAnchorTransform(Transform anchorTransform)
+        {
+            _matched = null;
+            _matched = PhysicsGoIdToLocalSyncs[PhysicsAnchorGO.GetInstanceID()];
+            for (int i = 0; i < _matched.Count; i++)
+            {
+                if (_matched[i].mainTransform == anchorTransform)
                     return _matched[i].physicsTransform;
             }
             return null;
@@ -669,10 +728,7 @@ namespace NoTime.Splitter
                 return;
 
             Vector3 impulse = collision.impulse;
-            if (Vector3.Dot(impulse, collision.GetContact(0).normal) < 0f)
-            {
-                impulse *= -1f;
-            }
+            
 
             _nmcSubscriber = mySubscriber;
 
@@ -682,6 +738,10 @@ namespace NoTime.Splitter
                     return;
 
                 _contactCount = collision.GetContacts(_contactPoints);
+                if (Vector3.Dot(impulse, _contactPoints[0].normal) < 0f)
+                {
+                    impulse *= -1f;
+                }
 #if UNITY_2022_1_OR_NEWER
                 for (_cnt = 0; _cnt < _contactCount; _cnt++)
                 {
@@ -704,13 +764,17 @@ namespace NoTime.Splitter
                     ForceMode.Impulse
                 );
 #endif
-            }else if (Body != null)
+            }
+            else if (Body != null)
             {
                 if(Body.isKinematic)
                     return;
 
                 _contactCount = collision.GetContacts(_contactPoints);
-
+                if (Vector3.Dot(impulse, _contactPoints[0].normal) < 0f)
+                {
+                    impulse *= -1f;
+                }
                 _avgContactPoint = Vector3.zero;
                 for (_cnt = 0; _cnt < _contactCount; _cnt++)
                 {
@@ -1328,8 +1392,26 @@ namespace NoTime.Splitter
         int _iFEAE;
         private void flickerEntryAndExits()
         {
-            EntranceTriggers = EntranceTriggers.Where(x => x != null).ToList();
-            StayTriggers = StayTriggers.Where(x => x != null).ToList();
+            //quick cleans
+            for(_iFEAE = 0; _iFEAE < EntranceTriggers.Count; _iFEAE++)
+            {
+                if (EntranceTriggers[_iFEAE] == null)
+                {
+                    EntranceTriggers.RemoveAt(_iFEAE);
+                    _iFEAE--;
+                }
+
+            }
+            for(_iFEAE = 0; _iFEAE < StayTriggers.Count; _iFEAE++)
+            {
+                if(StayTriggers[_iFEAE] == null)
+                {
+                    StayTriggers.RemoveAt(_iFEAE);
+                    _iFEAE--;
+                }
+            }
+            //EntranceTriggers = EntranceTriggers.Where(x => x != null).ToList();
+            //StayTriggers = StayTriggers.Where(x => x != null).ToList();
 
             _iFEAE = 0;
             for(; _iFEAE < EntranceTriggers.Count; _iFEAE++)
@@ -1538,6 +1620,65 @@ namespace NoTime.Splitter
         internal void setMySubscriber(SplitterSubscriber sub)
         {
             mySubscriber = sub;
+        }
+
+        private GoRigid ssTGoRigid;
+        private Transform simParentTransform;
+        private Transform created;
+        private Scene tempScene;
+        public Transform AddSimulatedSubscriberTransform(Transform newTransform, Transform parent, SplitterSubscriber belongsTo)
+        {
+            tempScene = SceneManager.GetActiveScene();
+            simParentTransform = GetMatchedSubscriberTransform(belongsTo, parent);
+            SceneManager.SetActiveScene(Scene.Value);
+            created = Instantiate(newTransform,
+                WorldPointToAnchorPoint(newTransform.position),
+                TranslateWorldRotationToAnchorRotation(newTransform.rotation)
+            ) as Transform;
+            created.parent = simParentTransform;
+            SceneManager.SetActiveScene(tempScene);
+
+            StripGameObjectAsSubscriber(created.gameObject, belongsTo);
+            SetupLocalTransformSyncCache(newTransform, created.gameObject, belongsTo.gameObject);
+            return created;
+        }
+        private Transform toRemove;
+        private Transform simBelongsTo;
+        public void RemoveSimulatedSubscriberTransform(Transform authentic, SplitterSubscriber belongsTo)
+        {
+            Debug.Log("removing authentic: " + authentic.gameObject.name + "; belongs to " + belongsTo.gameObject.name);
+            toRemove = GetMatchedSubscriberTransform(belongsTo, authentic);
+            Debug.Log("Removing something called " + toRemove.gameObject.name + " which belongs to " + belongsTo.gameObject.name);
+            RemoveFromLocalTransformSyncCache(toRemove, idToPhysicsGo[belongsTo.gameObject.GetInstanceID()].gameObject);
+            Destroy(toRemove.gameObject); 
+        }
+        public void RemoveSimulatedAnchorTransform(Transform authentic)
+        {
+            toRemove = GetMatchedAnchorTransform(authentic);
+            RemoveFromLocalTransformSyncCache(toRemove, idToPhysicsGo[gameObject.GetInstanceID()].gameObject);
+            Destroy(toRemove.gameObject);
+        }
+        public Transform AddSimulatedAnchorTransform(Transform newTransform, Transform parent)
+        {
+            tempScene = SceneManager.GetActiveScene();
+            if (parent == this.transform)
+                simParentTransform = PhysicsAnchorGO.transform;
+            else
+                //search children to find match
+                simParentTransform = GetMatchedAnchorTransform(parent);
+            SceneManager.SetActiveScene(Scene.Value);
+            created = Instantiate(newTransform,
+                WorldPointToAnchorPoint(newTransform.position),
+                TranslateWorldRotationToAnchorRotation(newTransform.rotation)
+            ) as Transform;
+            created.parent = simParentTransform;
+            SceneManager.SetActiveScene(tempScene);
+
+            StripGameObjectAsAnchor(created.gameObject);
+            Destroy(created.gameObject.GetComponent<Rigidbody>());
+            SetupLocalTransformSyncCache(newTransform, created.gameObject, this.gameObject);
+
+            return created;
         }
     }
 

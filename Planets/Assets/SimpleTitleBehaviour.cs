@@ -28,7 +28,8 @@ public class SimpleTitleBehaviour : MonoBehaviour
         {
             texts[i].color = new Color(texts[i].color.r, texts[i].color.g, texts[i].color.b, 0);
         }
-        titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, 0);
+        if(titleImage != null)
+            titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, 0);
         
     }
     private void Start()
@@ -56,7 +57,9 @@ public class SimpleTitleBehaviour : MonoBehaviour
             {
                 titleTexts[i].color = new Color(titleTexts[i].color.r, titleTexts[i].color.g, titleTexts[i].color.b, fade*fade*fade);
             }
-            titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, fade*fade*fade);
+
+            if(titleImage != null)
+                titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, fade*fade*fade);
 
             if (fade == 1f)
                 state = states.initial;
@@ -80,7 +83,9 @@ public class SimpleTitleBehaviour : MonoBehaviour
             {
                 titleTexts[i].color = new Color(titleTexts[i].color.r, titleTexts[i].color.g, titleTexts[i].color.b, fade);
             }
-            titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, fade);
+
+            if(titleImage != null)
+                titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, fade);
 
             if (fade == 0f)
                 state = states.gameFadeIn;

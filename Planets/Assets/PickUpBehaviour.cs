@@ -15,16 +15,18 @@ public class PickUpBehaviour : MonoBehaviour
     public Transform HolderTransform;
     private SplitterSubscriber holderSubscriber;
     private Rigidbody holderBody;
+    public float pickupAngularDrag;
+    public float dragThreshold;
     public float pickupRange = 3f; // Distance within which the rigidbody can be picked up
     public Transform hoverTarget;
-    
+    public Vector3 rayOffset;
     private Rigidbody pickedRigidbody;
     private Ray ray;
     private RaycastHit hit;
-    private SplitterSubscriber subscriber;
+    private SplitterSubscriber pickedSubscriber;
     private bool doIt;
     private bool press;
-
+    private float previousAngularDrag;
     void Start()
     {
         ray.origin = transform.position;
@@ -47,8 +49,21 @@ public class PickUpBehaviour : MonoBehaviour
 
             if (Input.GetMouseButtonUp(0) && pickedRigidbody != null)
             {
+
+                pickedSubscriber.AppliedPhysics.angularDrag = previousAngularDrag;
+
                 pickedRigidbody = null;
+                pickedSubscriber = null;
                 doIt = false;
+            }
+
+            if (Input.GetMouseButton(1) && pickedSubscriber != null)
+            {
+                pickedSubscriber.AppliedPhysics.angularDrag = pickupAngularDrag;
+            }
+            else if(pickedSubscriber != null)
+            {
+                pickedSubscriber.AppliedPhysics.angularDrag = previousAngularDrag;
             }
         }
     }
@@ -65,9 +80,9 @@ public class PickUpBehaviour : MonoBehaviour
         if (_colCheckSub != null)
         {
             pickedRigidbody = other.attachedRigidbody;
-            subscriber = _colCheckSub;
+            pickedSubscriber = _colCheckSub;
             doIt = true;
-            Debug.Log("trigger enter - picked up rigid: " + pickedRigidbody.gameObject.name + "; sub: " + subscriber.gameObject.name);
+            Debug.Log("trigger enter - picked up rigid: " + pickedRigidbody.gameObject.name + "; sub: " + pickedSubscriber.gameObject.name);
         }
     }
 
@@ -94,7 +109,7 @@ public class PickUpBehaviour : MonoBehaviour
         if (!doIt)
             return;
 
-        ray.origin = transform.position;
+        ray.origin = transform.position + rayOffset;
         ray.direction = transform.forward;
 
         if (press)
@@ -107,9 +122,10 @@ public class PickUpBehaviour : MonoBehaviour
                 {
                     
                     pickedRigidbody = rb;
-                    subscriber = pickedRigidbody.transform.GetComponent<SplitterSubscriber>();
-                    localHitPoint = Quaternion.Inverse(subscriber.AppliedPhysics.rotation) 
-                        * (hit.point - subscriber.AppliedPhysics.position);
+                    pickedSubscriber = pickedRigidbody.transform.GetComponent<SplitterSubscriber>();
+                    localHitPoint = Quaternion.Inverse(pickedSubscriber.AppliedPhysics.rotation) 
+                        * (hit.point - pickedSubscriber.AppliedPhysics.position);
+                    previousAngularDrag = pickedSubscriber.AppliedPhysics.angularDrag;
                 }
                 else
                 {
@@ -118,27 +134,38 @@ public class PickUpBehaviour : MonoBehaviour
                 }
             }
         }
+
         press = false;
         if (pickedRigidbody != null)
         {
             Vector3 targetPosition = hoverTarget.position;
             Vector3 forcePos = 
-                (subscriber.AppliedPhysics.rotation * localHitPoint) 
-                + subscriber.AppliedPhysics.position;
+                (pickedSubscriber.AppliedPhysics.rotation * localHitPoint) 
+                + pickedSubscriber.AppliedPhysics.position;
             Vector3 pidResult =
                 PIDToPosition(
                     targetPosition - forcePos,
-                    subscriber.AppliedPhysics.velocity - HolderVelocity()
+                    pickedSubscriber.AppliedPhysics.velocity - HolderVelocity()
                     , p, d, i, iMax
                 );
-            subscriber.AppliedPhysics.AddForceAtPosition(
-                pidResult,
+            pickedSubscriber.AppliedPhysics.AddForceAtPosition(
+                pidResult/3f,
                 forcePos,
                 ForceMode.Impulse
             );
             //the reciprocal version needs to be done in rigidbodyfps in the 
             //grounded section.  when moving up from the ground, add force
             //to other if it is not your anchor
+
+            //drag
+            /*if(pidResult.sqrMagnitude < Mathf.Pow(dragThreshold, 2f))
+            {   
+                pickedSubscriber.AppliedPhysics.angularDrag = pickupAngularDrag;
+            }
+            else
+            {
+                pickedSubscriber.AppliedPhysics.angularDrag = previousAngularDrag;
+            }*/
         }
     }
 

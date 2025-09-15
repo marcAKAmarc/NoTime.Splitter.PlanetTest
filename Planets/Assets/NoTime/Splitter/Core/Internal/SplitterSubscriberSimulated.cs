@@ -12,7 +12,7 @@ namespace NoTime.Splitter.Core.Internal
     {
         public SplitterAnchor Anchor;
         public SplitterSubscriber Authentic;
-        [HideInInspector]
+        //[HideInInspector]
         public List<Collider> CurrentAnchorTriggers;
 
         private List<Component> OnSimCollisionEnterReceivers;
@@ -42,18 +42,29 @@ namespace NoTime.Splitter.Core.Internal
             return type.GetMethod(methodName) != null;
         }
 
+        private SplitterAnchorSimulation otentAnchorSim;
+        private int otentI;
         private void OnTriggerEnter(Collider other)
         {
 
             //Deactivation Colliders
-            if (other.gameObject.GetComponentInParent<SplitterAnchorSimulation>() != null
-                && other.gameObject.GetComponentInParent<SplitterAnchorSimulation>().enabled
-                && (
-                    other.gameObject.GetComponentInParent<SplitterAnchorSimulation>().DeactivateTriggerColliders.Any(x => x.GetInstanceID() == other.GetInstanceID())
-                )
+            if (other.TryGetComponentInParent(out otentAnchorSim)
+                && otentAnchorSim.enabled
+                /*&& (
+                    otentAnchorSim.DeactivateTriggerColliders.Any(x => x.GetInstanceID() == other.GetInstanceID())
+                )*/
             )
             {
-                AddTriggerStack(other);
+                //only do it if you can find it in deactivate trigger colliders
+                for(otentI = 0;  otentI < otentAnchorSim.DeactivateTriggerColliders.Count; otentI++)
+                {
+                    if (otentAnchorSim.DeactivateTriggerColliders[otentI] == other)
+                    {
+                        AddTriggerStack(other);
+                        break;
+                    }
+                }
+                //AddTriggerStack(other);
             }
         }
         private void OnTriggerExit(Collider other)
@@ -68,23 +79,49 @@ namespace NoTime.Splitter.Core.Internal
                 Authentic.SimulationExitedAnchor(Anchor);
         }
 
+
         private void AddTriggerStack(Collider collider)
         {
             CleanTriggerStack();
-            if (CurrentAnchorTriggers.Any(x => x.GetInstanceID() == collider.GetInstanceID()))
-                return;
+            //do not add triggers that already exist
+            for(int i = 0; i < CurrentAnchorTriggers.Count; i++)
+            {
+                if (CurrentAnchorTriggers[i] == collider)
+                    return;
+            }
+            /*if (CurrentAnchorTriggers.Any(x => x.GetInstanceID() == collider.GetInstanceID()))
+                return;*/
             CurrentAnchorTriggers.Add(collider);
         }
 
         private void RemoveFromTriggerStack(Collider collider)
         {
-            CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x.GetInstanceID() != collider.GetInstanceID()).ToList();
+            for (int i = 0; i < CurrentAnchorTriggers.Count; i++)
+            {
+                if (CurrentAnchorTriggers[i].GetInstanceID() == collider.GetInstanceID())
+                {
+                    CurrentAnchorTriggers.RemoveAt(i);
+                    i--;
+                    //may be able to return here...
+                } 
+            }
+            //CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x.GetInstanceID() != collider.GetInstanceID()).ToList();
         }
+
 
         private void CleanTriggerStack()
         {
-            if (CurrentAnchorTriggers.Any(x => x == null))
-                CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x != null).ToList();
+            for(int i = 0; i < CurrentAnchorTriggers.Count; i++)
+            {
+                if (CurrentAnchorTriggers[i] == null)
+                {
+                    CurrentAnchorTriggers.RemoveAt(i);
+                    i--;
+                }
+            }    
+
+            /*if (CurrentAnchorTriggers.Any(x => x == null))
+                CurrentAnchorTriggers = CurrentAnchorTriggers.Where(x => x != null).ToList();*/
         }
 
 

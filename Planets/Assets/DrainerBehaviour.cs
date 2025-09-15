@@ -22,7 +22,7 @@ public class DrainerBehaviour : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if( 
-            other.gameObject.tag == "Drainable"
+            other.gameObject.CompareTag("Drainable")
         )
         {
             _sub = other.GetComponentInParent<SplitterSubscriber>();
@@ -41,7 +41,7 @@ public class DrainerBehaviour : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         if(
-            other.gameObject.tag == "Drainable"
+            other.gameObject.CompareTag("Drainable")
             &&
             other.GetComponentInParent<SplitterSubscriber>() == Held
         )
@@ -102,7 +102,7 @@ public static class SubscriberExtensions
         if (sub.Anchor != null)
         {
             Transform _simTransform = null;
-            _simTransform = sub.Anchor.GetMatchedTransform(sub, splitterTransform);
+            _simTransform = sub.Anchor.GetMatchedSubscriberTransform(sub, splitterTransform);
             if (_simTransform != null)
             {
                 return sub.Anchor.AnchorPointToWorldPoint(_simTransform.position);

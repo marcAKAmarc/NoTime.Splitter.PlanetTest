@@ -86,13 +86,13 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LargeColor: {r: 1, g: 0.99501103, b: 0, a: 1}
-    - _MainColor: {r: 0.8396226, g: 0.7138505, b: 0.6534799, a: 1}
+    - _MainColor: {r: 0.7924528, g: 0.6760002, b: 0.6242435, a: 1}
     - _MediumColor: {r: 1, g: 0.021577863, b: 0, a: 1}
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
     - _SmallColor: {r: 0, g: 0.086281754, b: 1, a: 1}
     - _TilingLarge: {r: 4, g: 530, b: 0.65, a: 0.1}
     - _TilingMedium: {r: 8, g: 364, b: 0.66, a: 0.1}
     - _TilingSmall: {r: 32, g: 272.8, b: 0.67, a: 0.1}
-    - _TilingTiny: {r: 400, g: 220, b: 0.96, a: 0.1}
+    - _TilingTiny: {r: 400, g: 220, b: 0.34, a: 0.125}
     - _TinyColor: {r: 0.5098039, g: 0.3215686, b: 0.2862745, a: 1}
   m_BuildTextureStacks: []

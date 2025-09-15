@@ -30,7 +30,7 @@ namespace NoTime.Splitter
     public class SplitterSubscriber : MonoBehaviour
     {
         [Tooltip("Scripts that need to execute physics operations relative to the anchor, i.e. character controllers")]
-        public List<MonoBehaviour> RunInSimulatedSpace;
+        public List<MonoBehaviour> RunInSimulatedSpace = new List<MonoBehaviour>();
 
         //[HideInInspector]
         public SplitterAnchor Anchor;
@@ -107,22 +107,18 @@ namespace NoTime.Splitter
             return false;
         }
 
-        SplitterAnchor _otherAnchor;
-        SplitterAnchor _attachedAnchor;
+        private SplitterAnchor _otherAnchor;
+        private SplitterAnchor _attachedAnchor;
         private void ProcessPotentialAnchorEntrance(Collider other)
         {
-
-            _otherAnchor = other.gameObject.GetComponentInParent<SplitterAnchor>();
-            if (_otherAnchor == null)
+            if (!other.TryGetComponentInParent(out _otherAnchor))
                 return;
-
-            _attachedAnchor = gameObject.GetComponent<SplitterAnchor>();
 
             if (_otherAnchor != null
                 &&
                 _otherAnchor.enabled
                 && !(
-                    _attachedAnchor != null
+                    gameObject.TryGetComponent(out _attachedAnchor)
                     &&
                     _attachedAnchor.enabled
                     &&
@@ -317,7 +313,22 @@ namespace NoTime.Splitter
         }
         private void RemoveFromAnchorStack(SplitterAnchor anchor)
         {
-            AnchorStack = AnchorStack.Where(x => x != null && x.gameObject != null && x.gameObject.GetInstanceID() != anchor.gameObject.GetInstanceID()).ToList();
+        
+            for(int i = 0; i < AnchorStack.Count; i++)
+            {
+                if (
+                    AnchorStack[i] == null 
+                    || AnchorStack[i].gameObject == null
+                    || AnchorStack[i].gameObject == anchor.gameObject
+                )
+                {
+                    AnchorStack.RemoveAt(i);
+                    i--;
+                    //can probably return here...
+                }
+            }
+            //AnchorStack = AnchorStack.Where(x => x != null && x.gameObject != null && x.gameObject.GetInstanceID() != anchor.gameObject.GetInstanceID()).ToList();
+        
         }
 
         private void AddToTriggerStack(AnchorTrigger anchorTrigger)
@@ -588,15 +599,19 @@ namespace NoTime.Splitter
         }
 
         List<Collider> _cols;
-        int _iFEAE;
+        int _iFC;
         private void flickerColliders()
         {
-            _cols = transform.GetComponentsInChildren<Collider>().Where(x => x.isTrigger == false).ToList();
-            _iFEAE = 0;
-            for (; _iFEAE < _cols.Count(); _iFEAE++)
+            _cols = transform.GetComponentsInChildren<Collider>().ToList();
+            
+            _iFC = 0;
+            for (; _iFC < _cols.Count(); _iFC++)
             {
-                _cols[_iFEAE].enabled = false;
-                _cols[_iFEAE].enabled = true;
+                //don't flicker triggers
+                if (_cols[_iFC].isTrigger)
+                    continue;
+                _cols[_iFC].enabled = false;
+                _cols[_iFC].enabled = true;
             }
         }
 
@@ -610,6 +625,13 @@ namespace NoTime.Splitter
                 _naaAnchor.setMySubscriber(this);
             else
                 _naaAnchor.setMySubscriber(null);
+        }
+
+        public void UpdateSimulatedTransform(Transform changedTransform)
+        {
+            if (Anchor == null)
+                return;
+
         }
     }
 

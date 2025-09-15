@@ -60,7 +60,7 @@ Material:
     m_Floats:
     - _AtmoDensitySpace: 0
     - _AtmoDensitySurface: 1
-    - _AtmosphereMaxRadius: 240
+    - _AtmosphereMaxRadius: 238.2
     - _BlendOp: 4
     - _BumpScale: 1
     - _Cutoff: 0.5
@@ -72,7 +72,7 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _FarFade: 99999
-    - _FogMaxDist: 170.5
+    - _FogMaxDist: 120.2
     - _FogMinDist: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -84,7 +84,7 @@ Material:
     - _NightPow: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _PlanetSurfaceRadius: 209.9
+    - _PlanetSurfaceRadius: 215
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1

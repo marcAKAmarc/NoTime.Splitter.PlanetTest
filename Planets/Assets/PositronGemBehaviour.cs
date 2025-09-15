@@ -7,6 +7,7 @@ public class PositronGemBehaviour : MonoBehaviour
 {
 
     public bool excited = false;
+    private int excitements = 0;
     public Collider attractionTrigger;
     public float attractionForce;
     private List<SplitterSubscriber> LocalAttracteds;
@@ -46,10 +47,33 @@ public class PositronGemBehaviour : MonoBehaviour
     {
         RemoteAttracteds.Clear();
     }
+    public void AddExcitement(bool add)
+    {
+        if (add)
+            excitements += 1;
+        else
+            excitements -= 1;
+
+        if (excitements > 0)
+            excited = true;
+        if (excitements <= 0)
+            excited = false;
+    }
+
+    private int otentI;
+    private SplitterSubscriber otentSub;
     private void OnTriggerEnter(Collider other)
     {
-        if (IsOtherTypeOfGem(other.attachedRigidbody.tag))
+        if (IsOtherTypeOfGem(other.attachedRigidbody.tag) 
+            && other.attachedRigidbody.TryGetComponent(out otentSub)
+        )
         {
+            //make sure not already in local attractedds 
+            for (otentI = 0; otentI < LocalAttracteds.Count; otentI++)
+            {
+                if (LocalAttracteds[otentI] == otentSub)
+                    return;
+            }
             LocalAttracteds.Add(
                 other.attachedRigidbody.GetComponent<SplitterSubscriber>()
             );
@@ -92,22 +116,31 @@ public class PositronGemBehaviour : MonoBehaviour
     private void ApplyForces(SplitterSubscriber subscriber)
     {
         subscriber.AppliedPhysics.AddForce(
-            (
+            /*(
                 mySubscriber.AppliedPhysics.velocity
                 - subscriber.AppliedPhysics.velocity
             )
-            * attractionForce
+            * attractionForce*/
+            GetForce(mySubscriber, subscriber)
         );
 
         mySubscriber.AppliedPhysics.AddForce(
-            (
+            /*(
                 subscriber.AppliedPhysics.velocity
                 - mySubscriber.AppliedPhysics.velocity
             )
-            * attractionForce
+            * attractionForce*/
+            GetForce(subscriber, mySubscriber)
         );
     }
-
+    public Vector3 GetForce(SplitterSubscriber to, SplitterSubscriber from)
+    {
+        return
+            (
+                to.AppliedPhysics.velocity
+                - from.AppliedPhysics.velocity
+            ) * attractionForce / (LocalAttracteds.Count + RemoteAttracteds.Count);
+    }
     private bool IsOtherTypeOfGem(string tag)
     {
         return tag == "NeutronGem" || tag == "NegatronGem";

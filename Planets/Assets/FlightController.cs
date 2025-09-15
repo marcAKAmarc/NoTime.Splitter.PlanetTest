@@ -17,6 +17,7 @@ public class FlightController : SplitterEventListener
     public bool TractorBeamInstalled;
     public bool TerranFlightInstalled;
 
+    private Rigidbody rigidbody;
 
     public BrassShipDoorBehavior Door;
     public Transform potentialController;
@@ -65,7 +66,7 @@ public class FlightController : SplitterEventListener
     private void Start()
     {
         //SetHintText(ControlsHint);
-
+        TryGetComponent(out rigidbody);
         if (Drainer != null)
             Drainer.PowerEvents += OnPowerChange;
 
@@ -99,7 +100,7 @@ public class FlightController : SplitterEventListener
     private int colCount = 0;
     private void OnTriggerEnter(Collider other)
     {
-        if (other.GetComponent<RigidbodyFpsController>())
+        if (other.TryGetComponent(out otherRigidFPS))
         {
             passengerPresent = true;
             potentialController = other.transform;
@@ -107,9 +108,10 @@ public class FlightController : SplitterEventListener
             SetHintText(PilotHint);
         }
     }
+    private RigidbodyFpsController otherRigidFPS;
     private void OnTriggerExit(Collider other)
     {
-        if (other.GetComponent<RigidbodyFpsController>())
+        if (other.TryGetComponent(out otherRigidFPS))
         {
             colCount -= 1;
             if (colCount == 0)
@@ -166,7 +168,7 @@ public class FlightController : SplitterEventListener
         Vector3 relVel;
         if (potentialController != null)
         {
-            relVel = RelativeVelocity(transform.GetComponent<Rigidbody>(), other.body as Rigidbody, other.GetContact(0).point);
+            relVel = RelativeVelocity(rigidbody, other.body as Rigidbody, other.GetContact(0).point);
             if (relVel.sqrMagnitude <= 25f)
                 return;
 
@@ -559,24 +561,24 @@ public class FlightController : SplitterEventListener
 
     }
 
+    private SplitterSubscriber rvOriginSubscriber, rvMeasureSubscriber;
+    private Vector3 rvOriginPointVel, rvMeasurePointVel;
     private Vector3 RelativeVelocity(Rigidbody origin, Rigidbody measure, Vector3 WorldPos)
     {
-        SplitterSubscriber originSubscriber = origin.transform.GetComponent<SplitterSubscriber>();
-        SplitterSubscriber measureSubscriber = measure.transform.GetComponent<SplitterSubscriber>();
+        rvOriginSubscriber = origin.transform.GetComponent<SplitterSubscriber>();
+        rvMeasureSubscriber = measure.transform.GetComponent<SplitterSubscriber>();
 
-        Vector3 originPointVel;
-        if (originSubscriber != null)
-            originPointVel = originSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
+        if (rvOriginSubscriber != null)
+            rvOriginPointVel = rvOriginSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
         else
-            originPointVel = origin.GetPointVelocity(WorldPos);
+            rvOriginPointVel = origin.GetPointVelocity(WorldPos);
 
-        Vector3 measurePointVel;
-        if (measureSubscriber != null)
-            measurePointVel = measureSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
+        if (rvMeasureSubscriber != null)
+            rvMeasurePointVel = rvMeasureSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
         else
-            measurePointVel = measure.GetPointVelocity(WorldPos);
+            rvMeasurePointVel = measure.GetPointVelocity(WorldPos);
 
-        return measurePointVel - originPointVel;
+        return rvMeasurePointVel - rvOriginPointVel;
     }
 
 }

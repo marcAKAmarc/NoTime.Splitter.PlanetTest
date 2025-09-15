@@ -201,8 +201,8 @@ namespace NoTime.Splitter.Demo
 
             if (_hit.rigidbody != null)
             {
-                _hitSub = _hit.rigidbody.GetComponent<SplitterSubscriber>();
-                _hitAnchor = _hit.rigidbody.GetComponent<SplitterAnchor>();
+                _hit.rigidbody.TryGetComponent(out _hitSub);
+                _hit.rigidbody.TryGetComponent(out _hitAnchor);
             }
             fricVel = body.AppliedPhysics.velocity;
 
@@ -220,12 +220,10 @@ namespace NoTime.Splitter.Demo
             //what about just rigids?
             else if (body.Anchor != null)
             {
-                Debug.Log("working from body anchor");
                 fricVel -= body.Anchor.AnchorVelocityToWorldVelocity(Vector3.zero, body.AppliedPhysics.position);
             }
             else
             {
-                Debug.Log("working form else");
                 fricVel -= _hit.rigidbody.GetPointVelocity(body.AppliedPhysics.position);
             }
 

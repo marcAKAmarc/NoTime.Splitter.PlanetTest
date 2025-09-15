@@ -1,24 +1,30 @@
 using NoTime.Splitter;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+[Serializable]
+public class HistoryItem
+{
+    public SplitterSubscriber Attracted;
+    public List<Vector3> errors;
+}
 public class NeutronGemBehaviour : MonoBehaviour
 {
     public bool excited = false;
+    private int excitements = 0;
     public Collider attractionTrigger;
     public float attractionForce;
     public int maxHistory;
+    public float maxAcceleration;
+    public Transform PositionalOverride;
     private List<HistoryItem> LocalAttracteds;
     private List<HistoryItem> RemoteAttracteds;
     private SplitterSubscriber mySubscriber;
 
-    private class HistoryItem
-    {
-        public SplitterSubscriber Attracted;
-        public List<Vector3> errors;
-    }
+
 
     //this is like D in PID
     private void Awake()
@@ -63,18 +69,42 @@ public class NeutronGemBehaviour : MonoBehaviour
     {
         RemoteAttracteds.Clear();
     }
+    public void AddExcitement(bool add)
+    {
+        if (add)
+            excitements += 1;
+        else
+            excitements -= 1;
+
+        if (excitements > 0)
+            excited = true;
+        if (excitements <= 0)
+            excited = false;
+    }
+
+    private int otentI;
+    private SplitterSubscriber otentSub;
     private void OnTriggerEnter(Collider other)
     {
-        if (IsOtherTypeOfGem(other.attachedRigidbody.tag))
+        if (
+            IsOtherTypeOfGem(other.attachedRigidbody.tag)
+            && other.attachedRigidbody.TryGetComponent(out otentSub)    
+        )
         {
+            //make sure not already in local attracteds
+            for (otentI = 0; otentI < LocalAttracteds.Count; otentI++)
+            {
+                if (LocalAttracteds[otentI].Attracted == otentSub)
+                    return;
+            }
             LocalAttracteds.Add(
                 new HistoryItem()
                 {
-                    Attracted = other.attachedRigidbody.GetComponent<SplitterSubscriber>(),
+                    Attracted = otentSub,
                     errors = new List<Vector3>()
                 }
             );
-        }
+        }   
     }
 
     private SplitterSubscriber teSub;
@@ -110,15 +140,21 @@ public class NeutronGemBehaviour : MonoBehaviour
         }
     }
 
-    int afI;
-    Vector3 afSum;
+    private int afI;
+    private Vector3 afSum;
+    private Vector3 afOffset;
     private void ApplyForces(HistoryItem history)
     {
+        if (PositionalOverride)
+            afOffset = PositionalOverride.position;
+        else
+            afOffset = mySubscriber.AppliedPhysics.position;
+
         //update errors
         history.errors.Insert(
             0,
             history.Attracted.AppliedPhysics.position
-                - mySubscriber.AppliedPhysics.position
+                - afOffset
         );
         //ensure maxHistory
         while (history.errors.Count > maxHistory)
@@ -131,15 +167,20 @@ public class NeutronGemBehaviour : MonoBehaviour
         {
             afSum += history.errors[afI];
         }
+        //apply max
+        if(afSum.sqrMagnitude > Mathf.Pow(maxAcceleration,2))
+        {
+            afSum = afSum.normalized * maxAcceleration;
+        }
         //apply force
         history.Attracted.AppliedPhysics.AddForce(
             (-afSum)
-            * attractionForce * 100f / maxHistory
+            * attractionForce * 30f / (maxHistory * (LocalAttracteds.Count + RemoteAttracteds.Count))
         );
 
         mySubscriber.AppliedPhysics.AddForce(
             afSum
-            * attractionForce * 100f / maxHistory
+            * attractionForce * 30f / (maxHistory * (LocalAttracteds.Count + RemoteAttracteds.Count))
         );
     }
     

@@ -2,12 +2,15 @@ using NoTime.Splitter;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 
 public class NegatronBehaviour : MonoBehaviour
 {
     public bool excited = false;
+    private int excitements = 0;
     public Collider attractionTrigger;
     public float attractionForce;
+    public Transform PositionOverride;
     private List<SplitterSubscriber> LocalAttracteds;
     private List<SplitterSubscriber> RemoteAttracteds;
     private SplitterSubscriber mySubscriber;
@@ -44,10 +47,34 @@ public class NegatronBehaviour : MonoBehaviour
     {
         RemoteAttracteds.Clear();
     }
+    public void AddExcitement(bool add)
+    {
+        if (add)
+            excitements += 1;
+        else
+            excitements -= 1;
+
+        if (excitements > 0)
+            excited = true;
+        if (excitements <= 0)
+            excited = false;
+    }
+
+    private int otentI;
+    private SplitterSubscriber otentSub; 
     private void OnTriggerEnter(Collider other)
     {
-        if(IsOtherTypeOfGem(other.attachedRigidbody.tag))
+        if(IsOtherTypeOfGem(other.attachedRigidbody.tag)
+            && other.attachedRigidbody.TryGetComponent(out otentSub)    
+        )
         {
+            //make sure not already in local attractedds 
+            for (otentI = 0; otentI < LocalAttracteds.Count; otentI++)
+            {
+                if (LocalAttracteds[otentI] == otentSub)
+                    return;
+            }
+
             LocalAttracteds.Add(
                 other.attachedRigidbody.GetComponent<SplitterSubscriber>()
             );
@@ -89,21 +116,28 @@ public class NegatronBehaviour : MonoBehaviour
 
     private void ApplyForces(SplitterSubscriber subscriber)
     {
+        if (PositionOverride)
+            _gfOffset = PositionOverride.position;
+        else
+            _gfOffset = mySubscriber.AppliedPhysics.position;
         subscriber.AppliedPhysics.AddForce(
-            (
-                mySubscriber.AppliedPhysics.position
-                - subscriber.AppliedPhysics.position
-            )
-            * attractionForce
+            GetForce(_gfOffset, subscriber.AppliedPhysics.position)
         );
 
         mySubscriber.AppliedPhysics.AddForce(
-            (
-                subscriber.AppliedPhysics.position
-                - mySubscriber.AppliedPhysics.position
-            )
-            * attractionForce
+            GetForce(subscriber.AppliedPhysics.position, _gfOffset)
         );
+    }
+
+    Vector3 _gfOffset;
+    private Vector3 GetForce(Vector3 to, Vector3 from)
+    {
+
+
+        return (
+                to
+                - from
+            ) * attractionForce / (LocalAttracteds.Count + RemoteAttracteds.Count);
     }
     private bool IsOtherTypeOfGem(string tag)
     {
