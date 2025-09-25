@@ -58,9 +58,7 @@ public class PhysicalSounds : MonoBehaviour
     private void OnCollisionEnterSounds(Vector3 worldPoint, float impulseSquareMagnitude)
     {
         //Debug.Log("enter sounds");
-
-        if (impulseSquareMagnitude < 1f)
-            return;
+        Debug.Log("impulse sqr mag: " + impulseSquareMagnitude);
 
         for (int i = 0; i < HitSounds.Count; i++)
         {
@@ -137,6 +135,8 @@ public class PhysicalSounds : MonoBehaviour
     Vector3 myVel;
     private void OnCollisionStaySounds(Vector3 worldPoint, float impulseSquareMagnitude, float pointRelativeVelocitySquareMagnitude)
     {
+
+        Debug.Log("impulse sqr mag: " + impulseSquareMagnitude);
         for (int i = 0; i < ScrapeSounds.Count; i++)
         {
 
@@ -314,6 +314,14 @@ public class PhysicalSounds : MonoBehaviour
         }
     }
 
+    public void SimulateCollision(float ImpulseSqrMag, Vector3 WorldPoint)
+    {
+        if (CollisionMeetsThreshold(ImpulseSqrMag))
+        {
+            OnCollisionEnterSounds(WorldPoint, ImpulseSqrMag);
+        }
+    }
+
     void Update()
     {
         for (int i = 0; i < _timers.Count; i++)
@@ -353,6 +361,10 @@ public class PhysicalSounds : MonoBehaviour
     {
         return collision.impulse.sqrMagnitude > Mathf.Pow(minimumImpulse, 2f);
     }
+    private bool CollisionMeetsThreshold(float impulseSquareMag)
+    {
+        return impulseSquareMag > Mathf.Pow(minimumImpulse, 2f);
+    }
     private bool CollisionIsNatural(Collision collision)
     {
         //i am subscriber of collider's anchor
@@ -361,8 +373,10 @@ public class PhysicalSounds : MonoBehaviour
             && collision.rigidbody.GetComponent<SplitterAnchor>()
             && collision.rigidbody.GetComponent<SplitterAnchor>().IsInMySimulation(transform.GetComponent<SplitterSubscriber>())
         )
+        {
+            Debug.Log("Is not natural: i am subscriber of collider's anchor.");
             return false;
-
+        }
         //i am anchor of collider's subscriber
         if (transform.GetComponent<SplitterAnchor>() != null &&
             collision.rigidbody.transform.GetComponent<SplitterSubscriber>() != null
@@ -370,7 +384,10 @@ public class PhysicalSounds : MonoBehaviour
                 collision.rigidbody.transform.GetComponent<SplitterSubscriber>()
             )
          )
+        {
+            Debug.Log("Is not natural: i am anchor of collider's subscriber.");
             return false;
+        }
 
         //we are subscribers with shared anchor
         if (transform.GetComponent<SplitterSubscriber>() != null
@@ -379,7 +396,10 @@ public class PhysicalSounds : MonoBehaviour
             && collision.rigidbody.GetComponent<SplitterSubscriber>().Simulating()
             && transform.GetComponent<SplitterSubscriber>().Anchor.gameObject == collision.rigidbody.GetComponent<SplitterSubscriber>().Anchor.gameObject
         )
+        {
+            Debug.Log("Is not natural: we are subscribers with shared anchor");
             return false;
+        }
 
         return true;
     }

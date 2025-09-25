@@ -64,7 +64,7 @@ public class PositronGemBehaviour : MonoBehaviour
     private SplitterSubscriber otentSub;
     private void OnTriggerEnter(Collider other)
     {
-        if (IsOtherTypeOfGem(other.attachedRigidbody.tag) 
+        if (IsOtherTypeOfGem(other.attachedRigidbody.gameObject) 
             && other.attachedRigidbody.TryGetComponent(out otentSub)
         )
         {
@@ -84,7 +84,7 @@ public class PositronGemBehaviour : MonoBehaviour
     private int i;
     private void OnTriggerExit(Collider other)
     {
-        if (IsOtherTypeOfGem(other.attachedRigidbody.tag))
+        if (IsOtherTypeOfGem(other.attachedRigidbody.gameObject))
         {
             teSub = other.attachedRigidbody.GetComponent<SplitterSubscriber>();
             for (i = 0; i < LocalAttracteds.Count; i++)
@@ -144,5 +144,12 @@ public class PositronGemBehaviour : MonoBehaviour
     private bool IsOtherTypeOfGem(string tag)
     {
         return tag == "NeutronGem" || tag == "NegatronGem";
+    }
+
+    NeutronGemBehaviour neutron;
+    NegatronBehaviour negatron;
+    private bool IsOtherTypeOfGem(GameObject go)
+    {
+        return go.TryGetComponent(out neutron) || go.TryGetComponent(out negatron);
     }
 }

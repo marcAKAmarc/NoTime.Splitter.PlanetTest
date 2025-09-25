@@ -20,18 +20,28 @@ public class PickUpBehaviour : MonoBehaviour
     public float pickupRange = 3f; // Distance within which the rigidbody can be picked up
     public Transform hoverTarget;
     public Vector3 rayOffset;
-    private Rigidbody pickedRigidbody;
+    public Rigidbody pickedRigidbody;
     private Ray ray;
     private RaycastHit hit;
     private SplitterSubscriber pickedSubscriber;
-    private bool doIt;
-    private bool press;
+    public bool doIt;
+    public bool press;
     private float previousAngularDrag;
+    public SplitterSubscriber subscriber;
+    public Vector3 subToHereOffset;
+    public IconHighlighter IconHighlighter;
+
+    void Awake()
+    {
+        errors = new List<Vector3>(History);
+        velocities = new List<Vector3>(History);
+        errorInts = new List<Vector3>(History);
+    }
     void Start()
     {
         ray.origin = transform.position;
         ray.direction = transform.forward;
-        mask = LayerMask.GetMask("Default");
+        mask = LayerMask.GetMask("Activator");
         holderSubscriber = HolderTransform.GetComponent<SplitterSubscriber>();
         holderBody = HolderTransform.GetComponent<Rigidbody>();
         
@@ -46,15 +56,18 @@ public class PickUpBehaviour : MonoBehaviour
                 doIt = true;
                 press = true;
             }
+            if (Input.GetMouseButtonUp(0)) { 
+                press = false;
 
-            if (Input.GetMouseButtonUp(0) && pickedRigidbody != null)
-            {
+                if (pickedRigidbody != null)
+                {
 
-                pickedSubscriber.AppliedPhysics.angularDrag = previousAngularDrag;
+                    pickedSubscriber.AppliedPhysics.angularDrag = previousAngularDrag;
 
-                pickedRigidbody = null;
-                pickedSubscriber = null;
-                doIt = false;
+                    /*pickedRigidbody = null;
+                    pickedSubscriber = null;
+                    doIt = false;*/
+                }
             }
 
             if (Input.GetMouseButton(1) && pickedSubscriber != null)
@@ -109,23 +122,30 @@ public class PickUpBehaviour : MonoBehaviour
         if (!doIt)
             return;
 
-        ray.origin = transform.position + rayOffset;
+
+        ray.origin = subscriber.AppliedPhysics.position + (subscriber.AppliedPhysics.rotation * subToHereOffset);
+        /*ray.direction = transform.forward;
+        Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Collide);*/
+
+       /* ray.origin = subscriber.AppliedPhysics.position 
+            + (subscriber.AppliedPhysics.rotation * (Quaternion.Inverse(subscriber.Body.rotation) * (transform.position - subscriber.Body.position)));*/
         ray.direction = transform.forward;
 
-        if (press)
-        {
+
+        if (!press) { 
             if (Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Ignore))
             {
-                Rigidbody rb = hit.collider.GetComponentInParent<Rigidbody>();
+
+                Rigidbody rb = hit.rigidbody;
 
                 if (rb != null && rb.mass <= MaxMass && rb.mass >= MinMass)
                 {
-                    
                     pickedRigidbody = rb;
                     pickedSubscriber = pickedRigidbody.transform.GetComponent<SplitterSubscriber>();
-                    localHitPoint = Quaternion.Inverse(pickedSubscriber.AppliedPhysics.rotation) 
+                    localHitPoint = Quaternion.Inverse(pickedSubscriber.AppliedPhysics.rotation)
                         * (hit.point - pickedSubscriber.AppliedPhysics.position);
                     previousAngularDrag = pickedSubscriber.AppliedPhysics.angularDrag;
+                    
                 }
                 else
                 {
@@ -133,10 +153,16 @@ public class PickUpBehaviour : MonoBehaviour
                     pickedRigidbody = null;
                 }
             }
+            else
+            {
+                localHitPoint = Vector3.zero;
+                pickedRigidbody = null;
+            }
         }
 
-        press = false;
-        if (pickedRigidbody != null)
+        IconHighlighter.CanPickUp = pickedRigidbody != null;
+
+        if (press && pickedRigidbody != null)
         {
             Vector3 targetPosition = hoverTarget.position;
             Vector3 forcePos = 
@@ -183,9 +209,9 @@ public class PickUpBehaviour : MonoBehaviour
     public float i;
     public float d;
     public float iMax;
-    private List<Vector3> errors = new List<Vector3>();
-    private List<Vector3> velocities = new List<Vector3>();
-    private List<Vector3> errorInts = new List<Vector3>();
+    private List<Vector3> errors;
+    private List<Vector3> velocities;
+    private List<Vector3> errorInts;
     public int History;
     private Vector3 PIDToPosition(Vector3 error, Vector3 velocity, float pGain, float dGain, float iGain, float iMaximum)
     {

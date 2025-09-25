@@ -137,7 +137,10 @@ public class GravityObject : SplitterEventListener
                 if (splitterSubscriber != null)
                     splitterSubscriber.AppliedPhysics.AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
                 else
+                {
                     rigidbody.AddForce(GravityDirection * GravityAcceleration, ForceMode.Acceleration);
+                    Debug.Log("Applied Gravity to Rigidbody!");
+                }
             }
         }
         else

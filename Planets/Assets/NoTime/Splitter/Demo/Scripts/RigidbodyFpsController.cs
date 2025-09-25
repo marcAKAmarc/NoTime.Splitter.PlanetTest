@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 using static UnityEngine.GraphicsBuffer;
 
 namespace NoTime.Splitter.Demo
@@ -27,15 +28,32 @@ namespace NoTime.Splitter.Demo
         public float JetpackForce;
         private bool JetpackUp = false;
         private bool JetpackDown = false;
-
+        private bool JetpackFwd, JetpackBack, JetpackLeft, JetpackRight;
+        public LoopSoundCollection jetpackSound;
+        public CameraShaker CameraShaker;
+        public AudioMixer ExternalsMixer;
+        public string CutoffParameter;
+        public FootstepSoundsBehaviour footstepSounds;
+        public PhysicalSounds physicalSounds;
 
         [HideInInspector]
         public bool inControllerPosition = false;
 
         private SplitterSubscriber body;
 
+        CameraShakeInput jetpackShake;
         private void Awake()
         {
+            jetpackShake = new CameraShakeInput
+            {
+                Attack = .2f,
+                Amplitude = 0f,
+                AngularAmplitude = .2f,
+                Frequency = 15f,
+                Decay = .2f,
+                Asymmetry = new Vector2(.8f, .64f),
+                startTime = 0f
+            };
             _spearRotationTarget = transform.rotation;
             body = transform.GetComponent<SplitterSubscriber>();
         }
@@ -45,6 +63,8 @@ namespace NoTime.Splitter.Demo
             VerticalLookStart = Quaternion.identity;
         }
 
+        
+        
         bool freezeLook;
         void Update()
         {
@@ -53,7 +73,60 @@ namespace NoTime.Splitter.Demo
             ShouldJump = ShouldJump || Input.GetKeyDown(KeyCode.Space);
             JetpackUp = (!Grounded && Input.GetKeyDown(KeyCode.Space)) || (JetpackUp && Input.GetKey(KeyCode.Space));
             JetpackDown = (!Grounded && Input.GetKeyDown(KeyCode.LeftShift)) || (JetpackDown && Input.GetKey(KeyCode.LeftShift));
+            JetpackFwd =  (InSpace && Input.GetKeyDown(KeyCode.W)) || (JetpackFwd && Input.GetKey(KeyCode.W));
+            JetpackBack = (InSpace && Input.GetKeyDown(KeyCode.S)) || (JetpackBack && Input.GetKey(KeyCode.S));
+            JetpackLeft = (InSpace && Input.GetKeyDown(KeyCode.A)) || (JetpackLeft && Input.GetKey(KeyCode.A));
+            JetpackRight =(InSpace && Input.GetKeyDown(KeyCode.D)) || (JetpackRight && Input.GetKey(KeyCode.D));
             freezeLook = Input.GetKey(KeyCode.F);
+
+
+            //jetpack fx
+            if(AnyJetpack())
+                CameraShaker.AddInput(jetpackShake);
+
+            if (AnyJetpack() && jetpackSound.enabled == false)
+            {
+                jetpackSound.enabled = true;
+            }
+            if(!AnyJetpack() && jetpackSound.enabled == true)
+            {
+                jetpackSound.enabled = false;
+            }
+
+            if (InSpace)
+            {
+                ExternalsMixer.SetFloat(CutoffParameter, 150f);
+            }
+            else
+            {
+                ExternalsMixer.SetFloat(CutoffParameter, 22000f);
+            }
+
+            //footstep fx
+            if (!footstepSounds.enabled && Walking())
+            {
+                footstepSounds.enabled = true;
+            }
+            else if (footstepSounds.enabled && !Walking())
+                footstepSounds.enabled = false;
+
+            if (footstepSounds.enabled)
+            {
+                if (body.Simulating())
+                    footstepSounds.CurrentCharacterSpeed = body.GetSimulationBody().velocity.magnitude;
+                else
+                    footstepSounds.CurrentCharacterSpeed = body.AppliedPhysics.velocity.magnitude;
+            }
+
+
+        }
+        private bool Walking()
+        {
+            return !InSpace && Grounded && (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D));
+        }
+        private bool AnyJetpack()
+        {
+            return JetpackUp || JetpackDown || JetpackFwd || JetpackBack || JetpackLeft || JetpackRight;
         }
         Vector3 previousPosition;
         bool Moved = false;
@@ -276,8 +349,12 @@ namespace NoTime.Splitter.Demo
         public bool TempDisableGroundCheck;
         public bool TempDisableFriction;
         private Vector3 gravDir;
+        private bool wasGrounded;
+        private SplitterSubscriber GroundCheckHitSub;
         private void GroundCheck()
         {
+            wasGrounded = Grounded;
+
             if (InSpace)
             {
                 Grounded = false;
@@ -346,6 +423,27 @@ namespace NoTime.Splitter.Demo
             {
                 if (_gravityObject != null)
                     _gravityObject.ApplyGravity = true;
+            }
+
+            if(!wasGrounded && Grounded)
+            {
+                
+                if(_hit.rigidbody.gameObject.TryGetComponent(out GroundCheckHitSub))
+                {
+                    physicalSounds.SimulateCollision(
+                        Mathf.Min(GroundCheckHitSub.AppliedPhysics.mass, body.AppliedPhysics.mass)
+                            * (GroundCheckHitSub.AppliedPhysics.GetPointVelocity(_hit.point) - body.AppliedPhysics.velocity).sqrMagnitude,
+                        _hit.point 
+                    );
+                }
+                else
+                {
+                    physicalSounds.SimulateCollision(
+                        Mathf.Min(_hit.rigidbody.mass, body.AppliedPhysics.mass)
+                        * (_hit.rigidbody.velocity - body.AppliedPhysics.velocity).sqrMagnitude,
+                        _hit.point
+                     );
+                }
             }
         }
         private WaitForSeconds PreventGroundCheckTime = new WaitForSeconds(.2f);

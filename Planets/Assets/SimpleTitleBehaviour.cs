@@ -10,8 +10,10 @@ public class SimpleTitleBehaviour : MonoBehaviour
     public float slowFadeSlowness;
     public float fastFadeFastness;
     public List<Text> texts;
+    public List<Image> images;
     public List<Text> titleTexts;
     public Image titleImage;
+    public Image blackout;
     public RigidbodyFpsController rigidbodyFpsController;
     public SplitterSubscriber subscriber;
     private enum states { fadeIn, initial, fadeOut, gameFadeIn, game}
@@ -30,6 +32,10 @@ public class SimpleTitleBehaviour : MonoBehaviour
         }
         if(titleImage != null)
             titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, 0);
+        for(int i = 0; i < images.Count; i++)
+        {
+            images[i].color = new Color(images[i].color.r, images[i].color.g, images[i].color.b, 0);
+        }
         
     }
     private void Start()
@@ -61,6 +67,8 @@ public class SimpleTitleBehaviour : MonoBehaviour
             if(titleImage != null)
                 titleImage.color = new Color(titleImage.color.r, titleImage.color.g, titleImage.color.b, fade*fade*fade);
 
+            blackout.color = new Color(blackout.color.r, blackout.color.g, blackout.color.b, 1f - (fade * fade * fade));
+
             if (fade == 1f)
                 state = states.initial;
         }
@@ -72,6 +80,8 @@ public class SimpleTitleBehaviour : MonoBehaviour
         }
         else if (state == states.fadeOut)
         {
+            blackout.color = new Color(0f, 0f, 0f, 0f);
+
             if (Input.anyKeyDown)
                 fade = 0;
             else
@@ -106,7 +116,10 @@ public class SimpleTitleBehaviour : MonoBehaviour
             {
                 texts[i].color = new Color(texts[i].color.r, texts[i].color.g, texts[i].color.b, Mathf.Clamp01(fade));
             }
-
+            for(int i = 0; i < images.Count; i++)
+            {
+                images[i].color = new Color(images[i].color.r, images[i].color.g, images[i].color.b, Mathf.Clamp01(fade));
+            }
             if (fade == 1f)
                 state = states.game;
         }

@@ -9,49 +9,87 @@ public class AutoDoorBehaviour : MonoBehaviour
     public Transform Door1;
     public Transform Door2;
     public Transform Door1Closed, Door1Open, Door2Closed, Door2Open;
+    public float JourneyTime;
     public int colCount = 0;
+    private int prevColCount = 0;
+    public float JourneyStart;
+    public AudioSource audio;
+    public void Start()
+    {
+        JourneyStart = Time.time;
+        totalDistance = (Door1Closed.position - Door1Open.position).magnitude;
+    }
 
     private RigidbodyFpsController otherRigidFPS;
     private void OnTriggerEnter(Collider other)
     {
-        if(other.TryGetComponent(out otherRigidFPS))
+        prevColCount = colCount;
+        if (other.TryGetComponent(out otherRigidFPS))
+        {
             colCount += 1;
+            if (colCount >= 1 && prevColCount == 0)
+            {
+                audio.pitch = 1f;
+                audio.Play();
+                JourneyStart = Time.time;
+            }
+        }
+        
     }
     private void OnTriggerExit(Collider other)
     {
         if (other.TryGetComponent(out otherRigidFPS))
+        {
             colCount -= 1;
+            if (colCount == 0)
+            {
+                JourneyStart = Time.time;
+                audio.pitch = .9f;
+                audio.Play();
+            }
+        }
     }
 
-    // Update is called once per frame
-    Vector3 d1error = Vector3.zero;
-    Vector3 d2error = Vector3.zero;
-    Vector3 d1errorPrev = Vector3.zero;
-    Vector3 d2errorPrev = Vector3.zero;
-    public float movementPGain = 0f;
-    public float movementDGain = 0f;
+    private float totalDistance;
     void Update()
     {
-        if (colCount > 0)
-        {
-            d1errorPrev = d1error;
-            d1error = (Door1Open.position - Door1.position);
-            d2errorPrev = d2error;
-            d2error = (Door2Open.position - Door2.position);
 
+        //if journey over
+        if ((Time.time - JourneyStart) / JourneyTime >= 1f)
+        {
+            audio.Stop();
+            if (colCount >= 1)
+            {
+                Door1.position = Door1Open.position;
+                Door2.position = Door2Open.position;
+            }
+            else
+            {
+                Door1.position = Door1Closed.position;
+                Door2.position = Door2Closed.position;
+            }
         }
+        //else journey happening now
         else
         {
-            d1errorPrev = d1error;
-            d1error = (Door1Closed.position - Door1.position);
-            d2errorPrev = d2error;
-            d2error = (Door2Closed.position - Door2.position);
+            if (colCount >= 1)
+            {
+                Door1.position = Door1Closed.position + (
+                        (Door1Open.position - Door1Closed.position) * ((Time.time - JourneyStart) / JourneyTime)
+                    );
+                Door2.position = Door2Closed.position + (
+                        (Door2Open.position - Door2Closed.position) * ((Time.time - JourneyStart) / JourneyTime)
+                    );
+            }
+            else
+            {
+                Door1.position = Door1Open.position + (
+                        (Door1Closed.position - Door1Open.position) * ((Time.time - JourneyStart) / JourneyTime)
+                    );
+                Door2.position = Door2Open.position + (
+                    (Door2Closed.position - Door2Open.position) * ((Time.time - JourneyStart) / JourneyTime)
+                );
+            }
         }
-        
-        //Door1.position = d1error.normalized * Mathf.Min()
-        Door1.position += d1error * Mathf.Min(Time.deltaTime * movementPGain, 1f);
-        //Door1.position += (d1error - d1errorPrev) * Time.deltaTime * movementDGain;
-        Door2.position += d2error * Mathf.Min(Time.deltaTime * movementPGain, 1f);
-        //Door2.position += (d2error - d2errorPrev) * Time.deltaTime * movementDGain;
     }
 }

@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using NoTime.Splitter.Core;
 using NoTime.Splitter.Core.Internal;
 using Unity.VisualScripting;
+using System;
 
 namespace NoTime.Splitter
 {
@@ -36,7 +37,7 @@ namespace NoTime.Splitter
         private bool CallPhysicsSync = false;
 
         [HideInInspector]
-        [DoNotSerialize]
+        [NonSerialized]
         public Scene? Scene;
         private PhysicsScene PhysicsScene;
         private Scene MainScene;
@@ -626,9 +627,11 @@ namespace NoTime.Splitter
         {
             if (
                 collision.body != null 
+                && ids.ContainsKey(collision.body.gameObject.GetInstanceID())
                 && collision.body.TryGetComponent(out ocentSub)
-                && ids.ContainsKey(ocentSub.gameObject.GetInstanceID()))
+            )
             {
+                //Debug.Log("Negating: " + gameObject.name + " is negating " + collision.body.gameObject.name +" collision on enter.");
                 NegateMyCollision(collision);
             }
         }
@@ -639,9 +642,12 @@ namespace NoTime.Splitter
                 return;
             
             if (
-                collision.body.TryGetComponent(out ocsSubscriber)
-                && ids.ContainsKey(ocsSubscriber.gameObject.GetInstanceID()))
+                
+                ids.ContainsKey(collision.body.gameObject.GetInstanceID())
+                && collision.body.TryGetComponent(out ocsSubscriber)
+            )
             {
+                //Debug.Log("Negating: " + gameObject.name + " is negating " + collision.body.gameObject.name + " collision on enter.");
                 NegateMyCollision(collision);
             }
         }
@@ -655,7 +661,7 @@ namespace NoTime.Splitter
 #endif
         }
 
-        ContactPoint[] _contactPoints = new ContactPoint[30];
+        ContactPoint[] _contactPoints = new ContactPoint[4];
         int _contactCount = 0;
         int _cnt = 0;
         Vector3 _avgContactPoint = Vector3.zero;
@@ -725,7 +731,10 @@ namespace NoTime.Splitter
         internal void NegateMyCollision(Collision collision)
         {
             if (mySubscriber == null && Body == null)
+            {
+                Debug.Log("  Returning due to subscriber and body being null.");
                 return;
+            }
 
             Vector3 impulse = collision.impulse;
             
@@ -735,16 +744,22 @@ namespace NoTime.Splitter
             if (_nmcSubscriber != null && _nmcSubscriber.isActiveAndEnabled)
             {
                 if (_nmcSubscriber.AppliedPhysics.isKinematic)
+                {
+                    Debug.Log("  Returning because anchor subscriber is kinematic.");
                     return;
+                }
 
                 _contactCount = collision.GetContacts(_contactPoints);
-                if (Vector3.Dot(impulse, _contactPoints[0].normal) < 0f)
-                {
-                    impulse *= -1f;
-                }
+
 #if UNITY_2022_1_OR_NEWER
+                //this should be using _contactPoints[_cnt].impulse
                 for (_cnt = 0; _cnt < _contactCount; _cnt++)
                 {
+                    impulse = _contactPoints[_cnt].impulse;
+                    if (Vector3.Dot(impulse, _contactPoints[_cnt].normal) < 0f)
+                    {
+                        impulse *= -1f;
+                    }
                     _nmcSubscriber.AppliedPhysics.AddForceAtPosition(
                         -impulse,
                         _contactPoints[_cnt].point,
@@ -752,6 +767,10 @@ namespace NoTime.Splitter
                     );
                 }
 #else
+                if (Vector3.Dot(impulse, _contactPoints[0].normal) < 0f)
+                {
+                    impulse *= -1f;
+                }
                 _avgContactPoint = Vector3.zero;
                 for (_cnt = 0; _cnt < _contactCount; _cnt++)
                 {
@@ -766,10 +785,11 @@ namespace NoTime.Splitter
 #endif
             }
             else if (Body != null)
-            {
-                if(Body.isKinematic)
+            { 
+                if (Body.isKinematic)
+                {
                     return;
-
+                }
                 _contactCount = collision.GetContacts(_contactPoints);
                 if (Vector3.Dot(impulse, _contactPoints[0].normal) < 0f)
                 {
@@ -787,6 +807,22 @@ namespace NoTime.Splitter
                     ForceMode.Impulse
                 );
             }
+
+
+            //should we be reciprocating??? reciprocate???
+            /*_nmcSubscriber = null;
+            if (collision.body == null)
+                return;
+
+            if(collision.body.TryGetComponent(out _nmcSubscriber))
+            {
+                Debug.Log("  Reciprocating...");
+                _nmcSubscriber.AppliedPhysics.AddForceAtPosition(
+                    impulse,
+                    _avgContactPoint,
+                    ForceMode.Impulse
+                );
+            }*/
         }
         
         internal void ApplyAddForce(Vector3 force, ForceMode mode, SplitterSubscriber subscriber)
@@ -1267,7 +1303,16 @@ namespace NoTime.Splitter
         {
             _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
             _mainGoRigidbody = mainGo.GetComponent<Rigidbody>();
-            _mainGoRigidbody.MoveRotation(
+
+            _mainGoRigidbody.rotation =
+                this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation);
+            _mainGoRigidbody.position =
+                this.transform.TransformPoint(
+                    PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
+                );
+            //using move rotation or move position will lose the velocity we just added.
+            //then, if multiple updates are run before a fixed update, subscribers will 'lag behind' during physics queries.
+            /*_mainGoRigidbody.MoveRotation(
                 this.getRotation() * (Quaternion.Inverse(PhysicsAnchorGO.transform.rotation) * _SimSubscriber.rigidbody.rotation)
             );
 
@@ -1275,7 +1320,7 @@ namespace NoTime.Splitter
                 this.transform.TransformPoint(
                     PhysicsAnchorGO.transform.InverseTransformPoint(_SimSubscriber.rigidbody.position)
                 )
-            );
+            );*/
         }
 
 

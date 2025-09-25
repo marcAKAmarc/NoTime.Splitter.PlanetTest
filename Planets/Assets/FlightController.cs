@@ -134,18 +134,18 @@ public class FlightController : SplitterEventListener
     }
     private void OnCollisionEnter(Collision other)
     {
-        MaybeTakeHitToStabilization(other);
+        MaybeTakeHitToStabilization(other, true);
     }
     private void OnCollisionStay(Collision other)
     {
 
-        MaybeTakeHitToStabilization(other);
+        MaybeTakeHitToStabilization(other, false);
     }
 
     private SplitterAnchor _takeHitMyAnchor;
     private SplitterSubscriber _takeHitOtherSubscriber;
     private CameraShaker camShake;
-    private void MaybeTakeHitToStabilization(Collision other)
+    private void MaybeTakeHitToStabilization(Collision other, bool AccountForAngularVelocity)
     {
         
         //bail if this collision is from an object occurring within your simulation
@@ -166,9 +166,14 @@ public class FlightController : SplitterEventListener
 
         //camera shake
         Vector3 relVel;
-        if (potentialController != null)
+        //if potential controller and this isn't from potential controller
+        if (potentialController != null && other.body != null && other.body.transform != potentialController)
         {
-            relVel = RelativeVelocity(rigidbody, other.body as Rigidbody, other.GetContact(0).point);
+            if(AccountForAngularVelocity)
+                relVel = RelativeVelocity(rigidbody, other.body as Rigidbody, other.GetContact(0).point);
+            else
+                relVel = RelativeVelocity(rigidbody, other.body as Rigidbody, other);
+
             if (relVel.sqrMagnitude <= 25f)
                 return;
 
@@ -577,6 +582,21 @@ public class FlightController : SplitterEventListener
             rvMeasurePointVel = rvMeasureSubscriber.AppliedPhysics.GetPointVelocity(WorldPos);
         else
             rvMeasurePointVel = measure.GetPointVelocity(WorldPos);
+
+        return rvMeasurePointVel - rvOriginPointVel;
+    }
+
+    private Vector3 RelativeVelocity(Rigidbody origin, Rigidbody measure, Collision collision)
+    {
+        //without a collision point we cannot account for angular velocity realistically
+        rvOriginSubscriber = origin.transform.GetComponent<SplitterSubscriber>();
+        rvMeasureSubscriber = measure.transform.GetComponent<SplitterSubscriber>();
+
+        if (rvOriginSubscriber == null || rvMeasureSubscriber == null)
+            return collision.relativeVelocity;
+
+        rvOriginPointVel = rvOriginSubscriber.AppliedPhysics.velocity;
+        rvMeasurePointVel = rvMeasureSubscriber.AppliedPhysics.velocity;   
 
         return rvMeasurePointVel - rvOriginPointVel;
     }

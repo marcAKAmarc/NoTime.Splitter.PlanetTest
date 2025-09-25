@@ -1,0 +1,16 @@
+{
+    "name": "ScreenToWorld",
+    "rootNamespace": "",
+    "references": [
+        "GUID:a78dded1d0bfc9d40b700ac40af4d377"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
