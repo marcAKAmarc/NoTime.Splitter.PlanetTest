@@ -46,6 +46,8 @@ public class PhysicalSounds : MonoBehaviour
     public List<ScrapeSoundData> ScrapeSounds;
     public float minimumImpulse;
 
+    public bool debugOutput;
+
     private float _vol;
     private Transform _t;
     private List<GameObject> _SoundCache;
@@ -58,7 +60,8 @@ public class PhysicalSounds : MonoBehaviour
     private void OnCollisionEnterSounds(Vector3 worldPoint, float impulseSquareMagnitude)
     {
         //Debug.Log("enter sounds");
-        Debug.Log("impulse sqr mag: " + impulseSquareMagnitude);
+        if(debugOutput)
+            Debug.Log("impulse sqr mag: " + impulseSquareMagnitude);
 
         for (int i = 0; i < HitSounds.Count; i++)
         {
@@ -135,8 +138,9 @@ public class PhysicalSounds : MonoBehaviour
     Vector3 myVel;
     private void OnCollisionStaySounds(Vector3 worldPoint, float impulseSquareMagnitude, float pointRelativeVelocitySquareMagnitude)
     {
-
-        Debug.Log("impulse sqr mag: " + impulseSquareMagnitude);
+        if(debugOutput)
+            Debug.Log("impulse sqr mag: " + impulseSquareMagnitude);
+        
         for (int i = 0; i < ScrapeSounds.Count; i++)
         {
 
@@ -374,7 +378,8 @@ public class PhysicalSounds : MonoBehaviour
             && collision.rigidbody.GetComponent<SplitterAnchor>().IsInMySimulation(transform.GetComponent<SplitterSubscriber>())
         )
         {
-            Debug.Log("Is not natural: i am subscriber of collider's anchor.");
+            if(debugOutput)
+                Debug.Log("Is not natural: i am subscriber of collider's anchor.");
             return false;
         }
         //i am anchor of collider's subscriber
@@ -385,7 +390,8 @@ public class PhysicalSounds : MonoBehaviour
             )
          )
         {
-            Debug.Log("Is not natural: i am anchor of collider's subscriber.");
+            if(debugOutput)
+                Debug.Log("Is not natural: i am anchor of collider's subscriber.");
             return false;
         }
 
@@ -397,7 +403,8 @@ public class PhysicalSounds : MonoBehaviour
             && transform.GetComponent<SplitterSubscriber>().Anchor.gameObject == collision.rigidbody.GetComponent<SplitterSubscriber>().Anchor.gameObject
         )
         {
-            Debug.Log("Is not natural: we are subscribers with shared anchor");
+            if(debugOutput)
+                Debug.Log("Is not natural: we are subscribers with shared anchor");
             return false;
         }
 

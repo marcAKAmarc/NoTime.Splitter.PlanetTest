@@ -147,7 +147,7 @@ public class FlightController : SplitterEventListener
     private CameraShaker camShake;
     private void MaybeTakeHitToStabilization(Collision other, bool AccountForAngularVelocity)
     {
-        
+
         //bail if this collision is from an object occurring within your simulation
         if (
             transform.TryGetComponent(out _takeHitMyAnchor)
@@ -157,7 +157,9 @@ public class FlightController : SplitterEventListener
             _takeHitMyAnchor.IsInMySimulation(_takeHitOtherSubscriber)
 
         )
+        {
             return;
+        }
         
         _FlightRotationWhenHit = GoalRotation;
         GoalRotation = body.AppliedPhysics.rotation;
@@ -175,7 +177,11 @@ public class FlightController : SplitterEventListener
                 relVel = RelativeVelocity(rigidbody, other.body as Rigidbody, other);
 
             if (relVel.sqrMagnitude <= 25f)
+            {
                 return;
+            }
+
+            
 
             camShake = potentialController.GetComponent<PlayerPublicInfoServer>().camera.GetComponent<CameraShaker>();
             if (camShake != null)
@@ -596,7 +602,7 @@ public class FlightController : SplitterEventListener
             return collision.relativeVelocity;
 
         rvOriginPointVel = rvOriginSubscriber.AppliedPhysics.velocity;
-        rvMeasurePointVel = rvMeasureSubscriber.AppliedPhysics.velocity;   
+        rvMeasurePointVel = rvMeasureSubscriber.AppliedPhysics.GetPointVelocity(rvOriginSubscriber.AppliedPhysics.position);   
 
         return rvMeasurePointVel - rvOriginPointVel;
     }

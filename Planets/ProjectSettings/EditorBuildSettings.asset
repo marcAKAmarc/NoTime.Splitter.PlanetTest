@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/trychangeplanetcollider.unity
-    guid: 8c036635d3a6bce49b1002678d5f3fee
+    path: Assets/Scenes/demoattempt.unity
+    guid: cade5047092fc0742b7b4bf098897903
   m_configObjects: {}

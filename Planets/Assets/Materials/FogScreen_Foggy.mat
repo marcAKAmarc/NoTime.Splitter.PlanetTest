@@ -60,7 +60,7 @@ Material:
     m_Floats:
     - _AtmoDensitySpace: 0
     - _AtmoDensitySurface: 1
-    - _AtmosphereMaxRadius: 238.2
+    - _AtmosphereMaxRadius: 256
     - _BlendOp: 4
     - _BumpScale: 1
     - _Cutoff: 0.5
@@ -73,7 +73,7 @@ Material:
     - _DstBlend: 0
     - _FarFade: 99999
     - _FogMaxDist: 120.2
-    - _FogMinDist: 0
+    - _FogMinDist: 5
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1

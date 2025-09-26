@@ -1220,6 +1220,7 @@ namespace NoTime.Splitter
         int _psi;
         public void PhysicsSync()
         {
+            return;
             _psi = 0;
             for (; _psi < subscribers.Count; _psi++)
             {
@@ -1230,6 +1231,7 @@ namespace NoTime.Splitter
         int _hsi;
         public void HardSync()
         {
+            return;
             /*#if UNITY_2022_2_OR_NEWER
                         PhysicsScene.InterpolateBodies();
 #endif*/
@@ -1280,8 +1282,13 @@ namespace NoTime.Splitter
             if (_mainGoRigidbody.isKinematic || _SimSubscriber.rigidbody.isKinematic)
                 return;
 
-
-            _mainGoRigidbody.AddForce(
+            //test this in splitter env!
+            _mainGoRigidbody.velocity = _sub.AppliedPhysics.velocity;
+            _mainGoRigidbody.angularVelocity = _sub.AppliedPhysics.angularVelocity;
+            _mainGoRigidbody.position = _sub.AppliedPhysics.position;
+            _mainGoRigidbody.rotation = _sub.AppliedPhysics.rotation;
+            
+            /*_mainGoRigidbody.AddForce(
                 GetUltimatePointVelocity(
                     _mainGoRigidbody.position,
                     _sub
@@ -1296,7 +1303,8 @@ namespace NoTime.Splitter
                 - _mainGoRigidbody.angularVelocity
                 ,
                 ForceMode.VelocityChange
-            );
+            );*/
+            
         }
 
         private void SyncSubscriberRigidbody(GameObject mainGo)
