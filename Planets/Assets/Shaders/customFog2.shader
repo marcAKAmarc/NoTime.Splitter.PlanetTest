@@ -1,8 +1,8 @@
 Shader "Custom/ScreenSpaceFog2"
 {
 
-    //IT ALL LOOKS GOOD WITH INCREASED FOG DIST IN SPACE AND
-    //THE SUNDIR POWER ON.  ON THE PLANET THAT POWER SHOULD BE OFF.  SO I GOTTA FIX THAT.
+    //after muddling through this on my own, I came back to tweak and understand it.  I couldn't have picked it back up without also looking at this:
+    //https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
     Properties
     {
         _DayColor("Sunshine Color", Color) = (0, 0, 0, 1)
@@ -116,22 +116,23 @@ Shader "Custom/ScreenSpaceFog2"
             {
                 float3 uvForward = normalize(i.uvPos.xyz - _WorldSpaceCameraPos.xyz);
                 // get linear depth from the depth
-                //hint: the dot(uvForward, i.viewDir) takes things from dist between near and far camera plane to a cheap radial distance
-                float sceneZ = LinearEyeDepth(dot(uvForward, i.viewDir) * SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.projPos.xy / i.projPos.w));
-                //float flatZ = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.projPos.xy / i.projPos.w));
-                //float sceneZ = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.projPos.xy / i.projPos.w);
+                
+                //hint: the /dot(uvForward, i.viewDir) is to take LinearEyeDepth from View depth (orthogonic - from plane to plane) to radial (from camera to point)
+                //...this comes from trig - Linear eye depth is adjacent, then we calculate the theta between uvForward and viewDir acos(dot(...)) and then we do trig -
+                //...Adj/cos(theta) = H (h is radial distance).  Cos and Acos cancel eachother out, so we are left with dot(...);
+                float sceneZ = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.projPos.xy / i.projPos.w))/dot(uvForward, i.viewDir);
 
                 
 
                 //get dist to planet
-                float3 fogRayStart = _WorldSpaceCameraPos + uvForward;
+                float3 fogRayStart = _WorldSpaceCameraPos;
                 float distPlanet = distance(fogRayStart, _PlanetWorldOrigin);
 
                 float3 theta = acos(dot(uvForward, normalize(_PlanetWorldOrigin - fogRayStart)));
 
                 float opposite = distPlanet * sin(theta);
 
-                float adjacent = distPlanet * cos(theta);
+                float adjacent = distPlanet * cos(theta); //could be optimized to just dot(uvFor, normal(_planetworkdorgin - fograystart));
                 
                 float distInFog = sqrt(   max(0,pow(_AtmosphereMaxRadius, 2) - pow(opposite, 2)));
                 
@@ -148,33 +149,7 @@ Shader "Custom/ScreenSpaceFog2"
                 float3 endPosFog = startPosFog + (uvForward * totalDist);
                 float3 midPosFog = startPosFog + (uvForward * totalDist) / 2;
                 
-                //depth fading stuff
-                /*float depthFading = saturate(
-                    (
-                        abs(
-                            pow(
-                                //fogAmt
-                                
-                                    (
-                                        max(
-                                            0,
-                                            min(
-                                                //scene z in fog
-                                                flatZ - max(0, adjacent - distInFog)
-                                                , totalDist
-                                            ) - _FogMinDist
-                                        )
-                                    ) / (_FogMaxDist - _FogMinDist)
-                                   
-                                
-                                ,
-                                //depthPow
-                                lerp(_DepthPowSurface, _DepthPowSpace, i.amtInSpace)
-                            )
-                        )
-                        ) / //depthFactor:
-                    lerp(_DepthFactorSurface, _DepthFactorSpace, i.amtInSpace)
-                );*/
+                //depth fading
                 float sceneZInFog = sceneZ - max(0, adjacent - distInFog);
                 float fogAmt = (max(0, min(/*start scene z in fog*/sceneZ - max(0, adjacent - distInFog)/*end scene z in fog*/, totalDist) - _FogMinDist)) / (_FogMaxDist - _FogMinDist);
                 float depthPow = lerp(_DepthPowSurface, _DepthPowSpace, i.amtInSpace);
@@ -244,23 +219,6 @@ Shader "Custom/ScreenSpaceFog2"
 
                 ///sunset stuff
                 float maxSunTravelDist = 2 * sqrt(pow(_AtmosphereMaxRadius, 2) - pow(_PlanetSurfaceRadius, 2));
-                /*float amtTowardSun =
-                    
-                        dot(
-                            uvForward,
-                            -normalize(
-                                _SunlightDir
-                            )
-                        );
-                //put in [0,1] range
-                amtTowardSun = (
-                    dot(
-                        uvForward,
-                        -normalize(
-                            _SunlightDir
-                        )
-                    ) + 1
-                ) / 2;*/
                 float amtTowardSun = pow(
                     (
                         dot(
@@ -321,42 +279,7 @@ Shader "Custom/ScreenSpaceFog2"
                 float4 dayNightColor = lerp(_NightColor, _DayColor, pow(max(0, 1.25 * (dayNight - 1) + 1),2));//(cos(PI*(1 - dayNight))+1)/2);
                 float4 atmosphereColor = (dayNightColor*(1-sunsetAmt)) + (sunsetColor * sunsetAmt);
                 return
-
-                    //_NightColor /* depthFading*/ * atmoDensity
-                    //lerp(_NightColor, _DayColor, distance(endPosFogClipped,endPosFog))* /*atmoDensity **/ 
-                    //_DayColor * depthFading
-                    atmosphereColor * depthFading * atmoDensity
-                   // dayNightColor * depthFading * atmoDensity
-                    //_DayColor * sunsetAmt *.3 //oky?
-                    //dayNight seems okay
-                    //_DayColor * dayNight /* depthFading*/ * atmoDensity
-
-
-
-                //float4 fogamt = (
-                //    max(
-                //        0,
-                //        min(
-                //            sceneZ - max(0, adjacent - distInFog)
-                //            , totalDist
-                //        ) - _FogMinDist
-                //    )
-                //) / (_FogMaxDist - _FogMinDist);
-
-                    //its depthfading
-                    // its in fogamt
-                    //NOT DIST IN FOG
-                    //its sceneZ
-
-                //float4 angle = acos(dot(uvForward, i.viewDir));
-                
-                //float4 rawDepth = LinearEyeDepth(dot(uvForward, i.viewDir)*SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.projPos.xy / i.projPos.w));
-                
-                //rawDepth = cos(angle) * rawDepth;
-                  //  return _DayColor /* (1-clamp((opposite/250),0,1))*/ /** (totalDist/700)*/ * (clamp((rawDepth)/30, 0, 1))
-                ;
-
-                
+                    atmosphereColor * atmoDensity * depthFading;                
             }
             ENDCG
         }
