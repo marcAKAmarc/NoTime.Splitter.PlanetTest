@@ -72,7 +72,7 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _FarFade: 99999
-    - _FogMaxDist: 250
+    - _FogMaxDist: 350
     - _FogMinDist: 5
     - _GlossMapScale: 1
     - _Glossiness: 0.5

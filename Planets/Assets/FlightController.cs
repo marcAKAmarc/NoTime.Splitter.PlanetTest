@@ -1,15 +1,18 @@
 using NoTime.Splitter;
 using NoTime.Splitter.Demo;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.UI;
 
 public class FlightController : SplitterEventListener
 {
 
     public DrainerBehaviour Drainer;
-    private bool PoweredByDrainer;
+    public bool PoweredByDrainer;
     public bool StablizerInstalled;
     public bool RollInstalled;
     public bool LookRotationInstalled;
@@ -49,11 +52,21 @@ public class FlightController : SplitterEventListener
     public Transform FlightRotationVisual;
     public List<InteriorLightBehavior> InteriorLights;
 
-    public List<Text> HintTexts;
-    private string PilotHint = "Press CAPSLOCK to pilot.";
-    private string ControlsHint = "W, A, S, D, LShift and Space to Move.\nQ, E, Tab to Rotate.\nCAPSLOCK to disengage.";
-
+    public List<TextMeshProUGUI> HintTexts;
+    private string PilotHint = "Press CAPSLOCK to pilot";
+    private string ControlsHint = "Space: Upward thrust\nLShift: Downward thrust\nW, A, S, D: Lateral Thrust\nQ, E, Tab: Rotate\nCAPSLOCK: disengage";
+    private string DrainerHint = "Insert a star gem to power the engines";
+    public HintController hintController;
+    public Transform ShipTutorialTransform;
+    public AudioSource powerOn, powerOff;
+    public AudioMixer shipHumMixer;
+    public float shipHumFadeTime;
     Vector3 autopilotThrust;
+
+    public float GetStabilization()
+    {
+        return StabilizationCapability;
+    }
     public void RegisterAutopilotThrust(Vector3 thrust)
     {
         autopilotThrust = thrust;
@@ -65,7 +78,6 @@ public class FlightController : SplitterEventListener
     }
     private void Start()
     {
-        //SetHintText(ControlsHint);
         TryGetComponent(out rigidbody);
         if (Drainer != null)
             Drainer.PowerEvents += OnPowerChange;
@@ -93,23 +105,63 @@ public class FlightController : SplitterEventListener
         mDown3 = Down3.transform.GetComponent<Renderer>().material;
 
     }
+
+    float _currentHumVol;
+    float _humVolDistance;
+
+    IEnumerator FadeHumToVol(float vol)
+    {
+        
+        shipHumMixer.GetFloat("ShipHumVolume", out _currentHumVol);
+        _humVolDistance = vol - _currentHumVol;
+
+        while (true)
+        {
+            _currentHumVol += (_humVolDistance * Time.deltaTime) / shipHumFadeTime;
+            if(Mathf.Sign(_humVolDistance) != Mathf.Sign(vol - _currentHumVol))
+            {
+                //we have passed our goal
+                _currentHumVol = vol;
+            }
+            shipHumMixer.SetFloat("ShipHumVolume", _currentHumVol);
+
+            if (_currentHumVol == vol)
+                break;
+
+            yield return null;
+        }
+    }
+    private Coroutine FadeHumCo;
     public void OnPowerChange(bool power)
     {
         PoweredByDrainer = power;
+        if (power)
+        {
+            powerOn.Play();
+            if (FadeHumCo != null)
+                StopCoroutine(FadeHumCo);
+            FadeHumCo = StartCoroutine(FadeHumToVol(-0f));
+        }
+        else
+        {
+            powerOff.Play();
+            if (FadeHumCo != null)
+                StopCoroutine(FadeHumCo);
+            FadeHumCo = StartCoroutine(FadeHumToVol(-80f));
+        }
     }
     private int colCount = 0;
-    private void OnTriggerEnter(Collider other)
+    public void RegisterPotentialPilot(Collider other)
     {
         if (other.TryGetComponent(out otherRigidFPS))
         {
             passengerPresent = true;
             potentialController = other.transform;
             colCount += 1;
-            SetHintText(PilotHint);
         }
     }
     private RigidbodyFpsController otherRigidFPS;
-    private void OnTriggerExit(Collider other)
+    public void UnregisterPotentialPilot(Collider other)
     {
         if (other.TryGetComponent(out otherRigidFPS))
         {
@@ -118,20 +170,14 @@ public class FlightController : SplitterEventListener
             {
                 potentialController = null;
                 passengerPresent = false;
-
-                SetHintText("");
             }
         }
     }
 
 
-    private void SetHintText(string hint)
-    {
-        foreach(Text _text in HintTexts)
-        {
-            _text.text = hint;
-        }
-    }
+
+
+
     private void OnCollisionEnter(Collision other)
     {
         MaybeTakeHitToStabilization(other, true);
@@ -147,7 +193,10 @@ public class FlightController : SplitterEventListener
     private CameraShaker camShake;
     private void MaybeTakeHitToStabilization(Collision other, bool AccountForAngularVelocity)
     {
-
+        //got this error once?
+        if (rigidbody == null)
+            return;
+        
         //bail if this collision is from an object occurring within your simulation
         if (
             transform.TryGetComponent(out _takeHitMyAnchor)
@@ -198,9 +247,33 @@ public class FlightController : SplitterEventListener
             }
         }
     }
-    void Update()
+    void HandleHints()
     {
 
+        if (passengerPresent && (Drainer == null || !PoweredByDrainer))
+            hintController.ActivateHint(hintType.StargemPower);
+        else
+            hintController.DeactivateHint(hintType.StargemPower);
+
+        if (passengerPresent && Drainer != null && PoweredByDrainer && controlled)
+        {
+            hintController.ActivateHint(hintType.ShipControls);
+            if (!ShipTutorialTransform.gameObject.activeSelf)
+                ShipTutorialTransform.gameObject.SetActive(true);
+        }
+        else
+        {
+            hintController.DeactivateHint(hintType.ShipControls);
+        }
+
+        if (passengerPresent && Drainer != null && PoweredByDrainer && !controlled)
+            hintController.ActivateHint(hintType.Pilot);
+        else
+            hintController.DeactivateHint(hintType.Pilot);       
+    }
+    void Update()
+    {
+        HandleHints();
         HandlePilotSeat();
 
         //merge autopilot input
@@ -267,7 +340,6 @@ public class FlightController : SplitterEventListener
                     light.Switch(true);
                 }
 
-                SetHintText(ControlsHint);
             }
             else
             {
@@ -279,6 +351,7 @@ public class FlightController : SplitterEventListener
                 {
                     light.Switch(false);
                 }
+
             }
         }
     }
@@ -473,6 +546,9 @@ public class FlightController : SplitterEventListener
             Move();
 
         }
+        //integrate display input
+        _thrustInput += _externalDisplayInput;
+        _externalDisplayInput = Vector3.zero;
 
         SetDirection();
         Rotate();
@@ -480,8 +556,14 @@ public class FlightController : SplitterEventListener
 
     }
 
+    private Vector3 _externalDisplayInput;
+    public void AddExternalDisplayInput(Vector3 WorldSpaceInput)
+    {
+        _externalDisplayInput += Quaternion.Inverse(body.AppliedPhysics.rotation) * WorldSpaceInput;
+    }
     private Vector3 _thrust;
     private Vector3 _thrustInput;
+    
     private void Move()
     {
 
@@ -503,13 +585,14 @@ public class FlightController : SplitterEventListener
             _thrustInput += Vector3.down;
 
 
-
         _thrust = _thrustInput.normalized;
         _thrust = body.AppliedPhysics.rotation * _thrust;
+        
 
         //body.AppliedPhysics.AddForceAtPosition(_thrust * MoveForce * Time.fixedDeltaTime, gameObject.GetComponent<SplitterAnchor>().inclusiveWorldCenterOfMass(), ForceMode.Acceleration);
         body.AppliedPhysics.AddForce(_thrust * MoveForce * Time.fixedDeltaTime, ForceMode.Acceleration);
 
+        
     }
     Quaternion _FlightRotationWhenHit = Quaternion.identity;
     Stabilizer _simSubStabilizer;

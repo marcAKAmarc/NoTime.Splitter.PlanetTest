@@ -41,10 +41,11 @@ public class LoopSoundCollection : MonoBehaviour
 
     public IEnumerator SectionA()
     {
-        if (!LoopAudio.isPlaying)
+        if (!StartAudio.isPlaying)
+        {
             StartAudio.Play();
-
-        yield return LoopWait;
+            yield return LoopWait;
+        }
 
         float fadeRefTime;
         float fadeStartValue;
@@ -81,6 +82,7 @@ public class LoopSoundCollection : MonoBehaviour
         }
 
         //not enabled
+        if(!EndAudio.isPlaying)
         EndAudio.Play();
 
         //fade loop audio

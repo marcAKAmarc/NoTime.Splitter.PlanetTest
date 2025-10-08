@@ -24,7 +24,7 @@ public class ImageAndAlpha
 public class VisorBehaviour : MonoBehaviour
 {
     public bool visorOn;
-    
+    public float visorDistanceFactor;
     public RectTransform myTransform;
     public Camera playerCamera;
     public Transform LookTransform;
@@ -61,14 +61,17 @@ public class VisorBehaviour : MonoBehaviour
             _degrees -= 360f;
         if (_degrees < -180f)
             _degrees += 360f;
-        /*if(playerCamera.aspect > 1)
-            _viewConst = playerCamera.fieldOfView / playerCamera.aspect;
-        else
-            _viewConst = playerCamera.fieldOfView * playerCamera.aspect;*/
+
+
         _viewConst = playerCamera.fieldOfView;
-        _amtFromCenter = _degrees/_viewConst;
+        _amtFromCenter = Mathf.Sin((_degrees * Mathf.Deg2Rad)) * visorDistanceFactor;//degrees/_viewConst;
         
         myTransform.anchoredPosition = new Vector2(originalPos.x, originalPos.y +  (_amtFromCenter* myTransform.sizeDelta.y));
+
+        //tan(t) = o/a
+        //tan(t)*a = o (offset)
+        //sin(t)= o/h
+        //sin(t)h = o
     }
 
     public void Update()
@@ -83,11 +86,20 @@ public class VisorBehaviour : MonoBehaviour
         }
     }
 
+
+    public void SetVisor(bool on)
+    {
+        visorOn = on;
+        if (currentVisorEvent != null)
+            StopCoroutine(currentVisorEvent);
+        currentVisorEvent = VisorEvent(visorOn);
+        StartCoroutine(currentVisorEvent);
+    }
+
     private WaitForEndOfFrame wait = new WaitForEndOfFrame();
     IEnumerator currentVisorEvent = null;
     IEnumerator VisorEvent(bool on)
     {
-        Debug.Log("Starting Visor on=" + on);
         while (true)
         {
             for (int i = 0; i < images.Count; i++)

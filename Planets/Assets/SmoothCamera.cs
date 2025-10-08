@@ -16,7 +16,7 @@ public class SmoothCamera : MonoBehaviour
     void LateUpdate()
     {
         transform.rotation = Quaternion.Lerp(transform.rotation, followTransform.rotation, SmoothFactor);//SmoothDampQuaternion(transform.rotation, followTransform.rotation, ref currentVelocity, SmoothFactor - (SmoothFactor * Mathf.Clamp01(Quaternion.Angle(transform.rotation, followTransform.rotation)/90f)));
-        transform.position = followTransform.position + followTransform.TransformDirection(followTransformRelativeOffset);
+        transform.position = followTransform.position;// + followTransform.TransformDirection(followTransformRelativeOffset);
     }
 
     private static Quaternion SmoothDampQuaternion(Quaternion current, Quaternion target, ref Vector3 currentVelocity, float smoothTime)

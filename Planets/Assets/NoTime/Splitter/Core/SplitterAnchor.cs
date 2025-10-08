@@ -37,6 +37,10 @@ namespace NoTime.Splitter
         private bool CallPhysicsSync = false;
 
         [HideInInspector]
+        public bool AllowInternalCollisions;
+
+
+        [HideInInspector]
         [NonSerialized]
         public Scene? Scene;
         private PhysicsScene PhysicsScene;
@@ -585,7 +589,26 @@ namespace NoTime.Splitter
             }
             return null;
         }
-
+        public Transform GetWorldTransform(Transform simGO, bool checkChildTransforms = false)
+        {
+            //check anchor
+            if (simGO == PhysicsAnchor.transform)
+                return this.transform;
+            //check subs
+            if (idToMainGo.ContainsKey(simGO.gameObject.GetInstanceID()))
+            {
+                return idToMainGo[simGO.gameObject.GetInstanceID()].gameObject.transform;
+            }
+            //check all child transforms
+            foreach(List<MatchedTransform> ts in PhysicsGoIdToLocalSyncs.Values)
+            {
+                foreach (MatchedTransform t in ts) {
+                    if (t.physicsTransform == simGO)
+                        return t.mainTransform;
+                }
+            }
+            return null;
+        }
         public Rigidbody GetSimulationBody(SplitterSubscriber subscriber)
         {
             return idToPhysicsGo[subscriber.gameObject.GetInstanceID()].rigidbody;
@@ -730,6 +753,12 @@ namespace NoTime.Splitter
         private Rigidbody _nmcBody;
         internal void NegateMyCollision(Collision collision)
         {
+            if (AllowInternalCollisions)
+            {
+                Debug.Log("Bailing on negation...");
+                return;
+            }
+
             if (mySubscriber == null && Body == null)
             {
                 Debug.Log("  Returning due to subscriber and body being null.");
@@ -1220,7 +1249,7 @@ namespace NoTime.Splitter
         int _psi;
         public void PhysicsSync()
         {
-            return;
+
             _psi = 0;
             for (; _psi < subscribers.Count; _psi++)
             {
@@ -1283,7 +1312,7 @@ namespace NoTime.Splitter
                 return;
 
             //test this in splitter env!
-            _mainGoRigidbody.velocity = _sub.AppliedPhysics.velocity;
+            _mainGoRigidbody.velocity = _sub.AppliedPhysics.velocity;           
             _mainGoRigidbody.angularVelocity = _sub.AppliedPhysics.angularVelocity;
             _mainGoRigidbody.position = _sub.AppliedPhysics.position;
             _mainGoRigidbody.rotation = _sub.AppliedPhysics.rotation;
@@ -1309,6 +1338,8 @@ namespace NoTime.Splitter
 
         private void SyncSubscriberRigidbody(GameObject mainGo)
         {
+            return;
+
             _SimSubscriber = idToPhysicsGo[mainGo.GetInstanceID()];
             _mainGoRigidbody = mainGo.GetComponent<Rigidbody>();
 

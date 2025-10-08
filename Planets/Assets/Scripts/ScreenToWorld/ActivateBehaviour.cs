@@ -25,7 +25,10 @@ public class ActivateBehaviour : MonoBehaviour
         {
             Type thisType = Scripts[i].GetType();
             MethodInfo theMethod = thisType.GetMethod("OnActivate");
-            theMethod.Invoke(Scripts[i], parameters);
+            if (theMethod.GetParameters().Length == 0)
+                theMethod.Invoke(Scripts[i], null);
+            else
+                theMethod.Invoke(Scripts[i], parameters);
         }
     }
 

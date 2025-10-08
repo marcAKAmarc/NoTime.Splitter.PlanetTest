@@ -95,7 +95,7 @@ public class PickUpBehaviour : MonoBehaviour
             pickedRigidbody = other.attachedRigidbody;
             pickedSubscriber = _colCheckSub;
             doIt = true;
-            Debug.Log("trigger enter - picked up rigid: " + pickedRigidbody.gameObject.name + "; sub: " + pickedSubscriber.gameObject.name);
+            //Debug.Log("trigger enter - picked up rigid: " + pickedRigidbody.gameObject.name + "; sub: " + pickedSubscriber.gameObject.name);
         }
     }
 
@@ -122,30 +122,38 @@ public class PickUpBehaviour : MonoBehaviour
         if (!doIt)
             return;
 
+        if (HoldOn == HoldType.OnClick)
+        {
+            ray.origin = subscriber.AppliedPhysics.position + (subscriber.AppliedPhysics.rotation * subToHereOffset);
+            /*ray.direction = transform.forward;
+            Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Collide);*/
 
-        ray.origin = subscriber.AppliedPhysics.position + (subscriber.AppliedPhysics.rotation * subToHereOffset);
-        /*ray.direction = transform.forward;
-        Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Collide);*/
-
-       /* ray.origin = subscriber.AppliedPhysics.position 
-            + (subscriber.AppliedPhysics.rotation * (Quaternion.Inverse(subscriber.Body.rotation) * (transform.position - subscriber.Body.position)));*/
-        ray.direction = transform.forward;
+            /* ray.origin = subscriber.AppliedPhysics.position 
+                 + (subscriber.AppliedPhysics.rotation * (Quaternion.Inverse(subscriber.Body.rotation) * (transform.position - subscriber.Body.position)));*/
+            ray.direction = transform.forward;
 
 
-        if (!press) { 
-            if (Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Ignore))
+            if (!press)
             {
-
-                Rigidbody rb = hit.rigidbody;
-
-                if (rb != null && rb.mass <= MaxMass && rb.mass >= MinMass)
+                if (Physics.Raycast(ray, out hit, pickupRange, mask, QueryTriggerInteraction.Ignore))
                 {
-                    pickedRigidbody = rb;
-                    pickedSubscriber = pickedRigidbody.transform.GetComponent<SplitterSubscriber>();
-                    localHitPoint = Quaternion.Inverse(pickedSubscriber.AppliedPhysics.rotation)
-                        * (hit.point - pickedSubscriber.AppliedPhysics.position);
-                    previousAngularDrag = pickedSubscriber.AppliedPhysics.angularDrag;
-                    
+
+                    Rigidbody rb = hit.rigidbody;
+
+                    if (rb != null && rb.mass <= MaxMass && rb.mass >= MinMass)
+                    {
+                        pickedRigidbody = rb;
+                        pickedSubscriber = pickedRigidbody.transform.GetComponent<SplitterSubscriber>();
+                        localHitPoint = Quaternion.Inverse(pickedSubscriber.AppliedPhysics.rotation)
+                            * (hit.point - pickedSubscriber.AppliedPhysics.position);
+                        previousAngularDrag = pickedSubscriber.AppliedPhysics.angularDrag;
+
+                    }
+                    else
+                    {
+                        localHitPoint = Vector3.zero;
+                        pickedRigidbody = null;
+                    }
                 }
                 else
                 {
@@ -153,16 +161,11 @@ public class PickUpBehaviour : MonoBehaviour
                     pickedRigidbody = null;
                 }
             }
-            else
-            {
-                localHitPoint = Vector3.zero;
-                pickedRigidbody = null;
-            }
+
+            IconHighlighter.CanPickUp = pickedRigidbody != null;
         }
 
-        IconHighlighter.CanPickUp = pickedRigidbody != null;
-
-        if (press && pickedRigidbody != null)
+        if ((HoldOn == HoldType.OnTrigger || press) && pickedRigidbody != null)
         {
             Vector3 targetPosition = hoverTarget.position;
             Vector3 forcePos = 

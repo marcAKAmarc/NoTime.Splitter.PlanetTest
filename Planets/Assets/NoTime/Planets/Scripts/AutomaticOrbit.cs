@@ -12,7 +12,7 @@ public class AutomaticOrbit : MonoBehaviour
     [Tooltip("if outside orbital path, no further forces applied.  this allows for nudging out of orbit. 0f value to ignore")]
     public float orbitalPathWidth = 1f;
 
-    [Tooltip("Flight Controller is only for adding rocket engines and fx.")]
+    [Tooltip("Flight Controller is for rocket engines and FX, also if defined, orbit will not have an effect if not powered.")]
     public FlightController flightController;
 
 
@@ -25,8 +25,11 @@ public class AutomaticOrbit : MonoBehaviour
 
     float _initialDistance = 0f;
 
+    private SplitterSubscriber sub;
+
     private void Start()
     {
+        transform.TryGetComponent(out sub);
         if (OnStartOnly)
             StartCoroutine("ShutOffIn10Seconds");
     }
@@ -44,6 +47,9 @@ public class AutomaticOrbit : MonoBehaviour
         if (!doIt)
             return;
 
+        if (flightController != null && (!flightController.isActiveAndEnabled || !flightController.PoweredByDrainer))
+            return;
+
         //OUT OF RANGE 
         if (gravityObject.field == null)
             return;
@@ -56,22 +62,30 @@ public class AutomaticOrbit : MonoBehaviour
             return;
 
         Vector3 orbitDirection;
-        if (transform.GetComponent<SplitterSubscriber>().AppliedPhysics.velocity.sqrMagnitude < 1f)
+        if (sub.AppliedPhysics.velocity.sqrMagnitude < 1f)
             orbitDirection = Vector3.ProjectOnPlane(transform.forward, gravityObject.GravityDirection.normalized).normalized;
         else
-            orbitDirection = Vector3.ProjectOnPlane(transform.GetComponent<SplitterSubscriber>().AppliedPhysics.velocity.normalized, gravityObject.GravityDirection.normalized).normalized;
+            orbitDirection = Vector3.ProjectOnPlane(sub.AppliedPhysics.velocity.normalized, gravityObject.GravityDirection.normalized).normalized;
 
         _goalV = Mathf.Sqrt(gravityObject.GravityAcceleration * gravityObject.GravityDistance) * orbitDirection;
 
         //have to add a small balancing force to keep object in orbit because physx 
         _goalV += Mathf.Clamp(_initialDistance - gravityObject.GravityDistance, 0f, .001f) * -gravityObject.GravityDirection;
-        _deltaV = Vector3.ClampMagnitude(_goalV - transform.GetComponent<SplitterSubscriber>().AppliedPhysics.velocity, maxVelocityChange);
-        transform.GetComponent<SplitterSubscriber>().AppliedPhysics.AddForce(_deltaV, ForceMode.VelocityChange);
+        _deltaV = Vector3.ClampMagnitude(_goalV - sub.AppliedPhysics.velocity, maxVelocityChange);
+        sub.AppliedPhysics.AddForce(_deltaV, ForceMode.VelocityChange);
+
+        if (_deltaV.sqrMagnitude < 1f)
+            return;
 
         if (flightController != null)
         {
-            flightController.RegisterAutopilotThrust(_deltaV);
+            flightController.AddExternalDisplayInput(_deltaV);
         }
+    }
+
+    public void OnActivate()
+    {
+        this.enabled = !this.enabled;
     }
 
     private void OnEnable()

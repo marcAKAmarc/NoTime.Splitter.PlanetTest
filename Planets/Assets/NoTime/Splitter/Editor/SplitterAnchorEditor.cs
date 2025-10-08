@@ -43,6 +43,13 @@ namespace NoTime.Splitter.Editors
                     )
                 );
                 /*EditorGUILayout.PropertyField(
+                    serializedObject.FindProperty("AllowInternalCollisions"),
+                    new GUIContent(
+                        "Allow Internal Collisions",
+                        "Set to true to limit drifting of subscribers in fast moving anchors.  Set to false to limit the effects of internal subscribers on the external anchor."
+                    )
+                );*/
+                /*EditorGUILayout.PropertyField(
                     serializedObject.FindProperty("CallPhysicsSync"),
                     new GUIContent(
                         "Call Physics.Sync()",

@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
+using static NoTime.Splitter.Demo.hitHelpers;
 using static UnityEngine.GraphicsBuffer;
 
 namespace NoTime.Splitter.Demo
@@ -25,6 +26,7 @@ namespace NoTime.Splitter.Demo
         private Transform _verticalLook;
         private Quaternion VerticalLookStart;
         public float JumpForce;
+        public bool MarioJumpEnabled;
         public float JetpackForce;
         private bool JetpackUp = false;
         private bool JetpackDown = false;
@@ -35,13 +37,14 @@ namespace NoTime.Splitter.Demo
         public string CutoffParameter;
         public FootstepSoundsBehaviour footstepSounds;
         public PhysicalSounds physicalSounds;
-
+        public VisorBehaviour visorBehaviour;
         [HideInInspector]
         public bool inControllerPosition = false;
 
         private SplitterSubscriber body;
-
+        public HintController hintController;
         CameraShakeInput jetpackShake;
+        public CameraController camController;
         private void Awake()
         {
             jetpackShake = new CameraShakeInput
@@ -57,26 +60,35 @@ namespace NoTime.Splitter.Demo
             _spearRotationTarget = transform.rotation;
             body = transform.GetComponent<SplitterSubscriber>();
         }
+
         private void Start()
         {
             _verticalLook = VerticalLook;
             VerticalLookStart = Quaternion.identity;
         }
 
-        
-        
+
+        bool prevInspace;
+        bool prevInControllerPosition;
         bool freezeLook;
+        bool lowAtmosphere;
         void Update()
         {
+            if (_gravityObject)
+                lowAtmosphere = _gravityObject.GravityAcceleration < 3f;
+
             rotationX += Input.GetAxis("Mouse X") * sensitivityX;
             _rotationY += Input.GetAxis("Mouse Y") * sensitivityY;
             ShouldJump = ShouldJump || Input.GetKeyDown(KeyCode.Space);
+            
             JetpackUp = (!Grounded && Input.GetKeyDown(KeyCode.Space)) || (JetpackUp && Input.GetKey(KeyCode.Space));
             JetpackDown = (!Grounded && Input.GetKeyDown(KeyCode.LeftShift)) || (JetpackDown && Input.GetKey(KeyCode.LeftShift));
             JetpackFwd =  (InSpace && Input.GetKeyDown(KeyCode.W)) || (JetpackFwd && Input.GetKey(KeyCode.W));
             JetpackBack = (InSpace && Input.GetKeyDown(KeyCode.S)) || (JetpackBack && Input.GetKey(KeyCode.S));
             JetpackLeft = (InSpace && Input.GetKeyDown(KeyCode.A)) || (JetpackLeft && Input.GetKey(KeyCode.A));
             JetpackRight =(InSpace && Input.GetKeyDown(KeyCode.D)) || (JetpackRight && Input.GetKey(KeyCode.D));
+
+            ShouldMarioJump = MarioJumpEnabled && !InSpace && !JetpackUp && (ShouldMarioJump || ShouldJump) && (Input.GetKeyDown(KeyCode.Space) || Input.GetKey(KeyCode.Space));
             freezeLook = Input.GetKey(KeyCode.F);
 
 
@@ -93,7 +105,7 @@ namespace NoTime.Splitter.Demo
                 jetpackSound.enabled = false;
             }
 
-            if (InSpace)
+            if (InSpace || lowAtmosphere)
             {
                 ExternalsMixer.SetFloat(CutoffParameter, 150f);
             }
@@ -117,8 +129,23 @@ namespace NoTime.Splitter.Demo
                 else
                     footstepSounds.CurrentCharacterSpeed = body.AppliedPhysics.velocity.magnitude;
             }
+            if(prevInspace != InSpace)
+            {
+                visorBehaviour.SetVisor(InSpace);
+                if (InSpace)
+                    hintController.ActivateHint(hintType.JetpackInSpace);
+                else
+                    hintController.DeactivateHint(hintType.JetpackInSpace);
+            }
 
+            //camera stuff
+            if (inControllerPosition && !prevInControllerPosition)
+                camController.AddState(CameraController.CameraStateType.Pilot);
+            if (!inControllerPosition && prevInControllerPosition)
+                camController.RemoveState(CameraController.CameraStateType.Pilot);
 
+            prevInspace = InSpace;
+            prevInControllerPosition = inControllerPosition;
         }
         private bool Walking()
         {
@@ -131,7 +158,7 @@ namespace NoTime.Splitter.Demo
         Vector3 previousPosition;
         bool Moved = false;
         bool ShouldJump = false;
-
+        bool ShouldMarioJump = false;
 
         bool InSpace = false;
         private void FixedUpdate()
@@ -192,7 +219,7 @@ namespace NoTime.Splitter.Demo
 
                 if (Grounded)
                 {
-                    direction = Vector3.ProjectOnPlane(direction, _hit.normal).normalized;
+                    direction = Vector3.ProjectOnPlane(direction, worldHit.normal).normalized;
                     
 
                     //body.AppliedPhysics.AddForce((body.AppliedPhysics.rotation * Vector3.up * GroundedRiseAmt / Time.fixedDeltaTime) * body.AppliedPhysics.mass);
@@ -254,12 +281,12 @@ namespace NoTime.Splitter.Demo
         Vector3 fricVel;
         Vector3 normalDir;
         private GravityObject _gravityObject;
-        private SplitterSubscriber _hitSub;
         private SplitterAnchor _hitAnchor;
 
         private void FrictionAndSlowdown()
         {
-            if (InSpace || !Grounded || TempDisableFriction || _hit.rigidbody == null)
+            
+            if (InSpace || !Grounded || TempDisableFriction || worldHit.rigidbody == null)
             {
                 /*if (_hit.rigidbody == null)
                     Debug.Log("No rigidbody on _hit.");
@@ -272,10 +299,9 @@ namespace NoTime.Splitter.Demo
 
             }
 
-            if (_hit.rigidbody != null)
+            if (worldHit.rigidbody != null)
             {
-                _hit.rigidbody.TryGetComponent(out _hitSub);
-                _hit.rigidbody.TryGetComponent(out _hitAnchor);
+                worldHit.rigidbody.TryGetComponent(out _hitAnchor);
             }
             fricVel = body.AppliedPhysics.velocity;
 
@@ -285,10 +311,10 @@ namespace NoTime.Splitter.Demo
                 //Debug.Log("working from same anchor");
                 fricVel -= body.Anchor.AnchorVelocityToWorldVelocity(Vector3.zero, body.AppliedPhysics.position);
             }
-            else if (_hitSub != null)
+            else if (worldHit.sub != null)
             {
                 //Debug.Log(" working from hitsub");
-                fricVel -= _hitSub.AppliedPhysics.GetPointVelocity(body.AppliedPhysics.position);
+                fricVel -= worldHit.sub.AppliedPhysics.GetPointVelocity(body.AppliedPhysics.position);
             }
             //what about just rigids?
             else if (body.Anchor != null)
@@ -297,7 +323,7 @@ namespace NoTime.Splitter.Demo
             }
             else
             {
-                fricVel -= _hit.rigidbody.GetPointVelocity(body.AppliedPhysics.position);
+                fricVel -= worldHit.rigidbody.GetPointVelocity(body.AppliedPhysics.position);
             }
 
             if (
@@ -324,6 +350,22 @@ namespace NoTime.Splitter.Demo
                 Grounded = false;
 
             }
+            
+
+            if(ShouldMarioJump && 
+                (
+                    (ShouldJump) 
+                    || (body.Anchor != null && Vector3.Dot(body.AppliedPhysics.velocity.normalized, -_gravityObject.GravityDirection.normalized) > 0f)
+                )
+            )
+            {
+                body.AppliedPhysics.AddForce(transform.up  * _gravityObject.GravityAcceleration/2f, ForceMode.Acceleration);
+            }
+            else
+            {
+                ShouldMarioJump = false;
+            }
+
             ShouldJump = false;
         }
 
@@ -351,10 +393,13 @@ namespace NoTime.Splitter.Demo
         private Vector3 gravDir;
         private bool wasGrounded;
         private SplitterSubscriber GroundCheckHitSub;
+
+        private WorldHit worldHit;
         private void GroundCheck()
-        {
+        {   
             wasGrounded = Grounded;
 
+            
             if (InSpace)
             {
                 Grounded = false;
@@ -364,25 +409,62 @@ namespace NoTime.Splitter.Demo
             }
             if (preventGroundCheck || TempDisableGroundCheck)
                 return;
-            //gravDir = (_gravityObject.GravityDirection * _gravityObject.GravityAcceleration).normalized;
-            //set collider layer to tmpExclue
-            _oldLayer = gameObject.layer;
-            gameObject.layer = 31;
-            _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOriginOffset);
-            Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, (_spherePos - body.AppliedPhysics.position).normalized, out _hit, GroundedOriginCastDistance, GroundLayers, QueryTriggerInteraction.Ignore);
-            gameObject.layer = _oldLayer;
+
+            
+
+            Vector3 pointUnderneath;
+            Vector3 worldPoint = Vector3.zero;
+            //ugh do this in Anchor? //this fixes it but it fucks up so much shit cause we depend on _hit elsewhere... see below...
+
+            //in anchor space, do the sphere cast and placement of player
+            if (body.Anchor && body.Anchor.Scene.HasValue) {
+                
+                Rigidbody simBody = body.Anchor.GetSimulationBody(body);
+                
+                _oldLayer = simBody.gameObject.layer;
+                simBody.gameObject.layer = 31;
+
+                _spherePos = simBody.position + (simBody.rotation * -Vector3.up * GroundedOriginOffset);
+                Grounded = body.Anchor.Scene.Value.GetPhysicsScene().SphereCast(simBody.position, GroundedRadius, (_spherePos - simBody.position).normalized, out _hit, GroundedOriginCastDistance, GroundLayers, QueryTriggerInteraction.Ignore);
+
+                simBody.gameObject.layer = _oldLayer;
+
+                if (Grounded) {
+                    pointUnderneath = Vector3.Project(_hit.point - simBody.position, simBody.rotation * Vector3.down) + simBody.position;
+                    simBody.position = pointUnderneath + simBody.rotation * Vector3.up * GroundedRiseAmt;
+                }
+                _hit.toWorldHit(body.Anchor, out worldHit);
+            }
+            else
+            //in real space, do raycast and placement of player
+            {
+                //set collider layer to tmpExclue
+                _oldLayer = gameObject.layer;
+                gameObject.layer = 31;
+
+                _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOriginOffset);
+                Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, (_spherePos - body.AppliedPhysics.position).normalized, out _hit, GroundedOriginCastDistance, GroundLayers, QueryTriggerInteraction.Ignore);
+
+                gameObject.layer = _oldLayer;
+                if (Grounded)
+                {
+                    pointUnderneath = Vector3.Project(_hit.point - body.AppliedPhysics.position, body.AppliedPhysics.rotation * Vector3.down) + body.AppliedPhysics.position;
+
+
+                    body.AppliedPhysics.position =
+                        pointUnderneath +
+                        (body.AppliedPhysics.rotation * Vector3.up //body up
+                            *
+                            GroundedRiseAmt
+                        );
+                    _hit.toWorldHit(out worldHit);
+                }
+            }
+
 
             if (Grounded)
             {
-                Vector3 pointUnderneath = Vector3.Project(_hit.point - body.AppliedPhysics.position, body.AppliedPhysics.rotation * Vector3.down) + body.AppliedPhysics.position;
 
-
-                body.AppliedPhysics.position =
-                    pointUnderneath +
-                    (body.AppliedPhysics.rotation * Vector3.up //body up
-                        *
-                        GroundedRiseAmt
-                    );
                 if (_gravityObject == null)
                     _gravityObject = transform.GetComponent<GravityObject>();
 
@@ -428,23 +510,49 @@ namespace NoTime.Splitter.Demo
             if(!wasGrounded && Grounded)
             {
                 
-                if(_hit.rigidbody.gameObject.TryGetComponent(out GroundCheckHitSub))
+                if(worldHit.sub)
                 {
                     physicalSounds.SimulateCollision(
-                        Mathf.Min(GroundCheckHitSub.AppliedPhysics.mass, body.AppliedPhysics.mass)
-                            * (GroundCheckHitSub.AppliedPhysics.GetPointVelocity(_hit.point) - body.AppliedPhysics.velocity).sqrMagnitude,
-                        _hit.point 
+                        Mathf.Min(worldHit.sub.AppliedPhysics.mass, body.AppliedPhysics.mass)
+                            * (worldHit.sub.AppliedPhysics.GetPointVelocity(worldHit.point) - body.AppliedPhysics.velocity).sqrMagnitude,
+                        worldHit.point
                     );
                 }
                 else
                 {
                     physicalSounds.SimulateCollision(
-                        Mathf.Min(_hit.rigidbody.mass, body.AppliedPhysics.mass)
-                        * (_hit.rigidbody.velocity - body.AppliedPhysics.velocity).sqrMagnitude,
-                        _hit.point
+                        Mathf.Min(worldHit.rigidbody.mass, body.AppliedPhysics.mass)
+                        * (worldHit.rigidbody.velocity - body.AppliedPhysics.velocity).sqrMagnitude,
+                        worldHit.point
                      );
                 }
             }
+
+            /*//should we just redo the cast to get the hit?! gross!
+            if (body.Anchor && body.Anchor.Scene.HasValue)
+            {
+                //set collider layer to tmpExclue
+                _oldLayer = gameObject.layer;
+                gameObject.layer = 31;
+
+                _spherePos = body.AppliedPhysics.position + (body.AppliedPhysics.rotation * -Vector3.up * GroundedOriginOffset);
+                Grounded = gameObject.scene.GetPhysicsScene().SphereCast(body.AppliedPhysics.position, GroundedRadius, (_spherePos - body.AppliedPhysics.position).normalized, out _hit, GroundedOriginCastDistance, GroundLayers, QueryTriggerInteraction.Ignore);
+
+                gameObject.layer = _oldLayer;
+                if (Grounded)
+                {
+                    pointUnderneath = Vector3.Project(_hit.point - body.AppliedPhysics.position, body.AppliedPhysics.rotation * Vector3.down) + body.AppliedPhysics.position;
+
+
+                    body.AppliedPhysics.position =
+                        pointUnderneath +
+                        (body.AppliedPhysics.rotation * Vector3.up //body up
+                            *
+                            GroundedRiseAmt
+                        );
+                    worldPoint = _hit.point;
+                }
+            }*/
         }
         private WaitForSeconds PreventGroundCheckTime = new WaitForSeconds(.2f);
         private bool preventGroundCheck = false;
@@ -512,8 +620,56 @@ namespace NoTime.Splitter.Demo
             InSpace = false;
             //body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotation;
         }
+    }
 
+    public static class hitHelpers
+    {
+       
+        public struct WorldHit
+        {
+            public Vector3 point;
+            public Rigidbody rigidbody;
+            public SplitterSubscriber sub;
+            public Vector3 normal;
+        }
         
+        public static WorldHit toWorldHit(this RaycastHit worldspaceHit, SplitterAnchor anchorContext, out WorldHit hit)
+        {
+            hit.point = Vector3.zero;
+            hit.normal = Vector3.zero;
+            hit.rigidbody = null;
+            hit.sub = null;
+
+            hit.point = anchorContext.AnchorPointToWorldPoint(worldspaceHit.point);
+            hit.normal = anchorContext.AnchorDirectionToWorldDirection(worldspaceHit.normal);
+
+            if (worldspaceHit.rigidbody)
+                anchorContext.GetWorldTransform(worldspaceHit.rigidbody.transform).TryGetComponent(out hit.rigidbody);
+            else
+                hit.rigidbody = null;
+
+            if (hit.rigidbody != null)
+                hit.rigidbody.transform.TryGetComponent(out hit.sub);
+
+            return hit;
+        }
+
+        public static WorldHit toWorldHit(this RaycastHit worldspaceHit, out WorldHit hit)
+        {
+            hit.point = Vector3.zero;
+            hit.normal = Vector3.zero;
+            hit.rigidbody = null;
+            hit.sub = null;
+
+            hit.point = worldspaceHit.point;
+            hit.normal = worldspaceHit.normal;
+            hit.rigidbody = worldspaceHit.rigidbody;
+
+            if (hit.rigidbody != null)
+                hit.rigidbody.transform.TryGetComponent(out hit.sub);
+
+            return hit;
+        }
     }
 }
 
