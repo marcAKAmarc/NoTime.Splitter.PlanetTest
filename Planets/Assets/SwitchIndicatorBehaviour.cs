@@ -45,7 +45,6 @@ public class SwitchIndicatorBehaviour : MonoBehaviour
         if (fController.PoweredByDrainer != wasPowered)
         {
             InitJourney();
-            Debug.Log("Journey Inited");
         }
 
         float goal = to[0];

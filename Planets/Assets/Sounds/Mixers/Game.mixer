@@ -14,6 +14,39 @@ AudioMixerEffectController:
   m_SendTarget: {fileID: 0}
   m_EnableWetMix: 0
   m_Bypass: 0
+--- !u!244 &-3787602023191021351
+AudioMixerEffectController:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_EffectID: 7851c8e23bea066458b7aeda20e4f989
+  m_EffectName: Attenuation
+  m_MixLevel: 53fc0b53276debb4880b5a5c89bec5ff
+  m_Parameters: []
+  m_SendTarget: {fileID: 0}
+  m_EnableWetMix: 0
+  m_Bypass: 0
+--- !u!243 &-3608295676073863720
+AudioMixerGroupController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Music
+  m_AudioMixer: {fileID: 24100000}
+  m_GroupID: 6bf8424f0142aaf44963acef01dffca2
+  m_Children: []
+  m_Volume: cd20fb9079543264ab4e6aaabdea53e2
+  m_Pitch: 6df48d94a7d64eb43a525181868baaaa
+  m_Send: 00000000000000000000000000000000
+  m_Effects:
+  - {fileID: -3787602023191021351}
+  m_UserColorIndex: 0
+  m_Mute: 0
+  m_Solo: 0
+  m_BypassEffects: 0
 --- !u!241 &24100000
 AudioMixerController:
   m_ObjectHideFlags: 0
@@ -32,10 +65,13 @@ AudioMixerController:
   m_ExposedParameters:
   - guid: 977521381efb2114389321b65f76799f
     name: MasterVolume
+  - guid: cd20fb9079543264ab4e6aaabdea53e2
+    name: MusicVolume
   m_AudioMixerGroupViews:
   - guids:
     - 4d6d8b73fb0b1b64c8070c8716161c2c
     - d659654b68999e64381fd249e5ee0b56
+    - 6bf8424f0142aaf44963acef01dffca2
     name: View
   m_CurrentViewIndex: 0
   m_TargetSnapshot: {fileID: 24500006}
@@ -50,6 +86,7 @@ AudioMixerGroupController:
   m_GroupID: 4d6d8b73fb0b1b64c8070c8716161c2c
   m_Children:
   - {fileID: 801773764980338119}
+  - {fileID: -3608295676073863720}
   m_Volume: 977521381efb2114389321b65f76799f
   m_Pitch: 4151a4549a6540e4fb06f0fab18a538a
   m_Send: 00000000000000000000000000000000
@@ -83,6 +120,7 @@ AudioMixerSnapshotController:
   m_AudioMixer: {fileID: 24100000}
   m_SnapshotID: bcae6a8f8aa7943438c3a28bae07e1d6
   m_FloatValues:
+    cd20fb9079543264ab4e6aaabdea53e2: 1
     977521381efb2114389321b65f76799f: -80
   m_TransitionOverrides: {}
 --- !u!243 &801773764980338119

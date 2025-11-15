@@ -17,6 +17,8 @@ public class SimpleTitleBehaviour : MonoBehaviour
     public Image titleImage;
     public Image blackout;
     public RigidbodyFpsController rigidbodyFpsController;
+    public HealthBehaviour playerHealth;
+    private float playerHealthRate;
     public SplitterSubscriber subscriber;
     public AudioMixer GameMixer;
     private enum states { fadeIn, initial, fadeOut, gameFadeIn, game}
@@ -24,7 +26,10 @@ public class SimpleTitleBehaviour : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
+        
         rigidbodyFpsController.enabled = false;
+        playerHealthRate = playerHealth.Lifetime;
+        playerHealth.Lifetime = float.MaxValue;
         for (int i = 0; i < titleTexts.Count; i++)
         {
             titleTexts[i].color = new Color(titleTexts[i].color.r, titleTexts[i].color.g, titleTexts[i].color.b, 0);
@@ -114,6 +119,7 @@ public class SimpleTitleBehaviour : MonoBehaviour
         else if (state == states.gameFadeIn)
         {
             rigidbodyFpsController.enabled = true;
+            playerHealth.Lifetime = playerHealthRate;
             subscriber.AppliedPhysics.constraints = RigidbodyConstraints.None;
             subscriber.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
             if (Input.anyKeyDown)
