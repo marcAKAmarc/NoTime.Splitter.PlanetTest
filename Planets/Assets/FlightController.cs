@@ -61,7 +61,9 @@ public class FlightController : SplitterEventListener
     public AudioSource powerOn, powerOff;
     public AudioMixer shipHumMixer;
     public float shipHumFadeTime;
+    public LookRotationBehaviour lookRotationBehaviour;
     Vector3 autopilotThrust;
+    public float MinimumDisplayThrust;
 
     public float GetStabilization()
     {
@@ -238,7 +240,7 @@ public class FlightController : SplitterEventListener
                 camShake.AddInput(new CameraShakeInput
                 {
                     Attack = .2f,
-                    Amplitude = relVel.sqrMagnitude / 5000f,
+                    Amplitude = (relVel.sqrMagnitude / 5000f) * (Mathf.Min(other.rigidbody.mass, rigidbody.mass)/rigidbody.mass) ,
                     Frequency = 10f,
                     Decay = .8f,
                     Asymmetry = new Vector2(.8f, .64f),
@@ -335,6 +337,8 @@ public class FlightController : SplitterEventListener
                 //Door.DoorRequestState = BrassShipDoorBehavior.DoorRequestStates.closed;
                 
                 controllerLookTransform = potentialController.GetComponent<RigidbodyFpsController>().VerticalLook;
+                lookRotationBehaviour.SetLookTransform(controllerLookTransform);
+
                 foreach (var light in InteriorLights)
                 {
                     light.Switch(true);
@@ -550,16 +554,41 @@ public class FlightController : SplitterEventListener
         _thrustInput += _externalDisplayInput;
         _externalDisplayInput = Vector3.zero;
 
-        SetDirection();
-        Rotate();
+        //SetDirection();
+        //Rotate();
 
+        HandleRoll();
+        HandleLookRotation();
 
+        if (PoweredByDrainer)
+        {
+            if (StabilizationCapability < 1f)
+                StabilizationCapability += Time.fixedDeltaTime / 4f;
+            if (StabilizationCapability > 1f)
+                StabilizationCapability = 1f;
+        }
+        else
+        {
+            StabilizationCapability = 0f;
+        }
     }
 
     private Vector3 _externalDisplayInput;
     public void AddExternalDisplayInput(Vector3 WorldSpaceInput)
     {
+        WorldSpaceInput = new Vector3(
+            ApplyMinimumThrust(WorldSpaceInput.x),
+            ApplyMinimumThrust(WorldSpaceInput.y),
+            ApplyMinimumThrust(WorldSpaceInput.z)
+        );
         _externalDisplayInput += Quaternion.Inverse(body.AppliedPhysics.rotation) * WorldSpaceInput;
+    }
+    private float ApplyMinimumThrust(float v)
+    {
+        if (v < Mathf.Abs(MinimumDisplayThrust))
+            return 0f;
+        else
+            return v;
     }
     private Vector3 _thrust;
     private Vector3 _thrustInput;
@@ -598,11 +627,7 @@ public class FlightController : SplitterEventListener
     Stabilizer _simSubStabilizer;
     void SetDirection()
     {
-        /*if (!passengerPresent)
-        {
-            GoalRotation = body.AppliedPhysics.rotation;
-            return;
-        }*/
+        //unused
 
         if (controlled)
         {
@@ -630,8 +655,36 @@ public class FlightController : SplitterEventListener
     }
     private void Rotate()
     {
+        //unused
         body.SmoothRotate(GoalRotation, maxRotateSpeed, rotateFactor, dampenFactor, Mathf.Pow(StabilizationCapability, 4f));
 
+    }
+
+    private void HandleRoll()
+    {
+        if (!controlled || !PoweredByDrainer)
+            return;
+
+        if (RollInstalled && Input.GetKey(KeyCode.Q))
+            body.AppliedPhysics.AddRelativeTorque(Vector3.forward * RollSensitivity * body.AppliedPhysics.mass);
+        if (RollInstalled && Input.GetKey(KeyCode.E))
+            body.AppliedPhysics.AddRelativeTorque(-Vector3.forward * RollSensitivity * body.AppliedPhysics.mass);
+    }
+    private void HandleLookRotation()
+    {
+        if (!controlled || !PoweredByDrainer)
+            lookRotationBehaviour.enabled = false;
+        else
+        {
+            if (Input.GetKey(KeyCode.Tab))
+            {
+                lookRotationBehaviour.enabled = true;
+            }
+            else
+            {
+                lookRotationBehaviour.enabled = false;
+            }
+        }
     }
 
     private Vector3 RelativeVelocity(Rigidbody origin, Rigidbody measure)

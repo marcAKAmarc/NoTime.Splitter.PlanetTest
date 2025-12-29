@@ -8,7 +8,7 @@ using UnityEngine;
 [Serializable]
 public enum hintType
 {
-    WalkingMovement, Jumping, JetpackOnPlanet, HealthIntro, Health, Pilot, StargemPower, ShipControls, NULL, JetpackInSpace, ShipTut1, ShipTut2, ShipTut3
+    WalkingMovement, Jumping, JetpackOnPlanet, HealthIntro, Health, Pilot, StargemPower, ShipControls, NULL, JetpackInSpace, ShipTut1, ShipTut2, ShipTut3, ShipTut4
 }
 
 [Serializable]

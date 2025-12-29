@@ -1,0 +1,7 @@
+Environment
+ -Has different types of assets listed
+EnvironmentReactor
+ -Has private EnvironmentCollision Stack
+ -Has references to all sorts of swappable components
+OwnLayer...
+

@@ -44,6 +44,9 @@ public class AlignWithGravity : SplitterEventListener
             slerpT = rotationFactor * gravObj.GravityAcceleration / 9.8f;
         else
             slerpT = rotationFactor;
+        if (optionalFlightController)
+            slerpT *= optionalFlightController.GetStabilization();
+
 
         float angle;
         Vector3 axis;

@@ -41,24 +41,28 @@ public class LoopSoundCollection : MonoBehaviour
 
     public IEnumerator SectionA()
     {
-        if (!StartAudio.isPlaying)
+        float fadeRefTime;
+        float fadeStartValue;
+
+        LoopAudio.outputAudioMixerGroup.audioMixer.GetFloat(LoopFadeParameterName, out fadeStartValue);
+        fadeStartValue = ToLinear(fadeStartValue);
+        if (!StartAudio.isPlaying && fadeStartValue <= .01f)
         {
             StartAudio.Play();
             yield return LoopWait;
         }
 
-        float fadeRefTime;
-        float fadeStartValue;
+
         //loop and fade in
         if (enabled)
         {
             //fade in
-            LoopAudio.outputAudioMixerGroup.audioMixer.SetFloat(LoopFadeParameterName, ToDecibal(.00001f));
+            //LoopAudio.outputAudioMixerGroup.audioMixer.SetFloat(LoopFadeParameterName, ToDecibal(.00001f));
             yield return null;
             if (!LoopAudio.isPlaying)
                 LoopAudio.Play();
             fadeRefTime = Time.time;
-            LoopAudio.outputAudioMixerGroup.audioMixer.GetFloat(LoopFadeParameterName, out fadeStartValue);
+            
             fadeStartValue = ToLinear(fadeStartValue);
             while (Time.time - fadeRefTime <= LoopFadeInTime)
             {

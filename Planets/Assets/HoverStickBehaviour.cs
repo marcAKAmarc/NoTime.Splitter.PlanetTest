@@ -10,9 +10,17 @@ public class HoverStickBehaviour : MonoBehaviour
     private float currentJourney;
     private Vector3 startPos;
     private Quaternion startRot;
+    public Transform soundOriginal;
+    private List<Transform> sounds;
 
     public FlightController fController;
     // Start is called before the first frame update
+    private void Awake()
+    {
+        soundWait = new WaitForSeconds(5f);
+        sounds = new List<Transform>();
+    }
+
     private void OnEnable()
     {
         InitJourney();
@@ -23,6 +31,23 @@ public class HoverStickBehaviour : MonoBehaviour
         CycleTos();
     }
 
+    private WaitForSeconds soundWait;
+    IEnumerator DeleteSound()
+    {
+        yield return soundWait;
+        if (sounds.Count > 0)
+        {
+            Destroy(sounds[sounds.Count - 1].gameObject);
+            sounds.RemoveAt(sounds.Count - 1);
+        }
+    }
+
+    private void ClickSound()
+    {
+        sounds.Insert(0, Instantiate(soundOriginal, soundOriginal.parent));
+        sounds[0].gameObject.SetActive(true);
+        StartCoroutine(DeleteSound());
+    }
     // Update is called once per frame
     void Update()
     {
@@ -61,5 +86,7 @@ public class HoverStickBehaviour : MonoBehaviour
         JourneyStart = Time.time;
         startPos = transform.localPosition;
         startRot = Quaternion.Inverse(transform.parent.rotation) * transform.rotation;
+
+        ClickSound();
     }
 }

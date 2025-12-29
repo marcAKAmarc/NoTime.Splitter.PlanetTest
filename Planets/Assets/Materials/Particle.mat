@@ -11,6 +11,7 @@ Material:
   m_Shader: {fileID: 211, guid: 0000000000000000f000000000000000, type: 0}
   m_ValidKeywords:
   - _ALPHABLEND_ON
+  - _FADING_ON
   m_InvalidKeywords: []
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 0
@@ -63,9 +64,9 @@ Material:
     m_Floats:
     - _BlendOp: 0
     - _BumpScale: 1
-    - _CameraFadingEnabled: 0
-    - _CameraFarFadeDistance: 0.2
-    - _CameraNearFadeDistance: 0.1
+    - _CameraFadingEnabled: 1
+    - _CameraFarFadeDistance: 10
+    - _CameraNearFadeDistance: 3
     - _ColorMode: 0
     - _Cull: 2
     - _Cutoff: 0.5
@@ -94,7 +95,7 @@ Material:
     - _UVSec: 0
     - _ZWrite: 0
     m_Colors:
-    - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}
+    - _CameraFadeParams: {r: 3, g: 0.14285715, b: 0, a: 0}
     - _Color: {r: 8.000349, g: 8.000349, b: 8.000349, a: 0.45470393}
     - _ColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

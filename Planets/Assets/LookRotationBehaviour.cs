@@ -26,14 +26,19 @@ public class LookRotationBehaviour : MonoBehaviour
         LookTransform = t;
     }
 
-    private void AlignRotationWithLook(Quaternion Look)
+    private void FixedUpdate()
+    {
+        if(fController.isActiveAndEnabled && fController.PoweredByDrainer)
+            AlignRotationWithLook();
+    }
+    private void AlignRotationWithLook()
     {
 
         //bail if not stabilizable
         if (fController.GetStabilization() == 0f)
             return;
 
-        Quaternion target = Quaternion.FromToRotation(sub.AppliedPhysics.rotation * Vector3.down, LookTransform.forward);
+        Quaternion target = Quaternion.FromToRotation(sub.AppliedPhysics.rotation * Vector3.forward, LookTransform.forward);
 
         float slerpT = rotationFactor;
 

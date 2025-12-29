@@ -1,0 +1,57 @@
+You have levels of Power or something that are needed to get past certain locks.
+The level of power is increased by successfully getting to a save zone.
+To enter the save zone you need to obtain a certain number of gems.
+
+You can not simply go to the same gem area every time, as they will disappear the next reincarnation.
+
+
+Spit balling on this shit
+what if it is like an indiana jones thing but your aliens coveting old religious items from earth.  And one team is like this belongs in a museum and the other is like this shit belongs in a private collection and the other is like this shit is for me cause it is powerful.
+
+I really like the food thing though cause it is so cozy.  I think it should be anchorite themed.  Living in caves.
+
+Need:
+Food, a Cave.
+If no food, karma down.  If no cave, karma down.
+On different days of karma, different things appear, like ships, or like guidance.
+
+
+visceralia:
+a thought about trying to get to a lake where catching a fish is almost automatic, and zombies come (or just an enemy) in a few seconds.
+
+needing to get to a few elements to solve the requirement of surviving a cycle.
+
+in rain world it is food.  who knows what it is in this one, but we need a meter just the like food in rain world.  if each world has different requirements, those huds appear as you enter the atmosphere.
+
+first planet is just two constants: food and water.  water pulls you out - constantly moving toward water sources to relieve immediate thurst.  after thirst, next most present is hunger.  Hunger is something you have to search for, or take the opportunity when it comes.  potentially there is something that also repels you: a dangerous animal, or environmental area, or unwanted extra work, a soft lock of somesort.
+
+and of course there needs to be some kind of rest/save/end of cycle when things must be done by... but why.  it could be resting in your religious churchy shelter where you have like an alter.   You can build one of these per planet.  Some planets already have some of these. Maybe this is rouge lite element that dosn't destroy when you game over?  Good story telling element these buildings are.  Imagine coming upon a planet that has a little town of these shelters that you didn't make.
+
+Anyway.  Each planet might have one extra needed resource management item or something that is a little different.  Maybe one planet has the need for a fire to go to sleep cause it is so cold so you need a lot of wood.
+
+Or perhaps you need something every other day on a new planet cause of large climate swings.
+
+Also on each planet, you could potentially mix which resource type (puller, opportunity/risk, repeller) is most immediate.
+
+environments don't have to be planets!  a space station will do.  a ship will do.  Or a large asteroid/moon.  Maybe a building on a planet is the environ because the planet is noxious outside.
+
+
+
+So lets fucking go.
+
+Planet 1
+___________
+
+Puller:  Water.
+Risk/Opportunity:  Food.
+Required to meditate:  Food full.
+No repeller - just seeking food / plants.
+
+Space:
+____________________________
+
+Puller: Oxygen - (more time than water was).
+
+Planet 2
+______________________________________________
+Puller:

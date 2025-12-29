@@ -9,7 +9,7 @@ public delegate void PowerEvent(bool on);
 public class DrainerBehaviour : MonoBehaviour
 {
     private SplitterSubscriber Held;
-    private int colliderCount = 0;
+    public int colliderCount = 0;
     public SplitterSubscriber MyPhysics;
     public Transform Target;
     public float maxSpeedChange = 1f;
@@ -56,6 +56,7 @@ public class DrainerBehaviour : MonoBehaviour
     }
 
     private Vector3 _target;
+    private Vector3 _pointVel;
     private void FixedUpdate()
     {
         if (Held != null)
@@ -68,10 +69,11 @@ public class DrainerBehaviour : MonoBehaviour
                 )
                 , ForceMode.VelocityChange
             );
+            _pointVel = MyPhysics.AppliedPhysics.GetPointVelocity(Held.AppliedPhysics.position);
             Held.AppliedPhysics.AddForce(
                 Vector3Min(
-                    (MyPhysics.AppliedPhysics.velocity - Held.AppliedPhysics.velocity).normalized * maxSpeedChange, 
-                    (MyPhysics.AppliedPhysics.velocity - Held.AppliedPhysics.velocity) * dampSpeed //* Time.fixedDeltaTime
+                    (_pointVel - Held.AppliedPhysics.velocity).normalized * maxSpeedChange, 
+                    (_pointVel - Held.AppliedPhysics.velocity) * dampSpeed //* Time.fixedDeltaTime
                  )
                  , ForceMode.VelocityChange
             );

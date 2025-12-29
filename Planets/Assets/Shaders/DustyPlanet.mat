@@ -46,7 +46,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: eacec9cd0f31ea04b82121877a6cccaa, type: 3}
-        m_Scale: {x: 35, y: 35}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
@@ -71,7 +71,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _HeightPower: 0
-    - _MainBlend: 0.309
+    - _MainBlend: 0.477
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -86,13 +86,13 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LargeColor: {r: 1, g: 0.99501103, b: 0, a: 1}
-    - _MainColor: {r: 0.7924528, g: 0.6760002, b: 0.6242435, a: 1}
+    - _MainColor: {r: 0.7924528, g: 0.69940597, b: 0.6541474, a: 1}
     - _MediumColor: {r: 1, g: 0.021577863, b: 0, a: 1}
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
-    - _SmallColor: {r: 0, g: 0.08628174, b: 1, a: 1}
-    - _TilingLarge: {r: 4, g: 530, b: 0.65, a: 0.01}
-    - _TilingMedium: {r: 8, g: 364, b: 0.66, a: 0.01}
-    - _TilingSmall: {r: 32, g: 230, b: 0.67, a: 0.01}
-    - _TilingTiny: {r: 300, g: 219, b: 0.6, a: 0.01}
-    - _TinyColor: {r: 0.5098038, g: 0.32156855, b: 0.28627446, a: 1}
+    - _SmallColor: {r: 0, g: 0.08628171, b: 1, a: 1}
+    - _TilingLarge: {r: 4, g: 530, b: 0.66, a: 0.01}
+    - _TilingMedium: {r: 32, g: 364, b: 0.66, a: 0.01}
+    - _TilingSmall: {r: 128, g: 230, b: 0.67, a: 0.01}
+    - _TilingTiny: {r: 512, g: 219, b: 0.6, a: 0.01}
+    - _TinyColor: {r: 0.5098037, g: 0.32156852, b: 0.28627443, a: 1}
   m_BuildTextureStacks: []

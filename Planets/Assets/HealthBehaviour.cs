@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Rendering.PostProcessing;
 using System.Collections.Generic;
+using UnityEngine.Audio;
 
 public class HealthBehaviour : MonoBehaviour
 {
@@ -18,8 +19,13 @@ public class HealthBehaviour : MonoBehaviour
 
     public PostProcessVolume healthyVolume;
     public PostProcessVolume lowHealthVolume;
+    public Image badHealthVignette;
+    public float badHealthAlpha;
 
     public HintController hintController;
+
+    public AudioMixerGroup musicMixGroup;
+    private float initialMusicVolume;
 
     private Coroutine flashEvent = null;
     private void Awake()
@@ -28,13 +34,15 @@ public class HealthBehaviour : MonoBehaviour
     }
     void Start()
     {
-        
+        musicMixGroup.audioMixer.GetFloat("MusicVolume", out initialMusicVolume);
 
         highlightColors = new List<Color>();
+        vignetteColors = new List<Color>();
         blackoutColors = new List<Color>();
         for(int i = 0; i < 100; i++)
         {
             highlightColors.Add(new Color(highlight.color.r, highlight.color.g, highlight.color.b, ((float)i) / 100f));
+            vignetteColors.Add(new Color(1f, 1f, 1f, ((float)i) / 100f) * badHealthAlpha);
             blackoutColors.Add(new Color(0, 0, 0, ((float)i) / 100f));
         }
 
@@ -43,17 +51,32 @@ public class HealthBehaviour : MonoBehaviour
         imageRect = healthBar.rectTransform;
     }
 
-    List<Color> blackoutColors;
+    List<Color> blackoutColors, vignetteColors;
+    private float vignetteAmt;
     private IEnumerator healthAnimation()
     {
         while (true)
         {
-            lowHealthVolume.weight = Mathf.Max(0f, (1.5f * ((1f - health) *  (Mathf.Sin(Time.timeSinceLevelLoad) + 1f)/2f) - .5f));
-            healthyVolume.weight = 1f - lowHealthVolume.weight;
+            vignetteAmt = Mathf.Max(0f, (1.5f * ((.4f - health) * (Mathf.Sin(Time.timeSinceLevelLoad) + 1f) / 2f) - .5f));
+            
+            //wav
+            vignetteAmt = (Mathf.Sin(Time.timeSinceLevelLoad)+1f)/2f;
+            //move down so it is only over 0 by .25f max at .5f health
+            vignetteAmt += (1f - health) * 2.5f - 2.5f;
+            //fade
+            vignetteAmt = Mathf.Clamp01(vignetteAmt * (1f - health));
+
+            badHealthVignette.color = vignetteColors[Mathf.FloorToInt(vignetteAmt * (vignetteColors.Count-1))];
+            
+            //lowHealthVolume.weight = Mathf.Max(0f, (1.5f * ((1f - health) *  (Mathf.Sin(Time.timeSinceLevelLoad) + 1f)/2f) - .5f));
+            //healthyVolume.weight = 1f - lowHealthVolume.weight;
 
 
             blackOut.color = blackoutColors[Mathf.RoundToInt(Mathf.Max(0,1f - (health * 8f))*99)];
-            
+
+
+            musicMixGroup.audioMixer.SetFloat("MusicVolume", (Mathf.Log10(1f-Mathf.Pow(1f-health,2f))*80f) + initialMusicVolume);
+
             yield return null;
         }
     }

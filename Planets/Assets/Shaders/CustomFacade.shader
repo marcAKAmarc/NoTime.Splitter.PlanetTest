@@ -124,18 +124,13 @@ Shader "Custom/Facade" {
                     _TilingLarge.x * _alphaLarge
                 ), IN.viewDir);
 
-            o.Albedo = .6667 * (tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingTiny.x).rgb +
+            o.Albedo = /*.5 * (tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingTiny.x).rgb +
                 tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingSmall.x ).rgb +
                 tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingMedium.x ).rgb +
                 tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingLarge.x ).rgb) / 4
-                //_TinyColor;
-                //_TinyColor * (IN.camD / _TilingTiny.y);
-                /*_TinyColor * _alphaTiny +
-                _SmallColor * _alphaSmall +
-                _MediumColor * _alphaMedium +
-                _LargeColor * _alphaLarge;*/
-                +
-                .3333 * (tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingTiny.x).rgb * _alphaTiny +
+
+                +*/
+                (tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingTiny.x).rgb * _alphaTiny +
                 tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingSmall.x ).rgb * _alphaSmall +
                 tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingMedium.x ).rgb * _alphaMedium +
                 tex2D(_MainTex, (IN.uv_MainTex + texOffset) * _TilingLarge.x ).rgb * _alphaLarge);
@@ -155,7 +150,7 @@ Shader "Custom/Facade" {
                 tex2D(_MainTex, IN.uv_MainTex * _TilingMedium.x).g * _alphaMedium +
                 tex2D(_MainTex, IN.uv_MainTex * _TilingLarge.x).g * _alphaLarge
                 ;*/
-            o.Albedo = o.Albedo * (1 - _MainBlend) + _MainColor * _MainBlend;
+            o.Albedo = (o.Albedo * (1 - _MainBlend)) + (_MainColor * _MainBlend);
             float bumpLevel = (
                 _TilingTiny.z * _alphaTiny
                 +
@@ -186,6 +181,7 @@ Shader "Custom/Facade" {
             );*/
             //half rim = 1.0 - saturate(dot(normalize(IN.viewDir), o.Normal));
             //o.Emission = _RimColor.rgb * pow(rim, _RimPower);
+            o.Emission = 0;
         }
         ENDCG
     }

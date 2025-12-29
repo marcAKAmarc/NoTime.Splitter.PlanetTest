@@ -8,6 +8,7 @@ public class AutomaticOrbit : MonoBehaviour
     private bool doIt = true;
     public GravityObject gravityObject;
     public float maxVelocityChange = 100f;
+    public float minVelocityChange = 0f;
 
     [Tooltip("if outside orbital path, no further forces applied.  this allows for nudging out of orbit. 0f value to ignore")]
     public float orbitalPathWidth = 1f;
@@ -58,8 +59,8 @@ public class AutomaticOrbit : MonoBehaviour
             _initialDistance = gravityObject.GravityDistance;
 
         //ALLOW TO BE NUDGED OUT OF ORBIT
-        if (orbitalPathWidth > 0f && Mathf.Abs(_initialDistance - gravityObject.GravityDistance) > orbitalPathWidth)
-            return;
+        /*if (orbitalPathWidth > 0f && Mathf.Abs(_initialDistance - gravityObject.GravityDistance) > orbitalPathWidth)
+            return;*/
 
         Vector3 orbitDirection;
         if (sub.AppliedPhysics.velocity.sqrMagnitude < 1f)
@@ -72,14 +73,15 @@ public class AutomaticOrbit : MonoBehaviour
         //have to add a small balancing force to keep object in orbit because physx 
         _goalV += Mathf.Clamp(_initialDistance - gravityObject.GravityDistance, 0f, .001f) * -gravityObject.GravityDirection;
         _deltaV = Vector3.ClampMagnitude(_goalV - sub.AppliedPhysics.velocity, maxVelocityChange);
-        sub.AppliedPhysics.AddForce(_deltaV, ForceMode.VelocityChange);
 
-        if (_deltaV.sqrMagnitude < 1f)
+        if (minVelocityChange != 0f && _deltaV.sqrMagnitude < Mathf.Pow(minVelocityChange, 2))
             return;
+
+        sub.AppliedPhysics.AddForce(_deltaV, ForceMode.VelocityChange);
 
         if (flightController != null)
         {
-            flightController.AddExternalDisplayInput(_deltaV);
+            flightController.AddExternalDisplayInput(_deltaV.normalized);
         }
     }
 
