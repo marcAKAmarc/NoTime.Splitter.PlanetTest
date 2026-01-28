@@ -279,7 +279,10 @@ Shader "Custom/ScreenSpaceFog2"
                 float4 dayNightColor = lerp(_NightColor, _DayColor, pow(max(0, 1.25 * (dayNight - 1) + 1),2));//(cos(PI*(1 - dayNight))+1)/2);
                 float4 atmosphereColor = (dayNightColor*(1-sunsetAmt)) + (sunsetColor * sunsetAmt);
                 return
-                    atmosphereColor * atmoDensity * depthFading;
+                    //atmosphereColor;
+                    //atmosphereColor * atmoDensity * float4(1,1,1,depthFading);
+                //old good one    
+                atmosphereColor * atmoDensity * depthFading;
             }
             ENDCG
         }

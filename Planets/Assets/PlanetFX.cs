@@ -183,7 +183,7 @@ public class PlanetFX : MonoBehaviour
                             Vector3.Dot((transform.position - ad.PlanetTransform.position).normalized, -SunLight.forward)
                      );
                 float activeZoneFactor = Map(x, ad.nearRadius, 0, ad.farRadius, 1f);
-                Debug.Log("active zone factor: " + activeZoneFactor);
+                //Debug.Log("active zone factor: " + activeZoneFactor);
                 float positionalBlend =
                     (
                         dayNightFactor

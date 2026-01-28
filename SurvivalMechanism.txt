@@ -46,6 +46,7 @@ Puller:  Water.
 Risk/Opportunity:  Food.
 Required to meditate:  Food full.
 No repeller - just seeking food / plants.
+What marks the end of the cycle?  Super foggyness?
 
 Space:
 ____________________________

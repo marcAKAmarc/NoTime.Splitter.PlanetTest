@@ -6,10 +6,12 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace NoTime.Splitter.Demo
 {
+    public enum FPSPhysicalState { steady, unsteady, collapsed}
     public class RigidbodyFpsController : SplitterEventListener
     {
 
         public bool Grounded = true;
+        public FPSPhysicalState physicalState; 
         public float GroundedOriginOffset = .67f;
         public float GroundedOriginCastDistance = .67f;
         public float GroundedRiseAmt = .01f;
@@ -45,6 +47,13 @@ namespace NoTime.Splitter.Demo
         public HintController hintController;
         CameraShakeInput jetpackShake;
         public CameraController camController;
+        public AlignWithGravity gravityAligner;
+
+        public float CollapseImpulse;
+        public float UnsteadyImpulse;
+        public float CollapsedTime;
+        public float UnsteadyTime;
+        private WaitForSeconds CollapsedTimeWait, UnsteadyTimeWait;
         private void Awake()
         {
             jetpackShake = new CameraShakeInput
@@ -59,10 +68,14 @@ namespace NoTime.Splitter.Demo
             };
             _spearRotationTarget = transform.rotation;
             body = transform.GetComponent<SplitterSubscriber>();
+
+            CollapsedTimeWait = new WaitForSeconds(CollapsedTime);
+            UnsteadyTimeWait = new WaitForSeconds(UnsteadyTime);
         }
 
         private void Start()
         {
+            _gravityObject = transform.GetComponent<GravityObject>();
             _verticalLook = VerticalLook;
             VerticalLookStart = Quaternion.identity;
         }
@@ -160,39 +173,113 @@ namespace NoTime.Splitter.Demo
         bool ShouldJump = false;
         bool ShouldMarioJump = false;
 
+        private void OnCollisionEnter(Collision collision)
+        {
+            HandleBlowToPhysicalState(collision.impulse.sqrMagnitude);
+        }
+
+        private void HandleBlowToPhysicalState(float impulse)
+        {
+            Debug.Log("Impulse sqr: " + impulse);
+            if(impulse > Mathf.Pow(CollapseImpulse,2f))
+            {
+                if (currentPhysicalStateRoutine != null)
+                    StopCoroutine(currentPhysicalStateRoutine);
+                currentPhysicalStateRoutine = StartCoroutine(PhysicalStateRecovery(FPSPhysicalState.collapsed));
+            }
+            else if(impulse > Mathf.Pow(UnsteadyImpulse,2f))
+            { 
+                if (currentPhysicalStateRoutine != null)
+                    StopCoroutine(currentPhysicalStateRoutine);
+                currentPhysicalStateRoutine = StartCoroutine(PhysicalStateRecovery(FPSPhysicalState.unsteady));
+            }
+        }
+        private Coroutine currentPhysicalStateRoutine;
+        IEnumerator PhysicalStateRecovery(FPSPhysicalState startState)
+        {
+            if(startState == FPSPhysicalState.collapsed)
+            {
+                physicalState = FPSPhysicalState.collapsed;
+                yield return CollapsedTimeWait;
+                physicalState = FPSPhysicalState.unsteady;
+                yield return UnsteadyTimeWait;
+                physicalState = FPSPhysicalState.steady;
+            }
+            if(startState == FPSPhysicalState.unsteady)
+            {
+                physicalState = FPSPhysicalState.unsteady;
+                yield return UnsteadyTimeWait;
+                physicalState = FPSPhysicalState.steady;
+            }
+            yield return null;
+        }
+
         bool InSpace = false;
         private void FixedUpdate()
         {
             if (body.Anchor == null)
                 InSpace = true;
-            if (InSpace)
-                body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
-            else
-                body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotation;
-            GroundCheck();
 
+            RotationalStuff();
+
+            if (physicalState == FPSPhysicalState.collapsed)
+            {
+                Grounded = false;
+                _gravityObject.ApplyGravity = true;
+            }
+            if (physicalState != FPSPhysicalState.collapsed)
+            {
+                GroundCheck();
+            }
+
+                GravityLook();
+
+                /*if (_rotateToGravity)
+                    AlignRotationWithGravity();*/
+
+                Move();
+
+
+                Jump();
+
+                Jetpack();
+
+                //sticky
+                //EnforceMinimumMovementDistance();
+
+                //friction
+                if (!TempDisableFriction)
+                    FrictionAndSlowdown();
             
-            GravityLook();
-
-            /*if (_rotateToGravity)
-                AlignRotationWithGravity();*/
-
-            Move();
-
-
-            Jump();
-
-            Jetpack();
-
-            //sticky
-            //EnforceMinimumMovementDistance();
-
-            //friction
-            if(!TempDisableFriction)
-                FrictionAndSlowdown();
-
+            
         }
         
+        private void RotationalStuff()
+        {
+            if (
+                physicalState == FPSPhysicalState.unsteady || physicalState == FPSPhysicalState.collapsed
+            )
+                body.AppliedPhysics.constraints = RigidbodyConstraints.None;
+            else
+            {
+                if (InSpace)
+                    body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
+                else
+                    body.AppliedPhysics.constraints = RigidbodyConstraints.FreezeRotation;
+            }
+
+            if(physicalState == FPSPhysicalState.collapsed)
+            {
+                if (gravityAligner.enabled)
+                    gravityAligner.enabled = false;
+            }
+            else
+            {
+                if (!gravityAligner.enabled)
+                    gravityAligner.enabled = true;
+            }
+        }
+
         private Quaternion _spearRotationTarget;
         private void Move()
         {
@@ -465,8 +552,7 @@ namespace NoTime.Splitter.Demo
             if (Grounded)
             {
 
-                if (_gravityObject == null)
-                    _gravityObject = transform.GetComponent<GravityObject>();
+
 
                 /*if (_gravityObject.ApplyGravity)
                 {

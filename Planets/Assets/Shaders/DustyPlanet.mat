@@ -71,7 +71,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _HeightPower: 0
-    - _MainBlend: 0.477
+    - _MainBlend: 0.346
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -86,7 +86,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LargeColor: {r: 1, g: 0.99501103, b: 0, a: 1}
-    - _MainColor: {r: 0.7924528, g: 0.69940597, b: 0.6541474, a: 1}
+    - _MainColor: {r: 1, g: 0.7121294, b: 0.5801887, a: 1}
     - _MediumColor: {r: 1, g: 0.021577863, b: 0, a: 1}
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
     - _SmallColor: {r: 0, g: 0.08628171, b: 1, a: 1}
